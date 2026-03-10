@@ -14,6 +14,14 @@ java {
 	}
 }
 
+// ==============================
+// Spring Boot main class 지정
+// ==============================
+springBoot {
+	// 실제 실행할 main class 패키지/클래스명으로 변경
+	mainClass = 'com.matching.team_builder.TeamBuilderApplication'
+}
+
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
@@ -25,7 +33,6 @@ repositories {
 }
 
 dependencies {
-
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 

@@ -70,18 +70,10 @@ goto fail
 :execute
 @rem Setup the command line
 
-<<<<<<< HEAD
 
 
 @rem Execute Gradle
 "%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -jar "%APP_HOME%\gradle\wrapper\gradle-wrapper.jar" %*
-=======
-set CLASSPATH=
-
-
-@rem Execute Gradle
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -classpath "%CLASSPATH%" -jar "%APP_HOME%\gradle\wrapper\gradle-wrapper.jar" %*
->>>>>>> afda2d7 (spring boot setup)
 
 :end
 @rem End local scope for the variables with windows NT shell

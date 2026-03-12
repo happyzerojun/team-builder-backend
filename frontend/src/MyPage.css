@@ -1,25 +1,23 @@
-/* 전체 배경: 화면 꽉 차게 하늘색 설정 */
+
 .mp-container {
-    background-color: #f0f8ff; /* 연한 하늘색 */
+    background-color: #f0f8ff;
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* 위쪽부터 배치 */
+    align-items: flex-start; 
     padding: 40px 20px;
     font-family: 'Pretendard', sans-serif;
 }
 
-/* 메인 카드: 하얀색 박스 */
 .mp-card {
     background-color: #ffffff;
     width: 100%;
-    max-width: 600px; /* 너무 넓지 않게 조절 */
+    max-width: 600px;
     border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); /* 은은한 그림자 */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); 
     padding: 30px;
 }
 
-/* 프로필 헤더 */
 .mp-header {
     display: flex;
     align-items: center;
@@ -42,7 +40,6 @@
     gap: 10px;
 }
 
-/* 태그 스타일 */
 .mp-tags {
     display: flex;
     gap: 8px;
@@ -56,7 +53,6 @@
     color: #555;
 }
 
-/* 수정 버튼 */
 .mp-setting-btn {
     font-size: 12px;
     padding: 5px 12px;
@@ -71,14 +67,12 @@
     background-color: #f5f5f5;
 }
 
-/* 구분선 */
 .mp-divider {
     border: 0;
     border-top: 1px solid #eee;
     margin: 25px 0;
 }
 
-/* 섹션 타이틀 */
 .mp-section h4 {
     font-size: 16px;
     color: #333;
@@ -88,7 +82,6 @@
     align-items: center;
 }
 
-/* 활동 카드 (프로젝트 리스트 항목) */
 .mp-activity-card {
     display: flex;
     justify-content: space-between;
@@ -112,7 +105,6 @@
     flex: 1;
 }
 
-/* 상태 배지 */
 .mp-badge {
     font-size: 12px;
     padding: 4px 8px;

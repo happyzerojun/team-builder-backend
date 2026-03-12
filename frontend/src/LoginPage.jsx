@@ -1,5 +1,5 @@
 import React from 'react';
-import './LoginPage.css'; // 분리한 CSS 파일을 불러옵니다
+import './LoginPage.css'; 
 import {Link} from 'react-router-dom';
 
 

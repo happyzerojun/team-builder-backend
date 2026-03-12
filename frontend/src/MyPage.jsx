@@ -3,8 +3,6 @@ import './MyPage.css';
 import { useNavigate } from 'react-router-dom';
 
 const MyPage = () => {
-  // [발표 데이터] 팀원분이 설계한 project, application 테이블과 연동될 가짜 데이터입니다.
-  // 나중에 서버(API)에서 실제 데이터를 받아오면 이 부분만 교체하면 됩니다.
   
   const myLeadProjects = [
     { id: 201, title: "포트폴리오 공유 플랫폼", members: "3/4명", status: "모집중" }
@@ -17,18 +15,16 @@ const MyPage = () => {
   const Navigate = useNavigate();
 
   return (
-    <div className="mp-container"> {/* 하늘색 배경을 담당하는 최상위 부모 */}
-      <div className="mp-card"> {/* 흰색 프로필 카드 영역 */}
+    <div className="mp-container"> 
+      <div className="mp-card"> 
         
-        {/* 1. 프로필 상단: 사진, 이름, 기술 스택 */}
         <div className="mp-header">
-          <div className="mp-avatar"></div> {/* 프로필 이미지 원형 영역 */}
+          <div className="mp-avatar"></div> 
           <div className="mp-info">
             <h3>
               강무원 님 
               <button className="mp-setting-btn" onClick={() => Navigate('/MyPageSetting')}>프로필 수정</button>
             </h3>
-            {/* 협업 매칭에 중요한 기술 스택을 태그 형태로 노출 */}
             <div className="mp-tags">
               <span className="mp-tag">#React</span>
               <span className="mp-tag">#Java</span>
@@ -39,7 +35,6 @@ const MyPage = () => {
 
         <hr className="mp-divider" />
 
-        {/* 2. 상세 소개 구역 */}
         <div className="mp-section">
           <h4>자기소개</h4>
           <p style={{ color: '#555', lineHeight: '1.6' }}>
@@ -55,7 +50,7 @@ const MyPage = () => {
 
         <hr className="mp-divider" />
 
-        {/* 3. 내가 리더인 프로젝트 (project 테이블 연동) */}
+        {/* 3. 내가 리더인 프로젝트  */}
         <div className="mp-section">
           <h4>내가 만든 프로젝트</h4>
           {myLeadProjects.map(proj => (

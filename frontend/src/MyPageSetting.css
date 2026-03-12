@@ -1,4 +1,4 @@
-/* 수정 페이지 컨테이너: 마이페이지와 동일한 하늘색 배경 */
+
 .ms-container {
     background-color: #f0f8ff;
     min-height: 100vh;
@@ -8,7 +8,6 @@
     padding: 40px 20px;
 }
 
-/* 수정 카드 */
 .ms-card {
     background-color: #ffffff;
     width: 100%;
@@ -25,7 +24,6 @@
     text-align: center;
 }
 
-/* 입력 그룹 */
 .ms-input-group {
     margin-bottom: 20px;
 }
@@ -44,7 +42,7 @@
     border: 1px solid #ddd;
     border-radius: 8px;
     font-size: 14px;
-    box-sizing: border-box; /* 패딩 때문에 박스 나가는 것 방지 */
+    box-sizing: border-box; 
 }
 
 .ms-textarea {
@@ -52,7 +50,6 @@
     resize: none;
 }
 
-/* 버튼 영역 */
 .ms-button-group {
     display: flex;
     gap: 10px;
@@ -80,7 +77,6 @@
     cursor: pointer;
 }
 
-/* 전체 감싸는 구역 */
 .ms-profile-img-wrap {
     display: flex;
     flex-direction: column;
@@ -88,7 +84,6 @@
     margin-bottom: 30px;
 }
 
-/* 라벨 자체를 이미지 박스 크기로 설정 */
 .ms-img-label-wrapper {
     cursor: pointer;
     position: relative;
@@ -98,7 +93,7 @@
     width: 120px;
     height: 120px;
     border-radius: 50%;
-    overflow: hidden; /* 오버레이가 동그라미 밖으로 안 나가게 */
+    overflow: hidden; 
     position: relative;
     border: 4px solid white;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
@@ -106,7 +101,7 @@
 }
 
 .ms-img-box:hover {
-    transform: scale(1.02); /* 살짝 커지는 효과 */
+    transform: scale(1.02); 
 }
 
 .ms-default-img {
@@ -119,25 +114,24 @@
     font-size: 50px;
 }
 
-/* 마우스 올렸을 때 어두워지면서 '편집' 글자 나오게 (선택) */
 .ms-img-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.3); /* 반투명 검정 */
+    background-color: rgba(0, 0, 0, 0.3); 
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 14px;
-    opacity: 0; /* 평소엔 안 보임 */
+    opacity: 0;
     transition: opacity 0.2s;
 }
 
 .ms-img-box:hover .ms-img-overlay {
-    opacity: 1; /* 마우스 올리면 보임 */
+    opacity: 1; 
 }
 
 .ms-hidden-input {

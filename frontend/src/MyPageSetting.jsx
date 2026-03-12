@@ -13,7 +13,6 @@ const MyPageSetting = () => {
     tags: '#React #Java #OracleSQL'
   });
 
-  // 입력값이 변할 때 실행되는 함수
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -22,9 +21,8 @@ const MyPageSetting = () => {
     });
   };
 
-  // 저장 버튼 클릭 시 실행
   const handleSave = () => {
-  // 1. 서버에 데이터 보내기 (API 호출)
+  // 1. 서버에 데이터 보내기
   // 2. 저장이 잘 됐는지 확인
   // 3. 성공했다면 페이지 이동
     alert("프로필 정보가 성공적으로 수정되었습니다!");

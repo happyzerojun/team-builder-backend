@@ -1,0 +1,97 @@
+/* 📁 src/components/post/PostCard.css */
+
+.post-card {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  cursor: pointer;
+  transition: border-color 0.25s, transform 0.2s, box-shadow 0.25s;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.post-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-glow);
+}
+
+/* 상단 헤더 */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badge-category {
+  background: var(--color-primary-glow);
+  color: var(--color-primary);
+  border: 1px solid rgba(79,142,247,0.3);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.card-headcount {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+/* 제목 */
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+}
+
+/* 설명 */
+.card-description {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;     /* 최대 2줄 표시 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 모집 분야 뱃지 */
+.card-roles { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge-role {
+  background: rgba(249, 115, 22, 0.1);
+  color: var(--color-accent);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* 태그 */
+.card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  background: var(--color-tag-bg);
+  color: var(--color-tag-text);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-family: var(--font-code);
+  font-weight: 500;
+}
+
+/* 푸터 */
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 4px;
+}
+.card-author { font-size: 0.8rem; color: var(--color-text-muted); }
+.card-date   { font-size: 0.8rem; color: var(--color-text-muted); }

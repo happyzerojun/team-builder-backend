@@ -1,0 +1,122 @@
+/* 📁 src/pages/WritePage.css */
+
+.write-page { min-height: 100vh; }
+
+.write-content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.btn-back {
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  padding: 0;
+  margin-bottom: 32px;
+  transition: color 0.2s;
+}
+.btn-back:hover { color: var(--color-text); }
+
+.write-header { margin-bottom: 40px; }
+.write-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin-bottom: 8px;
+}
+.write-subtitle { font-size: 0.9rem; color: var(--color-text-muted); }
+
+/* 폼 */
+.write-form {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.required { color: var(--color-primary); }
+
+.char-count {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+.form-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.form-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+
+/* 태그 선택기 */
+.tag-selector { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag-option {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-family: var(--font-code);
+  font-weight: 500;
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  border: 1.5px solid var(--color-border);
+  transition: all 0.2s;
+}
+.tag-option:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.tag-option.selected {
+  background: var(--color-primary-glow);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.selected-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 4px; }
+.selected-tag-badge {
+  background: var(--color-tag-bg);
+  color: var(--color-tag-text);
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-family: var(--font-code);
+}
+
+/* 버튼 영역 */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+.btn-cancel {
+  padding: 11px 24px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1.5px solid var(--color-border);
+  transition: all 0.2s;
+}
+.btn-cancel:hover { color: var(--color-text); border-color: var(--color-border-hover); }
+
+.btn-submit {
+  padding: 11px 28px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  transition: background 0.2s, transform 0.1s;
+}
+.btn-submit:hover { background: var(--color-primary-hover); }
+.btn-submit:active { transform: scale(0.97); }

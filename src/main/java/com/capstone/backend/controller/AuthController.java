@@ -21,6 +21,11 @@ public class AuthController {
         return ResponseEntity.ok("회원가입 성공");
     }
 
+    @GetMapping("/test")
+    public String test() {
+        return "server running";
+    }
+
     // 로그인
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {

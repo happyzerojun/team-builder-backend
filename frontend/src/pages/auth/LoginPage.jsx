@@ -14,7 +14,8 @@ const LoginPage = () => {
         </div>
         <button className="login-button">로그인</button>
         <div className="login-footer">
-          계정이 없으신가요? <Link to = "/SignupPage">회원가입</Link>
+                  계정이 없으신가요?
+                  <Link className="a" to="/Signup">회원가입</Link>
         </div>
       </div>
     </div>

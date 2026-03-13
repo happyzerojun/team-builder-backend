@@ -1,14 +1,15 @@
-.login-container { 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     height: 100vh;
-    background-color: #f8f9fa; 
+    background: var(--color-primary-glow);
 }
 
 .login-card { 
     background-color: #fff; 
-    padding: 40px; border-radius: 15px; 
+    padding: 40px; 
+    border-radius: 15px; 
     box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
     width: 100%; 
     max-width: 400px; 
@@ -45,8 +46,7 @@
     color: #777; 
 }
 
-.login-link { 
-    color: #4A90E2; 
-    font-weight: bold; 
-    cursor: pointer; 
+.a {
+    margin-left: 5px;
+    color: #007bff;
 }

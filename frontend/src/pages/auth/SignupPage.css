@@ -1,8 +1,9 @@
-.signup-container { 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; height: 100vh; 
-    background-color: #f8f9fa; 
+.signup-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: var(--color-primary-glow);
 }
 
 .signup-card { 

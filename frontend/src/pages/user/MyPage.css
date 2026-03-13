@@ -1,20 +1,20 @@
-
 .mp-container {
-    background-color: #f0f8ff;
+    background-color: #0f172a;
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: flex-start; 
+    align-items: flex-start;
     padding: 40px 20px;
     font-family: 'Pretendard', sans-serif;
+    color: #f8fafc;  
 }
 
 .mp-card {
-    background-color: #ffffff;
+    background-color: #1e293b;  
     width: 100%;
     max-width: 600px;
     border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); 
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); 
     padding: 30px;
 }
 
@@ -28,13 +28,15 @@
 .mp-avatar {
     width: 80px;
     height: 80px;
-    background-color: #e0e0e0;
+    background-color: #334155; 
     border-radius: 50%;
+    border: 2px solid #475569;
 }
 
 .mp-info h3 {
     margin: 0 0 8px 0;
     font-size: 22px;
+    color: #ffffff; 
     display: flex;
     align-items: center;
     gap: 10px;
@@ -49,37 +51,52 @@
     font-size: 12px;
     padding: 4px 10px;
     border-radius: 15px;
-    background-color: #eef2f6;
-    color: #555;
+    background-color: #334155;
+    color: #cbd5e1; 
 }
 
 .mp-setting-btn {
     font-size: 12px;
     padding: 5px 12px;
-    border: 1px solid #ddd;
+    border: 1px solid #475569;
     border-radius: 5px;
-    background: #fff;
+    background: transparent; 
+    color: #cbd5e1;
     cursor: pointer;
     transition: 0.2s;
 }
 
 .mp-setting-btn:hover {
-    background-color: #f5f5f5;
-}
+        background-color: #334155;
+        color: #ffffff;
+    }
 
 .mp-divider {
     border: 0;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #334155; 
     margin: 25px 0;
 }
 
 .mp-section h4 {
     font-size: 16px;
-    color: #333;
+    color: #f1f5f9; 
     margin-bottom: 15px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.mp-section p {
+    font-size: 13px;
+    line-height: 0; 
+    color: #cbd5e0; 
+    margin-top: 20px;
+}
+
+.mp-section p1 {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #ffffff; 
 }
 
 .mp-activity-card {
@@ -87,31 +104,48 @@
     justify-content: space-between;
     align-items: center;
     padding: 15px;
-    background-color: #f9f9f9;
+    background-color: #0f172a; 
     border-radius: 10px;
     margin-bottom: 10px;
-    border: 1px solid #f0f0f0;
+    border: 1px solid #334155;
     cursor: pointer;
+    transition: 0.2s;
+}
+
+.mp-activity-card:hover {
+        border-color: #5c7cfa; 
 }
 
 .mp-activity-card .title {
-    font-weight: 600;
-    flex: 2;
+        font-weight: 600;
+        color: #f1f5f9;
+        flex: 2;
 }
 
 .mp-activity-card .role {
-    font-size: 14px;
-    color: #777;
-    flex: 1;
+        font-size: 14px;
+        color: #94a3b8;
+        flex: 1;
 }
 
 .mp-badge {
-    font-size: 12px;
+    font-size: 11px;
     padding: 4px 8px;
     border-radius: 4px;
     font-weight: bold;
 }
 
-.status-ongoing { background-color: #e3f2fd; color: #1976d2; } /* 진행중 - 파랑 */
-.status-recruiting { background-color: #e8f5e9; color: #2e7d32; } /* 모집중 - 초록 */
-.status-pending { background-color: #fff3e0; color: #ef6c00; } /* 대기중 - 주황 */
+.status-ongoing {
+    background-color: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+}
+
+.status-recruiting {
+    background-color: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+}
+
+.status-pending {
+    background-color: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}

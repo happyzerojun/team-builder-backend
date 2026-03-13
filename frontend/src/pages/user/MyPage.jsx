@@ -37,12 +37,12 @@ const MyPage = () => {
 
         <div className="mp-section">
           <h4>자기소개</h4>
-          <p style={{ color: '#555', lineHeight: '1.6' }}>
+          <p1>
             안녕하세요! 대학생 강무원입니다. 
             ...
-          </p>
+          </p1>
           
-          <div style={{ marginTop: '15px', fontSize: '14px', color: '#777' }}>
+          <div>
             <p>📍 <strong>희망 직무:</strong> ...</p>
             <p>🏫 <strong>소속:</strong> 조선대학교 (컴퓨터공학과)</p>
           </div>

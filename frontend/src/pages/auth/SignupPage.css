@@ -40,3 +40,32 @@
     cursor: pointer; 
     font-weight: bold; 
 }
+
+.message {
+    font-size: 12px;
+    text-align: left;
+    margin-top: -10px;
+    margin-bottom: 15px;
+    padding-left: 5px;
+}
+
+.match {
+    color: #4dabf7;
+}
+
+.no-match {
+    color: #ff6b6b;
+}
+
+.login-link-container {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #888;
+}
+
+.login-link {
+    color: #748ffc;
+    text-decoration: none;
+    margin-left: 5px;
+    font-weight: bold;
+}

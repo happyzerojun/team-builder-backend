@@ -1,10 +1,13 @@
 package com.capstone.backend.service;
+import com.capstone.backend.dto.LoginResponse;
+import com.capstone.backend.security.JwtProvider;
 
 import com.capstone.backend.dto.LoginRequest;
 import com.capstone.backend.dto.SignupRequest;
 import com.capstone.backend.entity.User;
 import com.capstone.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,7 +15,23 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtProvider jwtProvider;
 
+
+    public LoginResponse login(LoginRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Password incorrect");
+        }
+
+        String token = jwtProvider.createToken(user.getEmail());
+
+        return new LoginResponse(token);
+    }
     // 회원가입
     public User signup(SignupRequest request) {
 
@@ -22,23 +41,11 @@ public class AuthService {
 
         User user = User.builder()
                 .email(request.getEmail())
-                .password(request.getPassword())
+                .password(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
                 .build();
 
         return userRepository.save(user);
     }
 
-    // 로그인
-    public User login(LoginRequest request) {
-
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (!user.getPassword().equals(request.getPassword())) {
-            throw new RuntimeException("Password incorrect");
-        }
-
-        return user;
-    }
 }

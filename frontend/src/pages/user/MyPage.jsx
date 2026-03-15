@@ -27,8 +27,8 @@ const MyPage = () => {
             </h3>
             <div className="mp-tags">
               <span className="mp-tag">#React</span>
-              <span className="mp-tag">#Java</span>
-              <span className="mp-tag">#OracleSQL</span>
+              <span className="mp-tag">#Vue.js</span>
+              <span className="mp-tag">#Next.js</span>
             </div>
           </div>
         </div>

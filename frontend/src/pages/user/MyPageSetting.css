@@ -32,7 +32,7 @@
     display: block;
     font-size: 14px;
     font-weight: 600;
-    color: #333;
+    color: #ffffff;
     margin-bottom: 8px;
 }
 
@@ -142,4 +142,112 @@
     margin-top: 10px;
     font-size: 13px;
     color: #888;
+}
+
+.ms-selected-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+    min-height: 35px;
+}
+
+.ms-tag-active {
+    background-color: #5c7cfa;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: transform 0.1s;
+}
+
+.ms-tag-active:hover {
+    transform: scale(1.05);
+    background-color: #4c6ef5;
+}
+
+.ms-tag-remove {
+    font-size: 11px;
+    opacity: 0.8;
+}
+
+.ms-tag-pool {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 15px;
+    background-color: #0f172a; 
+    border-radius: 12px;
+    border: 1px solid #334155;
+}
+
+.ms-tag-btn {
+    background: transparent;
+    border: 1px solid #475569;
+    color: #94a3b8;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ms-tag-btn:hover {
+    border-color: #5c7cfa;
+    color: #ffffff;
+}
+
+.ms-tag-btn.selected {
+    background-color: rgba(92, 124, 250, 0.1);
+    color: #5c7cfa;
+    border-color: #5c7cfa;
+}
+
+.ms-custom-tag-wrap {
+    display: flex;
+    align-items: center;
+    background-color: #1e293b; 
+    border: 1px dashed #475569;
+    border-radius: 20px;
+    padding: 2px 2px 2px 12px;
+    margin-left: 5px;
+}
+
+.ms-tag-input {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 13px;
+    width: 80px; 
+    outline: none;
+}
+
+.ms-tag-input::placeholder {
+    color: #64748b;
+}
+
+.ms-tag-add-btn {
+    background-color: #334155;
+    color: #5c7cfa;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 5px;
+    transition: 0.2s;
+}
+
+.ms-tag-add-btn:hover {
+    background-color: #5c7cfa;
+    color: white;
 }

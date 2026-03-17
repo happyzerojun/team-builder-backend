@@ -4,17 +4,26 @@ server:
 spring:
   application:
     name: backend
-# DB부분
+
   datasource:
-    url: jdbc:mysql://localhost:3306/team_builder?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    # 한국 시간 설정을 위해 serverTimezone을 Asia/Seoul로 변경하는 것을 추천합니다.
+    url: jdbc:mysql://localhost:3306/team_builder?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: root
-    password: 1234
+    password: "1234"
     driver-class-name: com.mysql.cj.jdbc.Driver
-# jpa설정
+
+  # --- 여기부터가 추가/수정된 부분입니다 ---
+  sql:
+    init:
+      mode: always # 서버 실행 시마다 src/main/resources/data.sql을 실행함
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+    # Hibernate가 테이블을 다 만든 "후에" SQL이 실행되도록 순서를 조절합니다.
+    defer-datasource-initialization: true
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect # 사용할 DB 방언 명시 (권장)

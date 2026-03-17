@@ -117,6 +117,32 @@ function WritePage() {
             />
           </div>
 
+          <div className="form-group">
+            <label className="form-label">프로젝트 기간 <span className="required">*</span></label>
+            <div className="period-selector">
+              <label className="radio-label">
+                <input
+                  type="radio"
+                  name="period"
+                  value="단기"
+                  checked={form.period === "단기"}
+                  onChange={handleChange}
+                />
+                단기
+              </label>
+              <label className="radio-label">
+                <input
+                  type="radio"
+                  name="period"
+                  value="장기"
+                  checked={form.period === "장기"}
+                  onChange={handleChange}
+                />
+                장기
+              </label>
+            </div>
+          </div>
+
           {/* 두 칸 나란히: 카테고리 + 모집 인원 */}
           <div className="form-row">
             <div className="form-group">

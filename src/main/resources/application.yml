@@ -4,13 +4,13 @@ server:
 spring:
   application:
     name: backend
-
+# DB부분
   datasource:
     url: jdbc:mysql://localhost:3306/team_builder?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
-
+# jpa설정
   jpa:
     hibernate:
       ddl-auto: update

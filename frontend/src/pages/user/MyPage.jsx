@@ -3,7 +3,8 @@ import './MyPage.css';
 import { useNavigate } from 'react-router-dom';
 
 const MyPage = () => {
-  
+   const user = JSON.parse(localStorage.getItem("user")) || {};
+
   const myLeadProjects = [
     { id: 201, title: "포트폴리오 공유 플랫폼", members: "3/4명", status: "모집중" }
   ];
@@ -39,16 +40,29 @@ const MyPage = () => {
 
         <div className="mp-section">
           <h4>자기소개</h4>
-          <p1>
+          <p>
             안녕하세요! 대학생 강무원입니다. 
             ...
-          </p1>
+          </p>
           
           <div>
             <p>📍 <strong>희망 직무:</strong> ...</p>
             <p>🏫 <strong>소속:</strong> 조선대학교 (컴퓨터공학과)</p>
           </div>
         </div>
+
+        <hr className="mp-divider" />
+
+        <div className="mp-section">
+          <h4>🐙 깃허브</h4>
+          <button
+         className="mp-setting-btn"
+         onClick={() => alert("준비 중인 기능입니다!")}
+         >
+            깃허브 연동하기
+         </button>
+        </div>
+
 
         <hr className="mp-divider" />
 
@@ -88,6 +102,20 @@ const MyPage = () => {
             <span className="mp-badge status-pending">대기중</span>
           </div>
         </div>
+
+        {/* 6. 실력 수준 + 협업 경험  */}
+        <div className="mp-tags" style={{ marginTop: '8px' }}>
+              {user.level && (
+                <span className="mp-tag">
+                  {user.level === "초보" ? "🌱" : user.level === "중급" ? "⚡" : "🔥"} {user.level}
+                </span>
+              )}
+              {user.hasTeamExp && (
+                <span className="mp-tag">
+                  {user.hasTeamExp === "있음" ? "🤝 협업 경험 있음" : "🙋 협업 경험 없음"}
+                </span>
+              )}
+            </div>
 
       </div>
     </div>

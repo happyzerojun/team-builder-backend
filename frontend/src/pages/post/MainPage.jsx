@@ -12,6 +12,8 @@ function MainPage({ isLoggedIn, onLogout }) {
     const [searchText, setSearchText] = useState("");
     const [selectedTags, setSelectedTags] = useState([]);
 
+    const [durationFilter, setDurationFilter] = useState("전체");
+
     function toggleTag(tag) {
         setSelectedTags((prev) =>
             prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
@@ -27,9 +29,12 @@ function MainPage({ isLoggedIn, onLogout }) {
             const matchesTags =
                 selectedTags.length === 0 ||
                 selectedTags.every((tag) => post.tags.includes(tag));
-            return matchesSearch && matchesTags;
+            const matchesDuration =
+                durationFilter === "전체" || post.duration === durationFilter;
+
+            return matchesSearch && matchesTags && matchesDuration;
         });
-    }, [searchText, selectedTags]);
+    }, [searchText, selectedTags, durationFilter]);
 
     return (
         <div className="main-page">
@@ -83,6 +88,18 @@ function MainPage({ isLoggedIn, onLogout }) {
                         </button>
                     )}
                 </section>
+
+                <div className="duration-filter">
+                    {["전체", "단기", "장기"].map((d) => (
+                        <button
+                            key={d}
+                            className={`tag-filter-btn ${durationFilter === d ? "active" : ""}`}
+                            onClick={() => setDurationFilter(d)}
+                        >
+                            {d === "단기" ? "⚡ 단기" : d === "장기" ? "📅 장기" : d}
+                        </button>
+                    ))}
+                </div>
 
                 <div className="result-count">
                     총 <strong>{filteredPosts.length}</strong>개의 모집 글

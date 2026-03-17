@@ -72,6 +72,7 @@
   font-weight: 500;
 }
 
+
 /* 태그 */
 .card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag {

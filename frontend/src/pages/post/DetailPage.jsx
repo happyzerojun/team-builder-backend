@@ -98,6 +98,18 @@ function DetailPage() {
             </div>
           </section>
 
+          <section className="detail-section">
+            <h2 className="section-title">📋 모집 조건</h2>
+            <div className="tags-list">
+              <span className={`badge-level ${post.level}`}>
+                 {post.level === "초보" ? "🌱 초보" : post.level === "중급" ? "⚡ 중급" : "🔥 고수"}
+              </span>
+              <span className="badge-exp">
+                {post.hasTeamExp === "있음" ? "🤝 협업 경험 있음" : "🙋 협업 경험 없음"}
+              </span>
+            </div>
+          </section>
+
           {/* 지원하기 버튼 */}
           <div className="detail-actions">
             <button className="btn-apply" onClick={handleApply}>

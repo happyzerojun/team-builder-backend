@@ -13,6 +13,9 @@ export const MOCK_POSTS = [
     headcount: 3,
     tags: ["React Native", "Node.js", "OpenAI API", "MongoDB"],
     author: "김지훈",
+    duration: "장기",
+    level: "고수",
+    hasTeamExp: "있음",
     createdAt: "2025-03-10",
   },
   {
@@ -25,6 +28,9 @@ export const MOCK_POSTS = [
     headcount: 4,
     tags: ["React", "Spring Boot", "MySQL", "WebSocket"],
     author: "박소연",
+    duration: "단기",
+    level: "중급",      
+    hasTeamExp: "있음",
     createdAt: "2025-03-09",
   },
   {
@@ -37,6 +43,9 @@ export const MOCK_POSTS = [
     headcount: 3,
     tags: ["Next.js", "TypeScript", "PostgreSQL", "Tailwind"],
     author: "이민준",
+    duration: "단기",
+    level: "초보",      
+    hasTeamExp: "없음",
     createdAt: "2025-03-08",
   },
   {
@@ -49,6 +58,9 @@ export const MOCK_POSTS = [
     headcount: 2,
     tags: ["Vue.js", "Django", "SQLite", "Python"],
     author: "최예림",
+    duration: "단기",
+    level: "초보",      
+    hasTeamExp: "없음",
     createdAt: "2025-03-07",
   },
   {
@@ -61,6 +73,9 @@ export const MOCK_POSTS = [
     headcount: 2,
     tags: ["React", "Socket.io", "Express", "Redis"],
     author: "정도현",
+    duration: "장기",
+    level: "고수",      
+    hasTeamExp: "있음",
     createdAt: "2025-03-06",
   },
   {
@@ -73,6 +88,9 @@ export const MOCK_POSTS = [
     headcount: 3,
     tags: ["Flutter", "Firebase", "Dart", "REST API"],
     author: "한수진",
+    duration: "단기",
+    level: "초보",      
+    hasTeamExp: "있음",
     createdAt: "2025-03-05",
   },
 ];

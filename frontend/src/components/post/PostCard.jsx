@@ -12,6 +12,12 @@ function PostCard({ post, onClick }) {
       {/* 카드 상단: 카테고리 배지 + 모집 인원 */}
       <div className="card-header">
         <span className="badge-category">{post.category}</span>
+
+        {/* ✅ 추가 */}
+        <span className={`badge-duration ${post.duration === "단기" ? "short" : "long"}`}>
+             {post.duration === "단기" ? "⚡ 단기" : "📅 장기"}
+        </span>
+
         <span className="card-headcount">👥 {post.headcount}명 모집</span>
       </div>
 
@@ -40,6 +46,16 @@ function PostCard({ post, onClick }) {
         <span className="card-author">✍️ {post.author}</span>
         <span className="card-date">{post.createdAt}</span>
       </div>
+
+      <div className="card-meta">
+        <span className={`badge-level ${post.level}`}>
+        {post.level === "초보" ? "🌱 초보" : post.level === "중급" ? "⚡ 중급" : "🔥 고수"}
+        </span>
+        <span className="badge-exp">
+         {post.hasTeamExp === "있음" ? "🤝 협업 경험 있음" : "🙋 협업 경험 없음"}
+        </span>
+    </div>
+
 
     </article>
   );

@@ -1,25 +1,51 @@
-import React, { useState } from 'react'; 
-import { Link } from 'react-router-dom'; 
-import './SignupPage.css';
-
 const SignupPage = () => {
-
+    // ✅ id, email 상태 추가
+    const [id, setId] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+
+    const navigate = useNavigate();
+
+    const handleSignup = () => {
+        // ✅ 하드코딩 대신 실제 입력값 저장
+        const user = {
+            id: id,
+            email: email,
+            password: password
+        };
+
+        localStorage.setItem("user", JSON.stringify(user));
+        alert("회원가입 완료!");
+        navigate('/login');
+    };
+
     const isMatch = password === confirmPassword;
     const showMessage = confirmPassword.length > 0;
-
-    const isFormValid = password.length >= 4 && isMatch && confirmPassword.length > 0; //비번 4글자이상
+    const isFormValid = password.length >= 4 && isMatch && confirmPassword.length > 0;
 
     return (
         <div className="signup-container">
             <div className="signup-card">
                 <h2 className="signup-title">회원가입</h2>
 
-                <input type="text" placeholder="아이디" className="signup-input" />
-                <input type="email" placeholder="이메일" className="signup-input" />
+                {/* ✅ value, onChange 추가 */}
+                <input
+                    type="text"
+                    placeholder="아이디"
+                    className="signup-input"
+                    value={id}
+                    onChange={(e) => setId(e.target.value)}
+                />
+                <input
+                    type="email"
+                    placeholder="이메일"
+                    className="signup-input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
 
-                {/* 비밀번호 입력 */}
+                {/* 아래는 기존 코드 그대로 */}
                 <input
                     type="password"
                     placeholder="비밀번호"
@@ -27,8 +53,6 @@ const SignupPage = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                 />
-
-                {/* 3. 비밀번호 확인 칸 추가 */}
                 <input
                     type="password"
                     placeholder="비밀번호 확인"
@@ -37,7 +61,6 @@ const SignupPage = () => {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                 />
 
-                {/* 4. 실시간 일치 메시지 */}
                 {showMessage && (
                     <p className={`message ${isMatch ? 'match' : 'no-match'}`}>
                         {isMatch ? '✓ 비밀번호가 일치합니다' : '✗ 비밀번호가 일치하지 않습니다'}
@@ -46,9 +69,10 @@ const SignupPage = () => {
 
                 <button
                     className="signup-button"
-                    disabled={!isFormValid} 
+                    disabled={!isFormValid}
+                    onClick={handleSignup}
                     style={{
-                        backgroundColor: isFormValid ? '#748ffc' : '#ccc', 
+                        backgroundColor: isFormValid ? '#748ffc' : '#ccc',
                         cursor: isFormValid ? 'pointer' : 'not-allowed'
                     }}
                 >

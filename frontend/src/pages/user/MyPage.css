@@ -149,3 +149,18 @@
     background-color: rgba(245, 158, 11, 0.2);
     color: #fbbf24;
 }
+
+.mp-back-btn {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 0.875rem;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 16px;
+    transition: color 0.2s;
+}
+
+    .mp-back-btn:hover {
+        color: #333;
+    }

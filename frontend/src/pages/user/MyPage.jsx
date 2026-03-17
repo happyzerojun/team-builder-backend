@@ -17,7 +17,9 @@ const MyPage = () => {
   return (
     <div className="mp-container"> 
       <div className="mp-card"> 
-        
+              <button className="mp-back-btn" onClick={() => Navigate('/')}>
+                  ← 메인으로
+              </button>
         <div className="mp-header">
           <div className="mp-avatar"></div> 
           <div className="mp-info">

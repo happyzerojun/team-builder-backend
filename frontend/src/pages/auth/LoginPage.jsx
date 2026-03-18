@@ -13,8 +13,15 @@ const LoginPage = ({ onLoginSuccess }) => {
         const code = urlParams.get('code');
 
         if (code) {
-            alert("소셜 로그인 성공!");
+            const socialUser = {
+                id: "SocialUser", // 혹은 랜덤 ID
+                name: "소셜사용자",
+                isSocial: true
+            };
+
+            localStorage.setItem("user", JSON.stringify(socialUser));
             localStorage.setItem("isLoggedIn", "true");
+
             if (onLoginSuccess) onLoginSuccess();
             navigate('/', { replace: true });
         }

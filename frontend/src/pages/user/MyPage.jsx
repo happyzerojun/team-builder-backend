@@ -1,122 +1,145 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './MyPage.css';
 import { useNavigate } from 'react-router-dom';
+import { MOCK_POSTS } from "../../data/mockData"; 
+import { getAppliedIds } from "../../services/applyService"; 
 
 const MyPage = () => {
-   const user = JSON.parse(localStorage.getItem("user")) || {};
+  const navigate = useNavigate();
+  
+  const [user, setUser] = useState({
+    name: "강무원",
+    organization: "조선대",
+    introduction: "안녕하세요!",
+    tags: ["React", "JavaScript", "CS"],
+    job_role: "개발자",
+    profileImg: null
+  });
+  
+  const [appliedPosts, setAppliedPosts] = useState([]);
 
-  const myLeadProjects = [
-    { id: 201, title: "포트폴리오 공유 플랫폼", members: "3/4명", status: "모집중" }
-  ];
+  useEffect(() => {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    if (!savedUser) {
+      alert("로그인이 필요한 페이지입니다.");
+      navigate("/login");
+      return;
+    }
 
-  const myParticipation = [
-    { id: 101, title: "캠퍼스 팀 매칭 서비스", role: "프론트엔드", status: "진행중" }
-  ];
+    setUser({
+      ...savedUser,
+      name: savedUser.nickname || savedUser.name || "강무원",
+      profileImg: savedUser.profileImg || null
+    });
 
-  const Navigate = useNavigate();
+    const ids = getAppliedIds();
+    const filteredApplied = MOCK_POSTS.filter(post => 
+      ids.includes(post.id) && 
+      post.author !== (savedUser.nickname || savedUser.name) &&![1, 3].includes(post.id)
+    );
+    
+    setAppliedPosts(filteredApplied);
+  }, [navigate]);
+
+  const myLeadProjects = MOCK_POSTS.filter(post => post.author === user.name);
+  const myParticipation = MOCK_POSTS.filter(post => [1, 3].includes(post.id));
 
   return (
     <div className="mp-container"> 
       <div className="mp-card"> 
-              <button className="mp-back-btn" onClick={() => Navigate('/')}>
-                  ← 메인으로
-              </button>
+        <button className="mp-back-btn" onClick={() => navigate('/')}>
+          ← 메인으로
+        </button>
+
         <div className="mp-header">
-          <div className="mp-avatar"></div> 
+          {user.profileImg ? (
+            <img src={user.profileImg} alt="프로필" className="mp-avatar-img" />
+          ) : (
+            <div className="mp-avatar">{user.name ? user.name[0] : "무"}</div>
+          )}
+
           <div className="mp-info">
-            <h3>
-              강무원 님 
-              <button className="mp-setting-btn" onClick={() => Navigate('/MyPageSetting')}>프로필 수정</button>
-            </h3>
-            <div className="mp-tags">
-              <span className="mp-tag">#React</span>
-              <span className="mp-tag">#Vue.js</span>
-              <span className="mp-tag">#Next.js</span>
+            <div className="mp-info-top">
+              <h3>{user.name} 님</h3>
+              <button className="mp-setting-btn" onClick={() => navigate('/MyPageSetting')}>프로필 수정</button>
             </div>
+
+            <div className="mp-org-row">
+              <span className="mp-org-label">소속</span>
+              <span className="mp-org-value">{user.organization || "소속 없음"}</span>
+            </div>
+
+            <div className="mp-tags">
+              {user.tags && user.tags.map(tag => (
+                <span key={tag} className="mp-tag">#{tag}</span>
+              ))}
+            </div>
+            <p className="mp-bio">{user.introduction}</p>
           </div>
         </div>
 
         <hr className="mp-divider" />
 
-        <div className="mp-section">
-          <h4>자기소개</h4>
-          <p>
-            안녕하세요! 대학생 강무원입니다. 
-            ...
-          </p>
-          
-          <div>
-            <p>📍 <strong>희망 직무:</strong> ...</p>
-            <p>🏫 <strong>소속:</strong> 조선대학교 (컴퓨터공학과)</p>
-          </div>
-        </div>
-
-        <hr className="mp-divider" />
-
-        <div className="mp-section">
-          <h4>🐙 깃허브</h4>
-          <button
-         className="mp-setting-btn"
-         onClick={() => alert("준비 중인 기능입니다!")}
-         >
-            깃허브 연동하기
-         </button>
-        </div>
-
-
-        <hr className="mp-divider" />
-
-        {/* 3. 내가 리더인 프로젝트  */}
+        {/* 📋 내가 만든 프로젝트 */}
         <div className="mp-section">
           <h4>내가 만든 프로젝트</h4>
-          {myLeadProjects.map(proj => (
-            <div key={proj.id} className="mp-activity-card">
-              <span className="title">{proj.title}</span>
-              <span className="role" style={{ fontSize: '13px' }}>{proj.members}</span>
-              <span className="mp-badge status-recruiting">{proj.status}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* 4. 참여 중인 프로젝트 (project_position 테이블 연동) */}
-        <div className="mp-section" style={{ marginTop: '20px' }}>
-          <h4>참여 중인 프로젝트</h4>
-          {myParticipation.length > 0 ? (
-            myParticipation.map(proj => (
-              <div key={proj.id} className="mp-activity-card">
-                <span className="title">{proj.title}</span>
-                <span className="role">{proj.role}</span>
-                <span className="mp-badge status-ongoing">{proj.status}</span>
+          {myLeadProjects.length > 0 ? (
+            myLeadProjects.map(proj => (
+              <div key={proj.id} className="mp-activity-card clickable" onClick={() => navigate(`/post/${proj.id}`)}>
+                <div className="proj-info">
+                  <span className="title">{proj.title}</span>
+                  <span className="sub-info">👥 {proj.headcount}명 모집</span>
+                </div>
+                <span className="mp-badge status-recruiting">모집중</span>
               </div>
             ))
           ) : (
-            <div className="mp-activity-card" style={{ color: '#999' }}>참여 중인 프로젝트가 없습니다.</div>
+            <div className="mp-activity-card no-data">작성한 게시글이 없습니다.</div>
           )}
         </div>
 
-        {/* 5. 나의 지원 현황 (application 테이블 연동 - 비공개 영역) */}
-        <div className="mp-section" style={{ marginTop: '20px' }}>
-          <h4>나의 지원 현황</h4>
-          <div className="mp-activity-card">
-            <span className="title">AI 스터디 그룹</span>
-            <span className="mp-badge status-pending">대기중</span>
-          </div>
+        {/* 🤝 참여 중인 프로젝트 (예시 데이터 고정) */}
+        <div className="mp-section" style={{ marginTop: '25px' }}>
+          <h4>참여 중인 프로젝트</h4>
+          {myParticipation.length > 0 ? (
+            myParticipation.map(proj => (
+              <div key={proj.id} className="mp-activity-card clickable" onClick={() => navigate(`/post/${proj.id}`)}>
+                <div className="proj-info">
+                  <span className="title">{proj.title}</span>
+                  <span className="sub-info">🛠 {proj.roles ? proj.roles[0] : "팀원"}</span>
+                </div>
+                <span className="mp-badge status-ongoing">진행중</span>
+              </div>
+            ))
+          ) : (
+            <div className="mp-activity-card no-data">참여 중인 프로젝트가 없습니다.</div>
+          )}
         </div>
 
-        {/* 6. 실력 수준 + 협업 경험  */}
-        <div className="mp-tags" style={{ marginTop: '8px' }}>
-              {user.level && (
-                <span className="mp-tag">
-                  {user.level === "초보" ? "🌱" : user.level === "중급" ? "⚡" : "🔥"} {user.level}
-                </span>
-              )}
-              {user.hasTeamExp && (
-                <span className="mp-tag">
-                  {user.hasTeamExp === "있음" ? "🤝 협업 경험 있음" : "🙋 협업 경험 없음"}
-                </span>
-              )}
-            </div>
+        {/* 📩 지원 중인 모집글 (중복 제거됨) */}
+        <div className="mp-section" style={{ marginTop: '25px' }}>
+          <h4>지원 중인 모집글</h4>
+          {appliedPosts.length > 0 ? (
+            appliedPosts.map(proj => (
+              <div key={proj.id} className="mp-activity-card clickable" onClick={() => navigate(`/post/${proj.id}`)}>
+                <div className="proj-info">
+                  <span className="title">{proj.title}</span>
+                  <span className="sub-info">📍 {proj.category}</span>
+                </div>
+                <span className="mp-badge status-pending">지원완료</span>
+              </div>
+            ))
+          ) : (
+            <div className="mp-activity-card no-data">아직 지원한 프로젝트가 없습니다.</div>
+          )}
+        </div>
 
+        <hr className="mp-divider" />
+
+        <div className="mp-footer-tags">
+            <span className="mp-tag-badge blue">⚡ {user.job_role || "개발자"}</span>
+            <span className="mp-tag-badge green">🤝 협업 가능</span>
+        </div>
       </div>
     </div>
   );

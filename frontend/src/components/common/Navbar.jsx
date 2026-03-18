@@ -1,49 +1,54 @@
-// 📁 src/components/common/Navbar.jsx
-import { useNavigate } from "react-router-dom";
-import "./Navbar.css";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './Navbar.css'; 
 
-function Navbar({ isLoggedIn, onLogout }) {
-    const navigate = useNavigate();
+const Navbar = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
 
-    return (
-        <nav className="navbar">
-            <div className="navbar-inner">
+  useEffect(() => {
+    // 모집글 상세페이지에서 로그인유지되게 수정
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    if (savedUser) {
+      setUser(savedUser);
+    } else {
+      setUser(null);
+    }
+  }, [navigate]);
 
-                {/* 로고 */}
-                <div className="navbar-logo" onClick={() => navigate("/")}>
-                    <span className="logo-bracket">&lt;</span>
-                    TeamBuilder
-                    <span className="logo-bracket">/&gt;</span>
-                </div>
+  const handleLogout = () => {
+    if (window.confirm("로그아웃 하시겠습니까?")) {
+      localStorage.removeItem("user");
+      setUser(null);
+      navigate('/');
+    }
+  };
 
-                {/* 오른쪽 버튼 영역 */}
-                <div className="navbar-actions">
-                    {isLoggedIn ? (
-                        // ✅ 로그인 상태일 때
-                        <>
-                            <button className="btn-ghost" onClick={() => navigate("/mypage")}>
-                                마이페이지
-                            </button>
-                            <button className="btn-primary" onClick={onLogout}>
-                                로그아웃
-                            </button>
-                        </>
-                    ) : (
-                        // ✅ 비로그인 상태일 때
-                        <>
-                            <button className="btn-ghost" onClick={() => navigate("/login")}>
-                                로그인
-                            </button>
-                            <button className="btn-primary" onClick={() => navigate("/Signup")}>
-                                회원가입
-                            </button>
-                        </>
-                    )}
-                </div>
-
+  return (
+    <nav className="navbar">
+      <div className="nav-container">
+        <div className="logo" onClick={() => navigate('/')}>
+          <span className="logo-point">Team</span>Matching
+        </div>
+        
+        <div className="nav-menu">
+          {user ? (
+            <div className="nav-user-area">
+              <span className="user-greet" onClick={() => navigate('/MyPage')}>
+                <span className="user-name">{user.id}</span>님
+              </span>
+              <button className="nav-btn logout" onClick={handleLogout}>로그아웃</button>
             </div>
-        </nav>
-    );
-}
+          ) : (
+            <div className="nav-auth-area">
+              <button className="nav-btn login" onClick={() => navigate('/login')}>로그인</button>
+              <button className="nav-btn signup" onClick={() => navigate('/signup')}>회원가입</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+};
 
 export default Navbar;

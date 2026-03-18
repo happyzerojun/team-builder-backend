@@ -2,9 +2,14 @@ package com.capstone.backend.service;
 
 import com.capstone.backend.dto.LoginRequest;
 import com.capstone.backend.dto.SignupRequest;
+import com.capstone.backend.entity.AuthProvider;
 import com.capstone.backend.entity.User;
+import com.capstone.backend.global.exception.ConflictException;
+import com.capstone.backend.global.exception.UnauthorizedException;
+import com.capstone.backend.global.jwt.JwtUtil;
 import com.capstone.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,17 +17,19 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
 
     // 회원가입
     public User signup(SignupRequest request) {
 
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("이미 존재하는 이메일입니다.");
+            throw new ConflictException("이미 존재하는 이메일입니다.");
         }
 
         User user = User.builder()
                 .email(request.getEmail())
-                .password(request.getPassword())
+                .password(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
                 .build();
 
@@ -30,15 +37,18 @@ public class AuthService {
     }
 
     // 로그인
-    public User login(LoginRequest request) {
-
+    public String login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않습니다."));
 
-        if (!user.getPassword().equals(request.getPassword())) {
-            throw new RuntimeException("Password incorrect");
+        if (user.getProvider() != AuthProvider.LOCAL || user.getPassword() == null) {
+            throw new UnauthorizedException("OAuth 계정입니다. 소셜 로그인을 사용해주세요.");
         }
 
-        return user;
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않습니다.");
+        }
+
+        return jwtUtil.createToken(user.getEmail()); // ⭐ 토큰 반환
     }
 }

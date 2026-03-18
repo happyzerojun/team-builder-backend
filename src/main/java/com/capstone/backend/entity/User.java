@@ -22,4 +22,12 @@ public class User {
 
     private String name;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private AuthProvider provider = AuthProvider.LOCAL;
+
+    @Column(unique = true)
+    private String providerId;
+
 }

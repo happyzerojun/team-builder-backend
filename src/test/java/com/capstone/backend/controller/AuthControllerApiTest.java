@@ -6,6 +6,8 @@ import com.capstone.backend.global.exception.GlobalExceptionHandler;
 import com.capstone.backend.global.jwt.JwtFilter;
 import com.capstone.backend.global.jwt.JwtUtil;
 import com.capstone.backend.security.SecurityConfig;
+import com.capstone.backend.security.oauth.CustomOAuth2UserService;
+import com.capstone.backend.security.oauth.OAuth2AuthenticationSuccessHandler;
 import com.capstone.backend.service.AuthService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +38,12 @@ class AuthControllerApiTest {
 
     @MockBean
     private AuthService authService;
+
+    @MockBean
+    private CustomOAuth2UserService customOAuth2UserService;
+
+    @MockBean
+    private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
     @Test
     void signupReturnsCreated() throws Exception {

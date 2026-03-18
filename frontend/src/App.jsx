@@ -10,6 +10,8 @@ import MainPage from "./pages/post/MainPage";
 import WritePage from "./pages/post/WritePage";
 import DetailPage from "./pages/post/DetailPage";
 
+import ChatPage from './pages/chat/ChatPage';
+
 import "./styles/global.css";
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -56,6 +58,9 @@ function App() {
                     {/* 게시글 관련 */}
                     <Route path="/write" element={<WritePage />} />
                     <Route path="/post/:id" element={<DetailPage />} />
+
+                    {/*채팅창*/}
+                    <Route path="/chat/:projectId" element={<ChatPage />} />
 
                     {/* 존재하지 않는 주소 → 메인으로 */}
                     <Route path="*" element={<Navigate to="/" />} />

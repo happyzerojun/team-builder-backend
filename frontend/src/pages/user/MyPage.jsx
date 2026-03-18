@@ -35,7 +35,8 @@ const MyPage = () => {
     const ids = getAppliedIds();
     const filteredApplied = MOCK_POSTS.filter(post => 
       ids.includes(post.id) && 
-      post.author !== (savedUser.nickname || savedUser.name) &&![1, 3].includes(post.id)
+      post.author !== (savedUser.nickname || savedUser.name) && 
+      ![1, 3].includes(post.id)
     );
     
     setAppliedPosts(filteredApplied);
@@ -43,6 +44,12 @@ const MyPage = () => {
 
   const myLeadProjects = MOCK_POSTS.filter(post => post.author === user.name);
   const myParticipation = MOCK_POSTS.filter(post => [1, 3].includes(post.id));
+
+  // 채팅방 이동 함수
+  const handleChatMove = (e, projectId) => {
+    e.stopPropagation(); // 카드 전체 클릭 이벤트(상세보기)가 실행되지 않도록 방지
+    navigate(`/chat/${projectId}`);
+  };
 
   return (
     <div className="mp-container"> 
@@ -63,12 +70,10 @@ const MyPage = () => {
               <h3>{user.name} 님</h3>
               <button className="mp-setting-btn" onClick={() => navigate('/MyPageSetting')}>프로필 수정</button>
             </div>
-
             <div className="mp-org-row">
               <span className="mp-org-label">소속</span>
               <span className="mp-org-value">{user.organization || "소속 없음"}</span>
             </div>
-
             <div className="mp-tags">
               {user.tags && user.tags.map(tag => (
                 <span key={tag} className="mp-tag">#{tag}</span>
@@ -98,7 +103,7 @@ const MyPage = () => {
           )}
         </div>
 
-        {/* 🤝 참여 중인 프로젝트 (예시 데이터 고정) */}
+        {/* 🤝 참여 중인 프로젝트 (채팅 버튼 추가됨) */}
         <div className="mp-section" style={{ marginTop: '25px' }}>
           <h4>참여 중인 프로젝트</h4>
           {myParticipation.length > 0 ? (
@@ -108,7 +113,13 @@ const MyPage = () => {
                   <span className="title">{proj.title}</span>
                   <span className="sub-info">🛠 {proj.roles ? proj.roles[0] : "팀원"}</span>
                 </div>
-                <span className="mp-badge status-ongoing">진행중</span>
+                <div className="mp-card-actions">
+                  {/* ✅ 채팅방 이동 버튼 추가 */}
+                  <button className="mp-action-chat-btn" onClick={(e) => handleChatMove(e, proj.id)}>
+                    💬 채팅
+                  </button>
+                  <span className="mp-badge status-ongoing">진행중</span>
+                </div>
               </div>
             ))
           ) : (
@@ -116,7 +127,7 @@ const MyPage = () => {
           )}
         </div>
 
-        {/* 📩 지원 중인 모집글 (중복 제거됨) */}
+        {/* 📩 지원 중인 모집글 */}
         <div className="mp-section" style={{ marginTop: '25px' }}>
           <h4>지원 중인 모집글</h4>
           {appliedPosts.length > 0 ? (

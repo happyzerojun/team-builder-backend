@@ -230,3 +230,26 @@
     object-fit: cover;
     border: 2px solid #38bdf8; 
 }
+
+.mp-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mp-action-chat-btn {
+    background-color: #f0f9ff;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mp-action-chat-btn:hover {
+    background-color: #e0f2fe;
+    border-color: #7dd3fc;
+}

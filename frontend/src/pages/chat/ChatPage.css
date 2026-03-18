@@ -1,0 +1,138 @@
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 500px;
+    margin: 0 auto;
+    /* 배경: 짙은 다크 그레이 */
+    background-color: #1a1a1a; 
+    color: #e5e7eb;
+}
+
+.chat-header {
+    padding: 15px;
+    /* 헤더: 약간 더 밝은 회색 */
+    background: #242424;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #333;
+}
+
+/* 헤더 내 글자 색상 조절 */
+.chat-header .room-name {
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.message-row {
+    display: flex;
+    flex-direction: column;
+    max-width: 80%;
+}
+
+.message-row.me {
+    align-self: flex-end;
+    align-items: flex-end;
+}
+
+.message-row.other {
+    align-self: flex-start;
+}
+
+/* 상대방 이름 색상 */
+.sender-name {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-bottom: 4px;
+    margin-left: 4px;
+}
+
+.bubble {
+    padding: 10px 14px;
+    border-radius: 15px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* 내가 보낸 메시지: 채도가 살짝 낮은 블루 */
+.me .bubble {
+    background-color: #0284c7;
+    color: #ffffff;
+    border-bottom-right-radius: 2px;
+}
+
+/* 상대방 메시지: 어두운 배경에 대비되는 회색 */
+.other .bubble {
+    background-color: #333333;
+    color: #e5e7eb;
+    border-bottom-left-radius: 2px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+/* 시간 표시 글자 */
+.time {
+    font-size: 10px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.chat-input-area {
+    padding: 15px;
+    background: #242424;
+    display: flex;
+    gap: 10px;
+    border-top: 1px solid #333;
+}
+
+.chat-input-area input {
+    flex: 1;
+    padding: 10px 15px;
+    background: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 20px;
+    color: #ffffff;
+    outline: none;
+}
+
+.chat-input-area input::placeholder {
+    color: #666;
+}
+
+.chat-input-area button {
+    background: #0284c7;
+    color: #ffffff;
+    border: none;
+    padding: 0 18px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.chat-input-area button:hover {
+    background: #0369a1;
+}
+
+.chat-input-area button:disabled {
+    background: #444;
+    color: #888;
+    cursor: not-allowed;
+}
+
+/* 스크롤바 커스텀 (다크모드용) */
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+    background-color: #444;
+    border-radius: 10px;
+}

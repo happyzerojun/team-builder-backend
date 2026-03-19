@@ -13,39 +13,50 @@ import java.util.List;
 @Entity
 @Table(name = "user")
 @Getter
-@Builder // <--- 1. 이 부분을 추가하세요! (빌더 패턴 사용 가능하게 함)
-@AllArgsConstructor // <--- 2. 빌더를 쓰려면 모든 필드를 인자로 받는 생성자가 필수입니다.
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class) // 자동으로 시간을 가져옴
+@EntityListeners(AuditingEntityListener.class)
 public class User {
 
-    // User 클래스 내부에 추가하세요
-    @Builder.Default // 빌더 사용 시 리스트 초기화 보장
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<UserTechStack> userTechStacks = new ArrayList<>();
-
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // PK 자동 증가 (AI)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
     private Long id;
 
     @Column(nullable = false, length = 50)
     private String name;
 
-    @Column(nullable = false, unique = true, length = 100) // 필수 값 + 중복 불가 (UQ)
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(nullable = false, length = 255) // 필수 값 (NN)
+    @Column(nullable = false, length = 255)
     private String password;
 
+    // 중복 제거 및 준원님 초기값 설정 병합
     @Column(name = "experience_level", nullable = false, length = 20)
-    private String experienceLevel;
+    @Builder.Default
+    private String experienceLevel = "BEGINNER";
 
     @Column(name = "github_url", length = 255)
     private String githubUrl;
 
     @Column(name = "baekjoon_id", length = 50)
     private String baekjoonId;
+
+    // --- 준원님이 추가한 OAuth2(소셜 로그인) 관련 필드 ---
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private AuthProvider provider = AuthProvider.LOCAL; // AuthProvider Enum이 있어야 정상 작동합니다.
+
+    @Column(unique = true)
+    private String providerId;
+
+    // --- 영준님이 추가한 기술 스택 양방향 매핑 필드 ---
+    @Builder.Default
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserTechStack> userTechStacks = new ArrayList<>();
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)

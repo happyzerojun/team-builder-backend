@@ -24,6 +24,7 @@ public class User {
     @Column(name = "user_id")
     private Long id;
 
+    @Setter
     @Column(nullable = false, length = 50)
     private String name;
 
@@ -48,8 +49,10 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
+    @Setter
     private AuthProvider provider = AuthProvider.LOCAL; // AuthProvider Enum이 있어야 정상 작동합니다.
 
+    @Setter
     @Column(unique = true)
     private String providerId;
 

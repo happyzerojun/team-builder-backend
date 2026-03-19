@@ -23,6 +23,15 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
 
+    // 🔥 영준님이 추가: 보초병이 아예 검사조차 하지 않고 프리패스 시킬 주소들!
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/api/tech-stacks") ||
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/v3/api-docs");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -37,7 +46,6 @@ public class JwtFilter extends OncePerRequestFilter {
             if (jwtUtil.validateToken(token)) {
                 String email = jwtUtil.getEmail(token);
 
-                // 🔥 인증 객체 생성
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 email,
@@ -46,10 +54,7 @@ public class JwtFilter extends OncePerRequestFilter {
                                         new SimpleGrantedAuthority("ROLE_USER"))
                         );
 
-                // 🔥 SecurityContext에 저장
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                // 필요하면 컨트롤러에서 사용
                 request.setAttribute("email", email);
             }
         }

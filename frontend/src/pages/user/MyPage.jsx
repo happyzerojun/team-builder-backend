@@ -49,7 +49,30 @@ const MyPage = () => {
   const handleChatMove = (e, projectId) => {
     e.stopPropagation(); // 카드 전체 클릭 이벤트(상세보기)가 실행되지 않도록 방지
     navigate(`/chat/${projectId}`);
-  };
+    };
+
+    // 팀원 리뷰 평가
+    const [rating, setRating] = useState(0);
+    const [hovered, setHovered] = useState(0);
+    const [comment, setComment] = useState("");
+    const [reviews, setReviews] = useState([
+        { id: 1, author: "김지훈", rating: 5, comment: "소통이 잘 되고 책임감 있어요!" },
+        { id: 2, author: "박소연", rating: 4, comment: "일정 관리를 잘 해줬어요." },
+    ]);
+
+    function handleSubmitReview() {
+        if (rating === 0) { alert("별점을 선택해주세요!"); return; }
+        if (comment.trim() === "") { alert("한줄평을 입력해주세요!"); return; }
+        setReviews([...reviews, {
+            id: reviews.length + 1,
+            author: user.name,
+            rating: rating,
+            comment: comment,
+        }]);
+        setRating(0);
+        setComment("");
+        alert("리뷰가 등록되었습니다!");
+    }
 
   return (
     <div className="mp-container"> 
@@ -127,6 +150,63 @@ const MyPage = () => {
           )}
         </div>
 
+              {/* ⭐ 팀원 리뷰 — 추가 */}
+              <div className="mp-section" style={{ marginTop: '25px' }}>
+                  <h4>⭐ 팀원 리뷰</h4>
+
+                  {/* 리뷰 작성 폼 */}
+                  <div className="mp-review-form">
+                      {/* 별점 선택 */}
+                      <div className="mp-star-row">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                              <span
+                                  key={star}
+                                  className={`mp-star ${star <= (hovered || rating) ? "filled" : ""}`}
+                                  onClick={() => setRating(star)}
+                                  onMouseEnter={() => setHovered(star)}
+                                  onMouseLeave={() => setHovered(0)}
+                              >
+                                  ★
+                              </span>
+                          ))}
+                          <span className="mp-rating-text">
+                              {rating > 0 ? `${rating}점` : "별점 선택"}
+                          </span>
+                      </div>
+
+                      {/* 한줄평 입력 */}
+                      <textarea
+                          className="mp-review-input"
+                          placeholder="이 팀원과의 협업은 어땠나요?"
+                          value={comment}
+                          onChange={(e) => setComment(e.target.value)}
+                          rows={2}
+                      />
+
+                      <button className="mp-review-submit-btn" onClick={handleSubmitReview}>
+                          리뷰 등록
+                      </button>
+                  </div>
+
+                  {/* 등록된 리뷰 목록 */}
+                  <div className="mp-review-list">
+                      {reviews.map((review) => (
+                          <div key={review.id} className="mp-review-item">
+                              <div className="mp-review-header">
+                                  <span className="mp-review-author">{review.author}</span>
+                                  <span className="mp-review-stars">
+                                      {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                                  </span>
+                              </div>
+                              <p className="mp-review-comment">{review.comment}</p>
+                          </div>
+                      ))}
+                  </div>
+              </div>
+
+              <hr className="mp-divider" />
+
+
         {/* 📩 지원 중인 모집글 */}
         <div className="mp-section" style={{ marginTop: '25px' }}>
           <h4>지원 중인 모집글</h4>
@@ -152,7 +232,9 @@ const MyPage = () => {
             <span className="mp-tag-badge green">🤝 협업 가능</span>
         </div>
       </div>
-    </div>
+      </div>
+
+
   );
 };
 

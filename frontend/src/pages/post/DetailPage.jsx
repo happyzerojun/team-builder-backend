@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MOCK_POSTS } from "../../data/mockData";
 import Navbar from "@/components/common/Navbar";
@@ -5,17 +6,43 @@ import "./DetailPage.css";
 import { applyToProject } from "../../services/applyService"; 
 
 function DetailPage() {
-  const { id } = useParams();
+  const { id } = useParams(); 
   const navigate = useNavigate();
+  const [isApplied, setIsApplied] = useState(false);
 
   const post = MOCK_POSTS.find((p) => p.id === Number(id));
 
+  // [수정] applyService의 'appliedProjects' 키와 숫자 배열 구조에 맞춤
+  useEffect(() => {
+    const appliedIds = JSON.parse(localStorage.getItem("appliedProjects") || "[]");
+    
+    // appliedIds가 [1, 2, 3] 형태이므로 includes로 바로 확인 가능
+    const alreadyApplied = appliedIds.includes(Number(id));
+    
+    setIsApplied(alreadyApplied);
+  }, [id]);
+
+  // [수정] 지원 취소 로직 (단순 숫자 배열에서 해당 ID 삭제)
+  const handleCancel = () => {
+    if (window.confirm("정말 이 프로젝트 지원을 취소하시겠습니까?")) {
+      const appliedIds = JSON.parse(localStorage.getItem("appliedProjects") || "[]");
+      
+      // 현재 게시글 ID만 제외하고 필터링
+      const updatedIds = appliedIds.filter((appliedId) => Number(appliedId) !== Number(id));
+
+      localStorage.setItem("appliedProjects", JSON.stringify(updatedIds));
+      setIsApplied(false);
+        alert("지원이 취소되었습니다.");
+        navigate('/MyPage');
+    }
+  };
+
   const handleApply = () => {
-    // 실제 지원 로직 실행
     const success = applyToProject(Number(id)); 
 
     if (success) {
       alert(`"${post.title}" 프로젝트에 지원했습니다! 마이페이지로 이동합니다.`);
+      setIsApplied(true); 
       navigate('/MyPage');
     } else {
       alert("이미 지원한 프로젝트입니다.");
@@ -38,7 +65,6 @@ function DetailPage() {
   return (
     <div className="detail-page">
       <Navbar />
-
       <main className="detail-content">
         <button className="btn-back" onClick={() => navigate(-1)}>
           ← 목록으로
@@ -97,13 +123,17 @@ function DetailPage() {
             </div>
           </section>
 
-          <div className="detail-actions">
-            {/* ✅ 3. onClick에 handleApply가 잘 연결되었습니다. */}
-            <button className="btn-apply" onClick={handleApply}>
-              🚀 이 프로젝트에 지원하기
-            </button>
+          <div className="detail-footer" style={{ marginTop: "40px", display: "flex", justifyContent: "center" }}>
+            {isApplied ? (
+              <button className="btn-cancle" onClick={handleCancel}>
+                지원 취소하기
+              </button>
+            ) : (
+              <button className="btn-apply" onClick={handleApply}>
+                프로젝트 지원하기
+              </button>
+            )}
           </div>
-
         </article>
       </main>
     </div>

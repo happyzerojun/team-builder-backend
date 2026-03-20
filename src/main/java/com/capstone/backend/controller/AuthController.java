@@ -33,6 +33,9 @@ public class AuthController {
 
     @GetMapping("/me")
     public String me(Authentication auth) {
+        if (auth == null) {
+            return "";
+        }
         return auth.getName();
     }
 

@@ -1,38 +1,42 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './SignupPage.css';
+import axios from 'axios';
 
 const SignupPage = () => {
-    // ✅ id, email 상태 추가
-    const [id, setId] = useState('');
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [level, setLevel] = useState('');           
-    const [hasTeamExp, setHasTeamExp] = useState(''); 
+    const [level, setLevel] = useState('');
+    const [hasTeamExp, setHasTeamExp] = useState('');
 
     const navigate = useNavigate();
 
-    const handleSignup = () => {
-        // ✅ 하드코딩 대신 실제 입력값 저장
-        const user = {
-            id: id,
-            email: email,
-            password: password,
-            level: level,        
-            hasTeamExp: hasTeamExp
-        };
+    const handleSignup = async () => {
+        try {
+            await axios.post('http://localhost:8080/api/auth/signup', {
+                name,
+                email,
+                password
+            });
 
-        localStorage.setItem("user", JSON.stringify(user));
-        alert("회원가입 완료!");
-        navigate('/login');
+            alert("회원가입 완료!");
+            navigate('/login');
+        } catch (error) {
+            if (error.response) {
+                alert(`회원가입 실패: ${error.response.data.message || '다시 시도해주세요.'}`);
+            } else {
+                alert("서버에 연결할 수 없습니다.");
+            }
+        }
     };
 
     const isMatch = password === confirmPassword;
     const showMessage = confirmPassword.length > 0;
     const isFormValid =
-        id.length > 0 &&
+        name.length > 0 &&
+        email.length > 0 &&
         password.length >= 4 &&
         isMatch &&
         confirmPassword.length > 0 &&
@@ -44,13 +48,12 @@ const SignupPage = () => {
             <div className="signup-card">
                 <h2 className="signup-title">회원가입</h2>
 
-                {/* ✅ value, onChange 추가 */}
                 <input
                     type="text"
-                    placeholder="아이디"
+                    placeholder="이름"
                     className="signup-input"
-                    value={id}
-                    onChange={(e) => setId(e.target.value)}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                 />
                 <input
                     type="email"
@@ -59,8 +62,6 @@ const SignupPage = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                 />
-
-                {/* 아래는 기존 코드 그대로 */}
                 <input
                     type="password"
                     placeholder="비밀번호"
@@ -82,7 +83,6 @@ const SignupPage = () => {
                     </p>
                 )}
 
-                {/* ✅ 추가: 실력 수준 선택 */}
                 <select
                     className="signup-input"
                     value={level}
@@ -94,7 +94,6 @@ const SignupPage = () => {
                     <option value="고수">고수 — 실무/대형 프로젝트 경험 있음</option>
                 </select>
 
-                {/* ✅ 추가: 협업 경험 선택 */}
                 <select
                     className="signup-input"
                     value={hasTeamExp}

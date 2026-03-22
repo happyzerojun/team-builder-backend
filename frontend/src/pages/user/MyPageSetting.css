@@ -258,3 +258,30 @@
     object-fit: cover; 
     border-radius: 50%;
 }
+
+.mp-review-view-btn {
+  background-color: #fff;       
+  color: #ffb100;              
+  border: 1px solid #ffb100;    
+  padding: 6px 14px;
+  border-radius: 20px;       
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;                
+}
+
+.mp-review-view-btn:hover {
+  background-color: #fff9e6;  
+  transform: translateY(-2px);  
+  box-shadow: 0 2px 8px rgba(255, 177, 0, 0.2);
+}
+
+.mp-btn-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}

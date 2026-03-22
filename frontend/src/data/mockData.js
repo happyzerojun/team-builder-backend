@@ -12,11 +12,20 @@ export const MOCK_POSTS = [
     roles: ["백엔드 개발자", "iOS 개발자"],
     headcount: 3,
     tags: ["React Native", "Node.js", "OpenAI API", "MongoDB"],
-    author: "김지훈",
+    author: "김지훈", // 팀장님 이름
     duration: "장기",
     level: "고수",
     hasTeamExp: "있음",
     createdAt: "2025-03-10",
+    status: "ing", // 마이페이지 '참여 중'에 뜨게 하려면 status를 'ing'로 설정
+
+    members: [
+      { id: 10, name: "김지훈", role: "팀장 / PM", status: "fixed" },
+      { id: 101, name: "강무원", role: "프론트엔드(React Native)", status: "fixed" }, // ⚠️ 닉네임 변경 시 이 'name'도 같이 바꿔주면 베스트!
+      { id: 11, name: "이하늘", role: "백엔드(Node.js)", status: "fixed" }
+    ],
+
+    applicants: []
   },
   {
     id: 2,
@@ -33,7 +42,7 @@ export const MOCK_POSTS = [
     hasTeamExp: "있음",
     createdAt: "2025-03-09",
   },
-  {
+ {
     id: 3,
     title: "운동 루틴 공유 커뮤니티 개발",
     description:
@@ -42,11 +51,21 @@ export const MOCK_POSTS = [
     roles: ["풀스택 개발자", "UI/UX 디자이너"],
     headcount: 3,
     tags: ["Next.js", "TypeScript", "PostgreSQL", "Tailwind"],
-    author: "이민준",
+    author: "이민준", // 팀장
     duration: "단기",
     level: "초보",      
     hasTeamExp: "없음",
     createdAt: "2025-03-08",
+    status: "ing", // 진행 중으로 설정해야 마이페이지 '참여 중'에 뜹니다.
+
+    // 👥 팀원 목록 (나를 포함한 3명 풀세팅)
+    members: [
+      { id: 20, name: "이민준", role: "팀장 / 기획", status: "fixed" },
+      { id: 101, name: "강무원", role: "풀스택 개발자", status: "fixed" }, // 내 닉네임과 맞추세요!
+      { id: 21, name: "정서윤", role: "UI/UX 디자인", status: "fixed" }
+    ],
+
+    applicants: []
   },
   {
     id: 4,
@@ -93,6 +112,65 @@ export const MOCK_POSTS = [
     hasTeamExp: "있음",
     createdAt: "2025-03-05",
   },
+
+  {
+  id: 7,
+  title: "✈️ 여행 경비 정산 앱 (더치페이)",
+  description: "영수증 촬영 자동 입력 및 카카오페이 송금 연동 프로젝트입니다.",
+  category: "앱 개발",
+  roles: ["Android 개발자", "백엔드 개발자"],
+  headcount: 3,
+  tags: ["Flutter", "Firebase", "Dart"],
+  author: "강무원", 
+  status: "recruiting", 
+  createdAt: "2025-03-05",
+
+  members: [
+    {
+      id: 101, // 유니크한 ID
+      name: "강무원",
+      role: "팀장 / 풀스택 개발자",
+      status: "fixed"
+    },
+    {
+      id: 102,
+      name: "김철수",
+      role: "Android 개발자",
+      status: "fixed"
+    }
+  ],
+
+  //  신청자 목록 (상태가 recruiting일 때 테스트용)
+  applicants: [
+    { id: 201, name: "이영희", role: "백엔드 개발자" }
+  ],
+
+  // 리뷰 데이터 (나중에 DB에서 불러올 구조 미리 정의)
+  reviews: [] 
+  },
+
+  {
+    id: 8,
+    title: "📱 캠퍼스 커뮤니티 플랫폼",
+    description: "조선대학교 학생들을 위한 중고거래 및 정보 공유 앱입니다.",
+    category: "앱 개발",
+    roles: ["React Native", "Spring"],
+    headcount: 4,
+    tags: ["React Native", "Java"],
+    author: "강무원", 
+    status: "ing", 
+    createdAt: "2025-02-10",
+    
+    members: [
+      { id: 101, name: "강무원", role: "팀장 / FE", status: "fixed" },
+      { id: 102, name: "이영희", role: "백엔드(Spring)", status: "fixed" },
+      { id: 103, name: "김철수", role: "기획/검수", status: "fixed" },
+      { id: 104, name: "박민수", role: "디자인", status: "fixed" }
+    ],
+    
+    applicants: []
+  }
+
 ];
 
 // 필터링에 사용할 태그 목록

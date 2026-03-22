@@ -18,16 +18,16 @@ const MyPageSetting = () => {
 
   const [customTag, setCustomTag] = useState('');
 
-  // 1. 초기 데이터 로드 (기존 저장 정보 불러오기)
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
+    
     if (savedUser) {
       setFormData({
-        nickname: savedUser.nickname || savedUser.name || '강무원',
-        job_role: savedUser.job_role || '개발자',
-        organization: savedUser.organization || '조선대',
-        introduction: savedUser.introduction || '안녕하세요!',
-        tags: savedUser.tags || ['React']
+        nickname: savedUser.nickname || savedUser.name || '',
+        job_role: savedUser.job_role || '',
+        organization: savedUser.organization || '',
+        introduction: savedUser.introduction || '',
+        tags: savedUser.tags || []
       });
       if (savedUser.profileImg) {
         setProfileImg(savedUser.profileImg);
@@ -79,14 +79,18 @@ const MyPageSetting = () => {
     }
   };
 
-  // 로컬저장
   const handleSave = () => {
+    if (!formData.nickname.trim()) {
+      alert("닉네임을 입력해주세요!");
+      return;
+    }
+
     const currentUser = JSON.parse(localStorage.getItem("user")) || {};
     
     const updatedUser = {
       ...currentUser,
       name: formData.nickname,
-      nickname: formData.nickname,
+      nickname: formData.nickname,  
       job_role: formData.job_role,
       organization: formData.organization,
       introduction: formData.introduction,
@@ -95,8 +99,9 @@ const MyPageSetting = () => {
     };
 
     localStorage.setItem("user", JSON.stringify(updatedUser));
-    alert("프로필 정보가 성공적으로 수정되었습니다!");
-    navigate('/mypage');
+    
+    alert("프로필이 성공적으로 저장되었습니다!");
+    navigate('/mypage'); 
   };
 
   return (
@@ -104,7 +109,7 @@ const MyPageSetting = () => {
       <div className="ms-card">
         <h2 className="ms-title">프로필 수정</h2>
 
-        {/* 프로필 이미지 업로드 구역 */}
+        {/* 프로필 이미지 업로드 */}
         <div className="ms-profile-img-wrap">
           <label htmlFor="profile-upload" className="ms-img-label-wrapper">
             <div className="ms-img-box">
@@ -128,26 +133,50 @@ const MyPageSetting = () => {
 
         <div className="ms-input-group">
           <label>닉네임</label>
-          <input className="ms-input" name="nickname" value={formData.nickname} onChange={handleChange} />
+          <input 
+            className="ms-input" 
+            name="nickname" 
+            placeholder="사용하실 닉네임을 입력하세요"
+            value={formData.nickname} 
+            onChange={handleChange} 
+          />
         </div>
 
         <div className="ms-input-group">
           <label>소속</label>
-          <input className="ms-input" name="organization" value={formData.organization} onChange={handleChange} />
+          <input 
+            className="ms-input" 
+            name="organization" 
+            placeholder="학교 또는 직장"
+            value={formData.organization} 
+            onChange={handleChange} 
+          />
         </div>
 
         <div className="ms-input-group">
           <label>희망 직무</label>
-          <input className="ms-input" name="job_role" value={formData.job_role} onChange={handleChange} />
+          <input 
+            className="ms-input" 
+            name="job_role" 
+            placeholder="예: 프론트엔드 개발자"
+            value={formData.job_role} 
+            onChange={handleChange} 
+          />
         </div>
 
         <div className="ms-input-group">
           <label>자기소개</label>
-          <textarea className="ms-textarea" name="introduction" value={formData.introduction} onChange={handleChange} />
+          <textarea 
+            className="ms-textarea" 
+            name="introduction" 
+            placeholder="자신을 자유롭게 소개해주세요"
+            value={formData.introduction} 
+            onChange={handleChange} 
+          />
         </div>
 
         <div className="ms-input-group">
-          <label>기술 스택 (클릭하거나 직접 입력)</label>
+          <label>기술 스택</label>
           <div className="ms-selected-tags">
             {formData.tags.map(tag => (
               <span key={tag} className="ms-tag-active" onClick={() => handleTagClick(tag)}>

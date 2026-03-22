@@ -9,6 +9,8 @@ import MyPageSetting from './pages/user/MyPageSetting';
 import MainPage from "./pages/post/MainPage";
 import WritePage from "./pages/post/WritePage";
 import DetailPage from "./pages/post/DetailPage";
+import ManagePage from './pages/user/ManagePage';
+import ReviewPage from './pages/user/ReviewPage';
 
 import ChatPage from './pages/chat/ChatPage';
 
@@ -61,6 +63,10 @@ function App() {
 
                     {/*채팅창*/}
                     <Route path="/chat/:projectId" element={<ChatPage />} />
+                    
+                    {/*마이페이지에 추가한 2개*/}
+                    <Route path="/manage/:id" element={<ManagePage />} />
+                    <Route path="/reviews" element={<ReviewPage />} />
 
                     {/* 존재하지 않는 주소 → 메인으로 */}
                     <Route path="*" element={<Navigate to="/" />} />

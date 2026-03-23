@@ -14,48 +14,59 @@ const ManagePage = () => {
 
   const [members, setMembers] = useState([]);
   const [applicants, setApplicants] = useState([]);
-  const [isReviewed, setIsReviewed] = useState(false); 
+  const [isReviewed, setIsReviewed] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [memberReviews, setMemberReviews] = useState({}); // { memberId: "내용" }
-  const [memberRatings, setMemberRatings] = useState({}); // { memberId: 점수 }
+  const [memberReviews, setMemberReviews] = useState({});
+  const [memberRatings, setMemberRatings] = useState({});
 
   useEffect(() => {
     const loadData = () => {
       try {
         const projectId = parseInt(id);
-        const currentProject = MOCK_POSTS.find(p => p.id === projectId);
+
+        // 1. 로컬 스토리지에서 전체 프로젝트 데이터 가져오기 (없으면 MOCK 데이터 사용)
+        const savedPosts = JSON.parse(localStorage.getItem("all_projects")) || MOCK_POSTS;
+        const currentProject = savedPosts.find(p => p.id === projectId);
 
         if (!currentProject) {
           navigate("/mypage");
           return;
         }
+
         const savedUser = JSON.parse(localStorage.getItem("user"));
         const myName = savedUser?.nickname || savedUser?.name || "강무원";
         setCurrentMyName(myName);
+        
+        // 2. 프로젝트 및 멤버 상태 설정
         setProject(currentProject);
+        setApplicants(currentProject.applicants || []);
 
-        if (currentProject.members) {
-          const syncMembers = currentProject.members.map(m => 
-            (m.role.includes("팀장") && currentProject.author === myName) ? { ...m, name: myName } : m
-          );
-          setMembers(syncMembers);
+        // 멤버 동기화 (팀장 이름 반영)
+        const syncMembers = (currentProject.members || []).map(m =>
+          (m.role.includes("팀장") && currentProject.author === myName) ? { ...m, name: myName } : m
+        );
+        setMembers(syncMembers);
 
+        // 3. 저장된 리뷰 데이터가 있는지 확인 (이미 작성했다면 불러오기)
+        if (currentProject.myReviewData) {
+          setMemberReviews(currentProject.myReviewData.reviews || {});
+          setMemberRatings(currentProject.myReviewData.ratings || {});
+          setIsReviewed(true);
+        } else {
+          // 초기값 세팅 (나 제외)
           const initialReviews = {};
           const initialRatings = {};
           syncMembers.forEach(m => {
             if (m.name !== myName) {
               initialReviews[m.id] = "";
-              initialRatings[m.id] = 5; 
+              initialRatings[m.id] = 5;
             }
           });
           setMemberReviews(initialReviews);
           setMemberRatings(initialRatings);
         }
 
-        setApplicants(currentProject.applicants || []);
-
         if (currentProject.author === myName) setIsLeader(true);
-        
         setLoading(false);
       } catch (error) {
         console.error("데이터 로드 실패:", error);
@@ -65,36 +76,60 @@ const ManagePage = () => {
     loadData();
   }, [id, navigate, currentMyName]);
 
+  // --- [공통] 로컬 스토리지 업데이트 함수 (DB 연동 대비) ---
+  const saveToStorage = (updatedProject) => {
+    const savedPosts = JSON.parse(localStorage.getItem("all_projects")) || MOCK_POSTS;
+    const nextPosts = savedPosts.map(p => p.id === updatedProject.id ? updatedProject : p);
+    localStorage.setItem("all_projects", JSON.stringify(nextPosts));
+    setProject(updatedProject);
+  };
+
+  // --- [함수] 신청자 승인/거절 ---
   const handleAccept = (app) => {
     if (window.confirm(`${app.name} 님을 팀원으로 승인하시겠습니까?`)) {
-      setMembers([...members, { ...app, status: "fixed" }]);
-      setApplicants(applicants.filter(a => a.id !== app.id));
+      const updatedMembers = [...members, { ...app, status: "fixed" }];
+      const updatedApplicants = applicants.filter(a => a.id !== app.id);
+      
+      setMembers(updatedMembers);
+      setApplicants(updatedApplicants);
+
+      const updatedProject = { ...project, members: updatedMembers, applicants: updatedApplicants };
+      saveToStorage(updatedProject);
     }
   };
 
   const handleReject = (app) => {
     if (window.confirm(`${app.name} 님의 신청을 거절하시겠습니까?`)) {
-      setApplicants(applicants.filter(a => a.id !== app.id));
+      const updatedApplicants = applicants.filter(a => a.id !== app.id);
+      setApplicants(updatedApplicants);
+
+      const updatedProject = { ...project, applicants: updatedApplicants };
+      saveToStorage(updatedProject);
     }
   };
 
+  // --- [함수] 상태 변경 (모집마감/종료) ---
   const handleStatusChange = () => {
-    if (project.status === 'recruiting') {
-      if (window.confirm("모집을 마감하고 프로젝트를 시작하시겠습니까?")) {
-        setProject({ ...project, status: 'ing' });
-        alert("프로젝트가 시작되었습니다! 이제 팀원 제외가 불가합니다.");
-      }
-    } else if (project.status === 'ing') {
-      if (window.confirm("프로젝트를 종료하시겠습니까? 종료 후 리뷰를 남길 수 있습니다.")) {
-        setProject({ ...project, status: 'complete' });
-      }
+    let nextStatus = project.status === 'recruiting' ? 'ing' : 'complete';
+    const msg = nextStatus === 'ing' ? "모집을 마감하고 시작하시겠습니까?" : "프로젝트를 종료하시겠습니까?";
+    
+    if (window.confirm(msg)) {
+      const updatedProject = { ...project, status: nextStatus };
+      saveToStorage(updatedProject);
+      alert(nextStatus === 'ing' ? "프로젝트가 시작되었습니다!" : "종료되었습니다. 리뷰를 남겨주세요.");
     }
   };
 
+  // --- [함수] 리뷰 저장 ---
   const saveReviews = () => {
-    alert("소중한 피드백이 저장되었습니다!");
+    const updatedProject = { 
+      ...project, 
+      myReviewData: { reviews: memberReviews, ratings: memberRatings } 
+    };
+    saveToStorage(updatedProject);
     setIsReviewed(true);
     setShowReviewModal(false);
+    alert("소중한 피드백이 저장되었습니다!");
   };
 
   if (loading) return <div className="manage-container">로딩 중...</div>;
@@ -114,6 +149,7 @@ const ManagePage = () => {
         <p className="manage-info">작성자: {project.author} | 카테고리: {project.category}</p>
       </div>
 
+      {/* 📩 신청자 관리 */}
       {project.status === 'recruiting' && isLeader && (
         <div className="manage-section">
           <h4>📩 새로운 신청자 ({applicants.length})</h4>
@@ -136,6 +172,7 @@ const ManagePage = () => {
         </div>
       )}
 
+      {/* 👥 현재 팀원 */}
       <div className="manage-section">
         <h4>👥 현재 팀원 ({members.length}명)</h4>
         <div className="member-list">
@@ -148,7 +185,11 @@ const ManagePage = () => {
               {isLeader && m.name !== currentMyName && project.status === 'recruiting' && (
                 <button 
                   className="btn-remove" 
-                  onClick={() => setMembers(members.filter(mem => mem.id !== m.id))}
+                  onClick={() => {
+                    const nextMembers = members.filter(mem => mem.id !== m.id);
+                    setMembers(nextMembers);
+                    saveToStorage({ ...project, members: nextMembers });
+                  }}
                 >제외</button>
               )}
             </div>
@@ -156,6 +197,7 @@ const ManagePage = () => {
         </div>
       </div>
 
+      {/* 🔘 하단 액션 버튼 */}
       <div className="leader-footer">
         {isLeader && project.status !== 'complete' && (
           <button className="complete-project-btn" onClick={handleStatusChange}>
@@ -173,6 +215,7 @@ const ManagePage = () => {
         )}
       </div>
 
+      {/* 📋 리뷰 모달 */}
       {showReviewModal && (
         <div className="modal-overlay">
           <div className="review-modal multi-review">
@@ -196,7 +239,7 @@ const ManagePage = () => {
                   </div>
                   <textarea 
                     placeholder="팀원과의 협업 경험을 적어주세요."
-                    value={memberReviews[m.id]}
+                    value={memberReviews[m.id] || ""}
                     onChange={(e) => setMemberReviews({...memberReviews, [m.id]: e.target.value})}
                     readOnly={isReviewed}
                     className={isReviewed ? "read-only-text" : ""}

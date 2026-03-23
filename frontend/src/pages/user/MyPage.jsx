@@ -6,7 +6,6 @@ import { getAppliedIds } from "../../services/applyService";
 
 const MyPage = () => {
   const navigate = useNavigate();
-  
 
   const [user, setUser] = useState({
     name: "",
@@ -16,11 +15,11 @@ const MyPage = () => {
     job_role: "",
     profileImg: null
   });
-  
+
+  const [allProjects, setAllProjects] = useState([]);
   const [appliedPosts, setAppliedPosts] = useState([]);
 
   useEffect(() => {
-
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (!savedUser) {
       alert("로그인이 필요한 페이지입니다.");
@@ -28,7 +27,7 @@ const MyPage = () => {
       return;
     }
 
-    const currentName = savedUser.nickname || savedUser.name || "사용자";
+    const currentName = savedUser.nickname || savedUser.name || "강무원";
 
     setUser({
       ...savedUser,
@@ -36,18 +35,22 @@ const MyPage = () => {
       profileImg: savedUser.profileImg || null
     });
 
+    const savedData = JSON.parse(localStorage.getItem("all_projects")) || MOCK_POSTS;
+    setAllProjects(savedData);
+
     const ids = getAppliedIds();
-    const filteredApplied = MOCK_POSTS.filter(post => 
+    const filteredApplied = savedData.filter(post => 
       ids.includes(post.id) && post.author !== currentName
     );
-    
     setAppliedPosts(filteredApplied);
+
   }, [navigate]);
 
-  const myLeadProjects = MOCK_POSTS.filter(post => post.author === user.name);
+  const myLeadProjects = allProjects.filter(post => post.author === user.name);
   const recruitingProjects = myLeadProjects.filter(post => post.status === "recruiting");
-  const ongoingLeadProjects = myLeadProjects.filter(post => post.status === "ing");
-  const myParticipation = MOCK_POSTS.filter(post => [1, 3].includes(post.id));
+  const ongoingLeadProjects = myLeadProjects.filter(post => post.status === "ing" || post.status === "complete"); 
+
+  const myParticipation = allProjects.filter(post => [1, 3].includes(post.id));
 
   return (
     <div className="mp-container"> 
@@ -101,18 +104,21 @@ const MyPage = () => {
             </div>
           ))}
 
-          {/* 진행 중 리스트 */}
+          {/* 진행 중/종료 리스트 */}
           {ongoingLeadProjects.map(proj => (
             <div key={proj.id} className="mp-activity-card clickable ongoing" onClick={() => navigate(`/manage/${proj.id}`)}>
               <div className="proj-info">
                 <span className="title">{proj.title}</span>
-                <span className="sub-info">👥 팀원 관리 및 협업 중</span>
+                <span className="sub-info">
+                  {proj.status === 'complete' ? '✅ 프로젝트 종료됨' : '👥 팀원 관리 및 협업 중'}
+                </span>
               </div>
-              <span className="mp-badge status-ongoing">진행 관리</span>
+              <span className={`mp-badge ${proj.status === 'complete' ? 'status-complete' : 'status-ongoing'}`}>
+                {proj.status === 'complete' ? '종료됨' : '진행 관리'}
+              </span>
             </div>
           ))}
 
-          {/* 데이터가 없을 때 */}
           {myLeadProjects.length === 0 && (
             <div className="mp-activity-card no-data">작성한 프로젝트가 없습니다.</div>
           )}
@@ -129,7 +135,7 @@ const MyPage = () => {
                   <span className="sub-info">🛠 {proj.roles ? proj.roles[0] : "팀원"} 참여 중</span>
                 </div>
                 <div className="mp-card-actions">
-                  <span className="mp-badge status-ongoing">현황보기</span>
+                  <span className="mp-badge status-ongoing">진행중</span>
                 </div>
               </div>
             ))

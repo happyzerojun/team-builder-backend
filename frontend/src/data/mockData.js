@@ -17,6 +17,8 @@ export const MOCK_POSTS = [
     level: "고수",
     hasTeamExp: "있음",
     createdAt: "2025-03-10",
+    applyType: "google",
+    googleFormLink: "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform"
   },
   {
     id: 2,
@@ -32,6 +34,8 @@ export const MOCK_POSTS = [
     level: "중급",      
     hasTeamExp: "있음",
     createdAt: "2025-03-09",
+    applyType: "kakao",
+    kakaoLink: "https://open.kakao.com/o/YOUR_ROOM_ID"
   },
   {
     id: 3,
@@ -47,6 +51,8 @@ export const MOCK_POSTS = [
     level: "초보",      
     hasTeamExp: "없음",
     createdAt: "2025-03-08",
+    applyType: "kakao",
+    kakaoLink: "https://open.kakao.com/o/YOUR_ROOM_ID"
   },
   {
     id: 4,
@@ -62,6 +68,8 @@ export const MOCK_POSTS = [
     level: "초보",      
     hasTeamExp: "없음",
     createdAt: "2025-03-07",
+    applyType: "google",
+    googleFormLink: "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform"
   },
   {
     id: 5,
@@ -77,6 +85,8 @@ export const MOCK_POSTS = [
     level: "고수",      
     hasTeamExp: "있음",
     createdAt: "2025-03-06",
+    applyType: "kakao",
+    kakaoLink: "https://open.kakao.com/o/YOUR_ROOM_ID"
   },
   {
     id: 6,
@@ -92,6 +102,8 @@ export const MOCK_POSTS = [
     level: "초보",      
     hasTeamExp: "있음",
     createdAt: "2025-03-05",
+    applyType: "google",
+    googleFormLink: "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform"
   },
 ];
 

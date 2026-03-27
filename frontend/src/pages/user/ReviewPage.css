@@ -22,7 +22,7 @@
 
 .review-card {
   padding: 20px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid #495057;
   border-radius: 12px;
   background-color: #fff;
   transition: transform 0.2s;
@@ -50,4 +50,10 @@
   line-height: 1.5;
   margin: 0;
   font-size: 15px;
+}
+
+.r-project-name {
+  font-size: 15px;              
+  color: #495057;    
+  margin-left: 10px;    
 }

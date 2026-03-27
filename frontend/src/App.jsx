@@ -12,8 +12,6 @@ import DetailPage from "./pages/post/DetailPage";
 import ManagePage from './pages/user/ManagePage';
 import ReviewPage from './pages/user/ReviewPage';
 
-import ChatPage from './pages/chat/ChatPage';
-
 import "./styles/global.css";
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -55,14 +53,14 @@ function App() {
 
                     {/* 마이페이지 */}
                     <Route path="/mypage" element={<MyPage />} />
+                    <Route path="/mypage/:userId" element={<MyPage />} />
+                    <Route path="/mypagesetting" element={<MyPageSetting />} />
+                    
                     <Route path="/mypagesetting" element={<MyPageSetting />} />
 
                     {/* 게시글 관련 */}
                     <Route path="/write" element={<WritePage />} />
                     <Route path="/post/:id" element={<DetailPage />} />
-
-                    {/*채팅창*/}
-                    <Route path="/chat/:projectId" element={<ChatPage />} />
                     
                     {/*마이페이지에 추가한 2개*/}
                     <Route path="/manage/:id" element={<ManagePage />} />
@@ -72,8 +70,12 @@ function App() {
                     <Route path="*" element={<Navigate to="/" />} />
 
                 </Routes>
+
+
             </div>
         </BrowserRouter>
+
+        
     );
 }
 

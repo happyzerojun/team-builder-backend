@@ -34,7 +34,7 @@ function PostCard({ post, onClick }) {
         ))}
       </div>
 
-      {/* 기술 스택 태그 */}
+      {/* 기술 스택 태그 */}  
       <div className="card-tags">
         {post.tags.map((tag) => (
           <span key={tag} className="tag">{tag}</span>

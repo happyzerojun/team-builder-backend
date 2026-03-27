@@ -1,24 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; 
 import './Navbar.css'; 
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation(); 
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // 모집글 상세페이지에서 로그인유지되게 수정
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (savedUser) {
       setUser(savedUser);
     } else {
       setUser(null);
     }
-  }, [navigate]);
+  }, [location]); 
 
   const handleLogout = () => {
     if (window.confirm("로그아웃 하시겠습니까?")) {
       localStorage.removeItem("user");
+      localStorage.removeItem("isLoggedIn"); 
       setUser(null);
       navigate('/');
     }
@@ -34,8 +35,9 @@ const Navbar = () => {
         <div className="nav-menu">
           {user ? (
             <div className="nav-user-area">
-              <span className="user-greet" onClick={() => navigate('/MyPage')}>
-                <span className="user-name">{user.id}</span>님
+              <span className="user-greet" onClick={() => navigate('/MyPage')} style={{ cursor: 'pointer' }}>
+                {/* 닉네임 필드명을 user.id에서 user.name으로 수정 */}
+                <span className="user-name">{user.name || "사용자"}</span>님
               </span>
               <button className="nav-btn logout" onClick={handleLogout}>로그아웃</button>
             </div>

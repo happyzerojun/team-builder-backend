@@ -6,7 +6,7 @@ import { projectService } from "../../services/projectService";
 import Navbar from "@/components/common/Navbar";
 import "./DetailPage.css";
 import { applyToProject } from "../../services/applyService";
-
+import ApplyModal from "@/components/post/ApplyModal";
 function DetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -194,22 +194,11 @@ function DetailPage() {
             </main>
 
             {showApplyModal && (
-                <div className="modal-overlay" onClick={() => setShowApplyModal(false)}>
-                    <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-                        <button className="modal-close" onClick={() => setShowApplyModal(false)}>✕</button>
-                        <div className="modal-icon">{isKakao ? "💬" : "📋"}</div>
-                        <h2 className="modal-title">{isKakao ? "카카오 오픈채팅으로 지원" : "구글폼으로 지원"}</h2>
-                        <p className="modal-desc">
-                            {isKakao ? "오픈채팅방 링크로 이동합니다.\n입장 후 지원 의사를 전달해주세요." : "구글폼 신청서 링크로 이동합니다.\n양식을 작성하여 지원해주세요."}
-                        </p>
-                        <div className="modal-actions">
-                            <button className="modal-btn-cancel" onClick={() => setShowApplyModal(false)}>취소</button>
-                            <button className="modal-btn-confirm" onClick={handleConfirmApply}>
-                                {isKakao ? "오픈채팅 입장하기 →" : "신청서 작성하기 →"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <ApplyModal
+                    post={post}
+                    onClose={() => setShowApplyModal(false)}
+                    onConfirm={handleConfirmApply}
+                />
             )}
         </div>
     );

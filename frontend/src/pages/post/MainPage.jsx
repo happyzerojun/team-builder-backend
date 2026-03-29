@@ -1,27 +1,17 @@
 // 📁 src/pages/MainPage.jsx
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { projectService } from "../../services/projectService"; 
 import PostCard from "@/components/post/PostCard";
 import Navbar from "@/components/common/Navbar";
 import "./MainPage.css";
+import Pagination from "@/components/common/Pagination";
+import SearchBar from "@/components/common/SearchBar";
+import TagFilterDropdown from "@/components/filter/TagFilterDropdown";
+import DurationFilterDropdown from "@/components/filter/DurationFilterDropdown";
 
 const POSTS_PER_PAGE = 9;
-
-const TAG_TABS = {
-    인기: ["React", "TypeScript", "Next.js", "Node.js", "Python", "Flutter", "Spring Boot", "Vue.js"],
-    프론트엔드: ["React", "Vue.js", "Next.js", "TypeScript", "JavaScript", "Tailwind"],
-    백엔드: ["Node.js", "Spring Boot", "Django", "Express", "FastAPI", "Redis", "MySQL", "PostgreSQL", "MongoDB"],
-    모바일: ["React Native", "Flutter", "Swift", "Kotlin"],
-    기타: ["Docker", "AWS", "Firebase", "Git", "Python"],
-    모두보기: ["React", "Vue.js", "Next.js", "TypeScript", "JavaScript",
-        "Node.js", "Spring Boot", "Django", "Express", "FastAPI",
-        "React Native", "Flutter", "Swift", "Kotlin",
-        "MySQL", "MongoDB", "PostgreSQL", "Firebase", "Redis",
-        "Docker", "AWS", "Git", "Tailwind", "Python"],
-};
-const TAB_KEYS = Object.keys(TAG_TABS);
 
 const DURATION_PRESETS = [
     { label: "전체", min: 0, max: Infinity },
@@ -43,14 +33,14 @@ function MainPage({ isLoggedIn, onLogout }) {
     const [activeTab, setActiveTab] = useState("인기");
 
     const [isTagOpen, setIsTagOpen] = useState(false);
-    const tagDropdownRef = useRef(null);
+
 
     const [isDurationOpen, setIsDurationOpen] = useState(false);
     const [durationPreset, setDurationPreset] = useState("전체");
     const [customMin, setCustomMin] = useState("");
     const [customMax, setCustomMax] = useState("");
     const [useCustom, setUseCustom] = useState(false);
-    const durationDropdownRef = useRef(null);
+
 
     useEffect(() => {
         const fetchPosts = async () => {
@@ -67,14 +57,7 @@ function MainPage({ isLoggedIn, onLogout }) {
         fetchPosts();
     }, []);
 
-    useEffect(() => {
-        function handleClickOutside(e) {
-            if (tagDropdownRef.current && !tagDropdownRef.current.contains(e.target)) setIsTagOpen(false);
-            if (durationDropdownRef.current && !durationDropdownRef.current.contains(e.target)) setIsDurationOpen(false);
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+ 
 
     function toggleTag(tag) {
         setSelectedTags((prev) =>
@@ -121,7 +104,8 @@ function MainPage({ isLoggedIn, onLogout }) {
             const matchesDuration = months >= min && months <= max;
 
             return matchesSearch && matchesTags && matchesDuration;
-        });
+        })
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }, [posts, searchText, selectedTags, activeDurationRange]);
 
     const totalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
@@ -167,85 +151,35 @@ function MainPage({ isLoggedIn, onLogout }) {
                     <p className="hero-subtitle">개발자, 디자이너, 기획자들이 모여 아이디어를 현실로 만드는 공간</p>
                 </section>
 
-                <section className="search-section">
-                    <div className="search-bar-wrapper">
-                        <span className="search-icon">🔍</span>
-                        <input
-                            type="text" className="search-input"
-                            placeholder="프로젝트 제목이나 설명으로 검색..."
-                            value={searchText}
-                            onChange={(e) => { setSearchText(e.target.value); setCurrentPage(1); }}
-                        />
-                    </div>
-                    <button className="btn-write" onClick={() => navigate("/write")}>+ 글 작성</button>
-                </section>
+                <SearchBar
+                    searchText={searchText}
+                    onSearchChange={(value) => { setSearchText(value); setCurrentPage(1); }}
+                />
 
                 <section className="filter-bar">
-                    {/* 기술 스택 드롭다운 */}
-                    <div className="tag-dropdown-wrapper" ref={tagDropdownRef}>
-                        <button
-                            className={`filter-btn ${isTagOpen || selectedTags.length > 0 ? "active" : ""}`}
-                            onClick={() => setIsTagOpen((prev) => !prev)}
-                        >
-                            🛠 기술 스택
-                            {selectedTags.length > 0 && <span className="filter-badge">{selectedTags.length}</span>}
-                            <span className={`filter-arrow ${isTagOpen ? "open" : ""}`}>▾</span>
-                        </button>
-                        {isTagOpen && (
-                            <div className="tag-dropdown-panel">
-                                <div className="tag-tab-nav">
-                                    {TAB_KEYS.map((tab) => (
-                                        <button key={tab} className={`tag-tab-btn ${activeTab === tab ? "active" : ""}`} onClick={() => setActiveTab(tab)}>{tab}</button>
-                                    ))}
-                                </div>
-                                <div className="tag-grid">
-                                    {TAG_TABS[activeTab].map((tag) => (
-                                        <button key={tag} className={`tag-chip ${selectedTags.includes(tag) ? "selected" : ""}`} onClick={() => toggleTag(tag)}>{tag}</button>
-                                    ))}
-                                </div>
-                                {selectedTags.length > 0 && (
-                                    <div className="tag-dropdown-footer">
-                                        <span className="tag-selected-count">{selectedTags.length}개 선택됨</span>
-                                        <button className="btn-clear" onClick={() => { setSelectedTags([]); setCurrentPage(1); }}>초기화 ✕</button>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* 기간 필터 드롭다운 */}
-                    <div className="tag-dropdown-wrapper" ref={durationDropdownRef}>
-                        <button
-                            className={`filter-btn ${isDurationOpen || isDurationFiltered ? "active" : ""}`}
-                            onClick={() => setIsDurationOpen((prev) => !prev)}
-                        >
-                            📅 {durationLabel}
-                            {isDurationFiltered && (
-                                <span className="filter-clear-x" onClick={(e) => { e.stopPropagation(); resetDuration(); }}>✕</span>
-                            )}
-                            <span className={`filter-arrow ${isDurationOpen ? "open" : ""}`}>▾</span>
-                        </button>
-                        {isDurationOpen && (
-                            <div className="duration-dropdown-panel">
-                                <p className="duration-panel-title">프로젝트 기간</p>
-                                <div className="duration-presets">
-                                    {DURATION_PRESETS.map((preset) => (
-                                        <button key={preset.label} className={`duration-preset-btn ${!useCustom && durationPreset === preset.label ? "active" : ""}`} onClick={() => { setDurationPreset(preset.label); setUseCustom(false); setCurrentPage(1); }}>{preset.label}</button>
-                                    ))}
-                                </div>
-                                <div className="duration-divider">직접 입력</div>
-                                <div className="duration-custom-row">
-                                    <input type="number" className="duration-custom-input" placeholder="최소" value={customMin} onChange={(e) => { setCustomMin(e.target.value); setUseCustom(true); setCurrentPage(1); }} />
-                                    <span className="duration-range-sep">개월 ~</span>
-                                    <input type="number" className="duration-custom-input" placeholder="최대" value={customMax} onChange={(e) => { setCustomMax(e.target.value); setUseCustom(true); setCurrentPage(1); }} />
-                                    <span className="duration-range-sep">개월</span>
-                                </div>
-                                {isDurationFiltered && (
-                                    <button className="btn-clear duration-reset-btn" onClick={resetDuration}>필터 초기화 ✕</button>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                    <TagFilterDropdown
+                        selectedTags={selectedTags}
+                        onToggleTag={toggleTag}
+                        onClear={() => { setSelectedTags([]); setCurrentPage(1); }}
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                        isOpen={isTagOpen}
+                        onToggleOpen={() => setIsTagOpen((prev) => !prev)}
+                    />
+                    <DurationFilterDropdown
+                        isOpen={isDurationOpen}
+                        onToggleOpen={() => setIsDurationOpen((prev) => !prev)}
+                        durationPreset={durationPreset}
+                        onPresetChange={(label) => { setDurationPreset(label); setUseCustom(false); setCurrentPage(1); }}
+                        customMin={customMin}
+                        customMax={customMax}
+                        onCustomMinChange={(v) => { setCustomMin(v); setUseCustom(true); setCurrentPage(1); }}
+                        onCustomMaxChange={(v) => { setCustomMax(v); setUseCustom(true); setCurrentPage(1); }}
+                        useCustom={useCustom}
+                        durationLabel={durationLabel}
+                        isDurationFiltered={isDurationFiltered}
+                        onReset={resetDuration}
+                    />
                 </section>
 
                 {/* 선택된 태그 칩 */}
@@ -277,15 +211,11 @@ function MainPage({ isLoggedIn, onLogout }) {
                     </div>
                 )}
 
-                {totalPages > 1 && (
-                    <div className="pagination">
-                        <button className="page-btn page-nav" onClick={() => handlePageChange(groupStart - 1)} disabled={groupStart === 1}>‹</button>
-                        {pages.map((page) => (
-                            <button key={page} className={`page-btn ${currentPage === page ? "active" : ""}`} onClick={() => handlePageChange(page)}>{page}</button>
-                        ))}
-                        <button className="page-btn page-nav" onClick={() => handlePageChange(groupEnd + 1)} disabled={groupEnd === totalPages}>›</button>
-                    </div>
-                )}
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                />
             </main>
         </div>
     );

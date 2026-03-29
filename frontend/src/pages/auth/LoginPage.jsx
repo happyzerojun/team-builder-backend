@@ -1,24 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { authService } from '../../services/authService'; 
 import './LoginPage.css';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const LoginPage = ({ onLoginSuccess }) => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+
+        if (code) {
+            const socialUser = {
+                id: "SocialUser",
+                name: "소셜사용자",
+                isSocial: true
+            };
+            localStorage.setItem("user", JSON.stringify(socialUser));
+            localStorage.setItem("isLoggedIn", "true");
+            if (onLoginSuccess) onLoginSuccess();
+            navigate('/', { replace: true });
+        }
+    }, [navigate, onLoginSuccess]);
+
     const handleLogin = async () => {
         try {
-            const credentials = { email: email, password: password };
-            await authService.login(credentials);
-            
+            const response = await axios.post('http://localhost:8080/api/auth/login', {
+                email,
+                password
+            });
+
+            console.log("응답 전체:", response.data);
+
+            const { accessToken } = response.data;
+            localStorage.setItem("token", accessToken);
+            localStorage.setItem("isLoggedIn", "true");
+            localStorage.setItem("user", JSON.stringify({ id: email })); // ← 이 줄 추가
+
             alert("로그인 성공!");
             if (onLoginSuccess) onLoginSuccess();
             navigate('/');
         } catch (error) {
-            console.error("로그인 에러:", error);
-            alert("로그인 실패: 이메일 또는 비밀번호를 확인하세요.");
+            if (error.response) {
+                alert(`로그인 실패: ${error.response.data.message || '이메일 또는 비밀번호를 확인해주세요.'}`);
+            } else {
+                alert("서버에 연결할 수 없습니다.");
+            }
         }
     };
 
@@ -39,18 +68,31 @@ const LoginPage = ({ onLoginSuccess }) => {
             <div className="login-card">
                 <h2 className="login-title">프로젝트 팀원 매칭 플랫폼</h2>
                 <div className="input-group">
-                    <input type="email" placeholder="아이디(이메일)" className="login-input" value={email} onChange={(e) => setEmail(e.target.value)} />
-                    <input type="password" placeholder="비밀번호" className="login-input" value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <input
+                        type="email"
+                        placeholder="이메일"
+                        className="login-input"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <input
+                        type="password"
+                        placeholder="비밀번호"
+                        className="login-input"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
                 </div>
-                <button className="login-button" onClick={handleLogin}>로그인</button>
-                
+                <button className="login-button" onClick={handleLogin}>
+                    로그인
+                </button>
                 <div className="social-login-group">
                     <button className="kakao-btn" onClick={handleKakaoLogin}>카카오 로그인</button>
                     <button className="google-btn" onClick={handleGoogleLogin}>구글 로그인</button>
                 </div>
-                
                 <div className="login-footer">
-                    계정이 없으신가요? <Link className="a" to="/Signup">회원가입</Link>
+                    계정이 없으신가요?
+                    <Link className="a" to="/Signup">회원가입</Link>
                 </div>
             </div>
         </div>

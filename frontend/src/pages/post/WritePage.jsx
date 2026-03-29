@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/common/Navbar";
-import { projectService } from "../../services/projectService";  
+import { projectService } from "../../services/projectService";
 import "./WritePage.css";
+import TagSelectDropdown from "@/components/filter/TagSelectDropdown";
 
 const CATEGORIES = ["웹 개발", "앱 개발", "AI/ML", "게임 개발", "기타"];
 const AVAILABLE_TAGS = [
@@ -17,6 +18,7 @@ const MONTH_OPTIONS = Array.from({ length: 24 }, (_, i) => i + 1);
 function WritePage() {
     const navigate = useNavigate();
     const [currentUser, setCurrentUser] = useState(null);
+    const [tagDropdownOpen, setTagDropdownOpen] = useState(false); // ← 여기로 이동
 
     useEffect(() => {
         const savedUser = JSON.parse(localStorage.getItem("user"));
@@ -32,7 +34,7 @@ function WritePage() {
         title: "",
         description: "",
         category: "",
-        roles: "",  
+        roles: "",
         headcount: 1,
         tags: [],
         durationMonths: "",
@@ -65,18 +67,18 @@ function WritePage() {
         if (!form.durationMonths) { alert("프로젝트 기간을 선택해주세요."); return; }
 
         const months = Number(form.durationMonths);
-        
+
         const postData = {
             ...form,
             roles: form.roles.split(',').map(r => r.trim()).filter(r => r !== ""),
             duration: months <= 3 ? "단기" : months <= 6 ? "중기" : "장기",
-            author: currentUser?.name || currentUser?.nickname || "익명", 
+            author: currentUser?.name || currentUser?.nickname || "익명",
             status: "recruiting",
-            createdAt: new Date().toLocaleDateString(), 
+            createdAt: new Date().toLocaleDateString(),
         };
 
         try {
-            await projectService.createProject(postData); // MockAPI 전송
+            await projectService.createProject(postData);
             alert("모집 글이 성공적으로 등록되었습니다!");
             navigate("/");
         } catch (error) {
@@ -165,16 +167,12 @@ function WritePage() {
 
                     <div className="form-group">
                         <label className="form-label">기술 스택 태그</label>
-                        <div className="tag-selector">
-                            {AVAILABLE_TAGS.map((tag) => (
-                                <button key={tag} type="button"
-                                    className={`tag-option ${form.tags.includes(tag) ? "selected" : ""}`}
-                                    onClick={() => toggleTag(tag)}
-                                >
-                                    {tag}
-                                </button>
-                            ))}
-                        </div>
+                        <TagSelectDropdown
+                            selectedTags={form.tags}
+                            onToggleTag={toggleTag}
+                            isOpen={tagDropdownOpen}
+                            onToggleOpen={() => setTagDropdownOpen((prev) => !prev)}
+                        />
                     </div>
 
                     <div className="form-group">
@@ -205,7 +203,6 @@ function WritePage() {
 
                     <div className="form-actions">
                         <button type="button" className="btn-cancel" onClick={() => navigate("/")}>취소</button>
-                        {/* 3. onClick 대신 onSubmit이나 type="submit"을 사용하기 위해 수정 */}
                         <button type="button" className="btn-submit" onClick={handleSubmit}>모집 글 등록하기</button>
                     </div>
                 </div>

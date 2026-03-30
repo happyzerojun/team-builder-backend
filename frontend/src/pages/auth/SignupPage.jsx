@@ -29,7 +29,7 @@ const SignupPage = () => {
             if (error.response) {
                 alert(`회원가입 실패: ${error.response.data.message || '다시 시도해주세요.'}`);
             } else {
-                alert("서버에 연결할 수 없습니다.");
+                alert("서버에 연결할 수 없습니다");
             }
         }
     };

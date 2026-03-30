@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './SignupPage.css';
-import { authService } from '../../services/authService'; // 1. 서비스 임포트
+import { authService } from '../../services/authService'; 
 
 const SignupPage = () => {
     const [name, setName] = useState('');
@@ -15,7 +15,7 @@ const SignupPage = () => {
 
     const handleSignup = async () => {
         try {
-            // 2. 서비스 호출 (무원님 원본 코드처럼 name, email, password만 전송)
+
             await authService.signup({
                 name,
                 email,
@@ -25,7 +25,7 @@ const SignupPage = () => {
             alert("회원가입 완료!");
             navigate('/login');
         } catch (error) {
-            // 3. 에러 처리 로직 유지
+
             if (error.response) {
                 alert(`회원가입 실패: ${error.response.data.message || '다시 시도해주세요.'}`);
             } else {
@@ -34,7 +34,6 @@ const SignupPage = () => {
         }
     };
 
-    // --- 아래 로직은 무원님 코드와 동일합니다 ---
     const isMatch = password === confirmPassword;
     const showMessage = confirmPassword.length > 0;
     const isFormValid =

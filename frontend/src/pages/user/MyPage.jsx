@@ -24,7 +24,6 @@ const MyPage = () => {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                // 1. 로그인 정보 확인 (localStorage)
                 const savedUser = JSON.parse(localStorage.getItem("user"));
                 if (!savedUser) {
                     alert("로그인이 필요한 페이지입니다.");
@@ -45,12 +44,24 @@ const MyPage = () => {
                 const ids = getAppliedIds().map(id => String(id)); 
 
                 const filteredApplied = projects.filter(post => {
-                    const isApplied = ids.includes(String(post.id));
-                    
-                    const postAuthor = String(post.author || post.leader || "");
-                    const isNotMine = postAuthor !== String(currentName);
 
-                    return isApplied && isNotMine;
+                    const myName = String(user.name || "").trim();
+
+                    const rawAuthor = post.author || post.leader || "";
+                    const authorName = (typeof rawAuthor === 'object' ? rawAuthor.name : String(rawAuthor)).trim();
+
+                    const isMine = authorName === myName;
+
+                    const applicants = post.applicants || [];
+                    const isInsideApplicants = applicants.some(app => {
+                        const appName = (typeof app === 'object' ? app.name : String(app)).trim();
+                        return appName === myName;
+                    });
+
+                    const ids = getAppliedIds().map(id => String(id));
+                    const isAppliedId = ids.includes(String(post.id));
+
+                    return !isMine && (isInsideApplicants || isAppliedId);
                 });
 
                 setAppliedPosts(filteredApplied);
@@ -69,9 +80,17 @@ const MyPage = () => {
     const recruitingProjects = myLeadProjects.filter(post => post.status === "recruiting");
     const ongoingLeadProjects = myLeadProjects.filter(post => post.status === "ing" || post.status === "complete");
 
-    const myParticipation = allProjects.filter(post =>
-        (post.members || []).includes(user.name) && String(post.author) !== String(user.name)
-    );
+    const myParticipation = allProjects.filter(post => {
+        const members = post.members || [];
+
+        const isMember = members.some(m => 
+            (typeof m === 'string' ? m === user.name : m.name === user.name)
+        );
+
+        const isNotAuthor = String(post.author) !== String(user.name);
+        
+        return isMember && isNotAuthor;
+    });
 
     if (isLoading) return <div className="mp-loading">데이터를 불러오는 중입니다...</div>;
 

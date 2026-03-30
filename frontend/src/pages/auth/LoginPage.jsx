@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './LoginPage.css';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { authService } from '../../services/authService'; 
 
 const LoginPage = ({ onLoginSuccess }) => {
     const navigate = useNavigate();
@@ -27,17 +27,14 @@ const LoginPage = ({ onLoginSuccess }) => {
 
     const handleLogin = async () => {
         try {
-            const response = await axios.post('http://localhost:8080/api/auth/login', {
-                email,
-                password
-            });
+            const data = await authService.login({ email, password });
 
-            console.log("응답 전체:", response.data);
+            console.log("응답 전체:", data);
 
-            const { accessToken } = response.data;
+            const { accessToken } = data;
             localStorage.setItem("token", accessToken);
             localStorage.setItem("isLoggedIn", "true");
-            localStorage.setItem("user", JSON.stringify({ id: email })); // ← 이 줄 추가
+            localStorage.setItem("user", JSON.stringify({ id: email, name: data.name }));
 
             alert("로그인 성공!");
             if (onLoginSuccess) onLoginSuccess();

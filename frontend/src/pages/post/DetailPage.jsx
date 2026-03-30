@@ -11,13 +11,13 @@ function DetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    // ✅ 상태 관리
+    // 상태 관리
     const [post, setPost] = useState(null); 
     const [loading, setLoading] = useState(true); 
     const [isApplied, setIsApplied] = useState(false); 
     const [showApplyModal, setShowApplyModal] = useState(false); 
 
-    // ✅ 서버에서 실시간 데이터 가져오기
+    // 서버에서 실시간 데이터 가져오기
     useEffect(() => {
         const fetchPostDetail = async () => {
             try {

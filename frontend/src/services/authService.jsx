@@ -8,16 +8,30 @@ export const authService = {
         const response = await axios.post(`${API_URL}/signup`, userData);
         return response.data;
     },
+
     login: async (credentials) => {
         const response = await axios.post(`${API_URL}/login`, credentials);
+        
         if (response.data) {
-            localStorage.setItem("user", JSON.stringify(response.data));
-            localStorage.setItem("isLoggedIn", "true");
+
+            const token = response.data.accessToken || response.data.token;
+            
+            if (token) {
+                localStorage.setItem("token", token);
+                localStorage.setItem("isLoggedIn", "true");
+                
+                const userInfo = response.data.user || { id: credentials.email };
+                localStorage.setItem("user", JSON.stringify(userInfo));
+            }
         }
         return response.data;
     },
+
     logout: () => {
-        localStorage.removeItem("user");
-        localStorage.removeItem("isLoggedIn");
+        localStorage.clear(); 
+    },
+
+    getCurrentUser: () => {
+        return JSON.parse(localStorage.getItem("user"));
     }
 };

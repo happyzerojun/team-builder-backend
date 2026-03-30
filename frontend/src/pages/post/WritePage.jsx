@@ -67,19 +67,31 @@ function WritePage() {
         if (!form.durationMonths) { alert("프로젝트 기간을 선택해주세요."); return; }
 
         const months = Number(form.durationMonths);
+        const authorName = currentUser?.name || currentUser?.nickname || "익명";
 
         const postData = {
             ...form,
             roles: form.roles.split(',').map(r => r.trim()).filter(r => r !== ""),
             duration: months <= 3 ? "단기" : months <= 6 ? "중기" : "장기",
-            author: currentUser?.name || currentUser?.nickname || "익명",
+            author: authorName,
+            
+            members: [
+                { 
+                    id: Date.now(), 
+                    name: authorName, 
+                    role: "리더",
+                    joinedAt: new Date().toLocaleDateString()
+                }
+            ],
+            
+            applicants: [],
             status: "recruiting",
             createdAt: new Date().toLocaleDateString(),
         };
 
         try {
             await projectService.createProject(postData);
-            alert("모집 글이 성공적으로 등록되었습니다!");
+            alert("🚀 모집 글이 성공적으로 등록되었습니다!");
             navigate("/");
         } catch (error) {
             console.error("글 등록 실패:", error);

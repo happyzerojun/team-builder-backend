@@ -45,8 +45,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login", "/api/auth/signup", "/api/auth/oauth2/**", "/oauth2/**", "/login/oauth2/**").permitAll()
                         // 🔥 영준님이 추가: 기술 스택 API 누구나 조회 가능하게 열어두기!
                         .requestMatchers("/api/tech-stacks", "/api/tech-stacks/**").permitAll()
-                        // 🔥 영준님이 추가: 프론트엔드 팀원들이 Swagger 명세서 볼 수 있게 열어두기!
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // 🔥 영준님이 추가: 프론트엔드 팀원들이 Swagger 명세서 볼 수 있게 열어두기! , 스웨거 관련 주소와 테스트 API는 모두 출입 허락 (프리패스!)
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api/test", "/error").permitAll()
 
                         .requestMatchers("/api/auth/me").authenticated()
                         .anyRequest().authenticated()

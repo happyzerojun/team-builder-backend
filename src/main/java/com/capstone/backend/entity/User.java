@@ -68,4 +68,11 @@ public class User {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    // 26.3.19 추가 메서드
+    public void updateProfile(String experienceLevel, String githubUrl, String baekjoonId) {
+        this.experienceLevel = experienceLevel;
+        this.githubUrl = githubUrl;
+        this.baekjoonId = baekjoonId;
+    }
 }

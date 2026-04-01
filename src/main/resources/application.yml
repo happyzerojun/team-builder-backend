@@ -18,7 +18,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
     # Hibernate가 테이블을 다 만든 "후에" SQL이 실행되도록 순서를 조절합니다.
     defer-datasource-initialization: true

@@ -82,7 +82,7 @@ const LoginPage = ({ onLoginSuccess }) => {
     const getGoogleToken = async (code) => {
 
         const CLIENT_ID = "825299339140-qss5ti06pv76gc0bb2s8rkqbv8o00g4i.apps.googleusercontent.com";
-        const CLIENT_SECRET = "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";
+        const CLIENT_SECRET = "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";// 프론트에서 돌릴려고 넣었어요, 나중에 백엔드연결할때 빼야함(보안키)
         const REDIRECT_URI = "http://localhost:5173/login";
 
         const tokenRes = await fetch("https://oauth2.googleapis.com/token", {

@@ -9,21 +9,23 @@ const LoginPage = ({ onLoginSuccess }) => {
     const [password, setPassword] = useState('');
 
     useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
 
-        if (code) {
-            const socialUser = {
-                id: "SocialUser",
-                name: "소셜사용자",
-                isSocial: true
-            };
-            localStorage.setItem("user", JSON.stringify(socialUser));
-            localStorage.setItem("isLoggedIn", "true");
-            if (onLoginSuccess) onLoginSuccess();
-            navigate('/', { replace: true });
+        const urlParams = new URLSearchParams(window.location.search);
+
+        const code = urlParams.get("code");
+        const state = urlParams.get("state");
+
+        if (!code) return;
+
+        if (state === "google") {
+            getGoogleToken(code);
         }
-    }, [navigate, onLoginSuccess]);
+
+        if (state === "kakao") {
+            getKakaoToken(code);
+        }
+
+    }, []);
 
     const handleLogin = async () => {
         try {
@@ -49,15 +51,134 @@ const LoginPage = ({ onLoginSuccess }) => {
     };
 
     const handleKakaoLogin = () => {
+
         const REST_API_KEY = "20a0b697b5c6300c4a61d4a14313c77e";
         const REDIRECT_URI = "http://localhost:5173/login";
-        window.location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code`;
+
+        window.location.href =
+            `https://kauth.kakao.com/oauth/authorize` +
+            `?client_id=${REST_API_KEY}` +
+            `&redirect_uri=${REDIRECT_URI}` +
+            `&response_type=code` +
+            `&state=kakao`; 
     };
 
     const handleGoogleLogin = () => {
         const CLIENT_ID = "825299339140-qss5ti06pv76gc0bb2s8rkqbv8o00g4i.apps.googleusercontent.com";
         const REDIRECT_URI = "http://localhost:5173/login";
-        window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=email profile&prompt=select_account`;
+
+        const url =
+            `https://accounts.google.com/o/oauth2/v2/auth` +
+            `?client_id=${CLIENT_ID}` +
+            `&redirect_uri=${REDIRECT_URI}` +
+            `&response_type=code` +
+            `&scope=email profile` +
+            `&prompt=select_account` +
+            `&state=google`;
+
+        window.location.href = url;
+    };
+
+    const getGoogleToken = async (code) => {
+
+        const CLIENT_ID = "825299339140-qss5ti06pv76gc0bb2s8rkqbv8o00g4i.apps.googleusercontent.com";
+        const CLIENT_SECRET = "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";
+        const REDIRECT_URI = "http://localhost:5173/login";
+
+        const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+                code: code,
+                client_id: CLIENT_ID,
+                client_secret: CLIENT_SECRET,
+                redirect_uri: REDIRECT_URI,
+                grant_type: "authorization_code"
+            })
+        });
+
+        const tokenData = await tokenRes.json();
+
+        const accessToken = tokenData.access_token;
+
+        getGoogleUser(accessToken);
+    };
+
+    const getGoogleUser = async (accessToken) => {
+
+        const userRes = await fetch(
+            "https://www.googleapis.com/oauth2/v2/userinfo",
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            }
+        );
+
+        const user = await userRes.json();
+
+        const socialUser = {
+            id: user.email,
+            name: user.name,
+            picture: user.picture,
+            isSocial: true
+        };
+
+        localStorage.setItem("user", JSON.stringify(socialUser));
+        localStorage.setItem("isLoggedIn", "true");
+
+        if (onLoginSuccess) onLoginSuccess();
+        navigate("/", { replace: true });
+    };
+
+    const getKakaoToken = async (code) => {
+
+        const REST_API_KEY = "20a0b697b5c6300c4a61d4a14313c77e";
+        const REDIRECT_URI = "http://localhost:5173/login";
+
+        const res = await fetch("https://kauth.kakao.com/oauth/token", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+                grant_type: "authorization_code",
+                client_id: REST_API_KEY,
+                redirect_uri: REDIRECT_URI,
+                code: code
+            })
+        });
+
+        const data = await res.json();
+
+        const accessToken = data.access_token;
+
+        getKakaoUser(accessToken);
+    };
+
+    const getKakaoUser = async (accessToken) => {
+
+        const res = await fetch("https://kapi.kakao.com/v2/user/me", {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        });
+
+        const data = await res.json();
+
+        const user = {
+            id: data.id,
+            name: data.kakao_account.profile.nickname,
+            isSocial: true
+        };
+
+        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("isLoggedIn", "true");
+
+        if (onLoginSuccess) onLoginSuccess();
+        navigate("/", { replace: true });
     };
 
     return (

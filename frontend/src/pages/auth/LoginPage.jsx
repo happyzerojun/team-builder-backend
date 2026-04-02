@@ -52,7 +52,7 @@ const LoginPage = ({ onLoginSuccess }) => {
 
     const handleKakaoLogin = () => {
 
-        const REST_API_KEY = "20a0b697b5c6300c4a61d4a14313c77e";
+        const REST_API_KEY = "55637b734996119177991d81b29f76a5";
         const REDIRECT_URI = "http://localhost:5173/login";
 
         window.location.href =

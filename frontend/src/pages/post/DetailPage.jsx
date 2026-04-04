@@ -1,5 +1,3 @@
-// 📁 src/pages/DetailPage.jsx
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { projectService } from "../../services/projectService"; 
@@ -7,17 +5,17 @@ import Navbar from "@/components/common/Navbar";
 import "./DetailPage.css";
 import { applyToProject } from "../../services/applyService";
 import ApplyModal from "@/components/post/ApplyModal";
+
 function DetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    // 상태 관리
     const [post, setPost] = useState(null); 
     const [loading, setLoading] = useState(true); 
     const [isApplied, setIsApplied] = useState(false); 
     const [showApplyModal, setShowApplyModal] = useState(false); 
 
-    // 서버에서 실시간 데이터 가져오기
+    // 서버에서 데이터 가져오기 및 지원 여부 확인
     useEffect(() => {
         const fetchPostDetail = async () => {
             try {
@@ -34,14 +32,17 @@ function DetailPage() {
         fetchPostDetail();
 
         const appliedIds = JSON.parse(localStorage.getItem("appliedProjects") || "[]");
-        const alreadyApplied = appliedIds.includes(Number(id));
+
+        const alreadyApplied = appliedIds.some(appliedId => String(appliedId) === String(id));
         setIsApplied(alreadyApplied);
     }, [id]);
 
     const handleCancel = () => {
         if (window.confirm("정말 이 프로젝트 지원을 취소하시겠습니까?")) {
             const appliedIds = JSON.parse(localStorage.getItem("appliedProjects") || "[]");
-            const updatedIds = appliedIds.filter((appliedId) => Number(appliedId) !== Number(id));
+
+            const updatedIds = appliedIds.filter((appliedId) => String(appliedId) !== String(id));
+            
             localStorage.setItem("appliedProjects", JSON.stringify(updatedIds));
             setIsApplied(false);
             alert("지원이 취소되었습니다.");
@@ -60,7 +61,7 @@ function DetailPage() {
             window.open(applyLink, "_blank", "noopener,noreferrer");
         }
 
-        const success = applyToProject(Number(id));
+        const success = applyToProject(id);
         if (success) {
             setIsApplied(true);
             setShowApplyModal(false);

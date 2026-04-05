@@ -159,10 +159,21 @@ const ManagePage = () => {
 
             <div className="manage-header">
                 <div className="title-row">
-                    <h2>{project.title}</h2>
-                    <span className={`status-badge ${project.status}`}>
-                        {project.status === 'ing' ? '진행 중' : project.status === 'complete' ? '종료됨' : '모집 중'}
-                    </span>
+                    <div className="title-left"> 
+                        <h2>{project.title}</h2>
+                        <span className={`status-badge ${project.status}`}>
+                            {project.status === 'ing' ? '진행 중' : project.status === 'complete' ? '종료됨' : '모집 중'}
+                        </span>
+                    </div>
+
+                    {isLeader && project.status === 'recruiting' && (
+                        <button 
+                            className="edit-project-btn" 
+                            onClick={() => navigate(`/write/${project.id}`)}
+                        >
+                            ✏️ 프로젝트 수정
+                        </button>
+                    )}
                 </div>
                 <p className="manage-info">작성자: {project.author} | 카테고리: {project.category}</p>
             </div>

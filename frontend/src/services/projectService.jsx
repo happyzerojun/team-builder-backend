@@ -52,4 +52,50 @@ export const projectService = {
             return false;
         }
     },
+
+    applyToProjectServer: async (projectId, user) => {
+        try {
+            const response = await axios.get(`${API_URL}/${projectId}`);
+            const currentProject = response.data;
+
+            const currentApplicants = currentProject.applicants || [];
+
+            if (currentApplicants.some(app => String(app.id) === String(user.id))) {
+                return { success: false, message: "이미 지원한 프로젝트입니다." };
+            }
+
+            const updatedData = {
+                ...currentProject,
+                applicants: [...currentApplicants, { id: user.id, name: user.name, role: "지원자" }]
+            };
+
+            await axios.put(`${API_URL}/${projectId}`, updatedData);
+            return { success: true };
+        } catch (error) {
+            console.error("지원하기 통신 실패:", error);
+            throw error;
+        }
+    },
+
+    cancelApplicationServer: async (projectId, userId) => {
+        try {
+            const response = await axios.get(`${API_URL}/${projectId}`);
+            const currentProject = response.data;
+
+            const updatedApplicants = (currentProject.applicants || []).filter(
+                app => String(app.id) !== String(userId)
+            );
+
+            const updatedData = {
+                ...currentProject,
+                applicants: updatedApplicants
+            };
+
+            await axios.put(`${API_URL}/${projectId}`, updatedData);
+            return true;
+        } catch (error) {
+            console.error("지원 취소 실패:", error);
+            return false;
+        }
+    }
 };

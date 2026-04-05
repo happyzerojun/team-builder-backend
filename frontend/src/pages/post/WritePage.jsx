@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "@/components/common/Navbar";
 import { projectService } from "../../services/projectService";
 import "./WritePage.css";
@@ -16,20 +16,14 @@ const AVAILABLE_TAGS = [
 const MONTH_OPTIONS = Array.from({ length: 24 }, (_, i) => i + 1);
 
 function WritePage() {
+    const { id } = useParams(); // URL에 id가 있으면 수정 모드
     const navigate = useNavigate();
+    const isEditMode = Boolean(id);
+
     const [currentUser, setCurrentUser] = useState(null);
-    const [tagDropdownOpen, setTagDropdownOpen] = useState(false); // ← 여기로 이동
+    const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
 
-    useEffect(() => {
-        const savedUser = JSON.parse(localStorage.getItem("user"));
-        if (!savedUser) {
-            alert("로그인이 필요한 페이지입니다.");
-            navigate("/login");
-        } else {
-            setCurrentUser(savedUser);
-        }
-    }, [navigate]);
-
+    // 폼 상태 초기화
     const [form, setForm] = useState({
         title: "",
         description: "",
@@ -42,6 +36,38 @@ function WritePage() {
         kakaoLink: "",
         googleFormLink: "",
     });
+
+    // 데이터 로드 로직
+    useEffect(() => {
+        const savedUser = JSON.parse(localStorage.getItem("user"));
+        if (!savedUser) {
+            alert("로그인이 필요한 페이지입니다.");
+            navigate("/login");
+            return;
+        }
+        setCurrentUser(savedUser);
+
+        // 수정 모드일 경우 기존 데이터 불러오기
+        if (isEditMode) {
+            const fetchProjectData = async () => {
+                try {
+                    const data = await projectService.getProjectById(id);
+                    if (data) {
+                        setForm({
+                            ...data,
+                            // 서버의 배열 데이터를 인풋창용 문자열로 변환 (예: ["기획", "디자인"] -> "기획, 디자인")
+                            roles: Array.isArray(data.roles) ? data.roles.join(", ") : data.roles,
+                        });
+                    }
+                } catch (error) {
+                    console.error("데이터 로드 실패:", error);
+                    alert("프로젝트 정보를 불러오는데 실패했습니다.");
+                    navigate(-1);
+                }
+            };
+            fetchProjectData();
+        }
+    }, [id, isEditMode, navigate]);
 
     function handleChange(e) {
         const { name, value } = e.target;
@@ -60,6 +86,7 @@ function WritePage() {
     async function handleSubmit(e) {
         e.preventDefault();
 
+        // 필수 입력값 검증
         if (!form.title.trim()) { alert("제목을 입력해주세요."); return; }
         if (!form.description.trim()) { alert("프로젝트 설명을 입력해주세요."); return; }
         if (!form.category) { alert("카테고리를 선택해주세요."); return; }
@@ -69,33 +96,45 @@ function WritePage() {
         const months = Number(form.durationMonths);
         const authorName = currentUser?.name || currentUser?.nickname || "익명";
 
-        const postData = {
+        // 서버 전송용 데이터 가공 (roles를 다시 배열로 변환)
+        const commonData = {
             ...form,
-            roles: form.roles.split(',').map(r => r.trim()).filter(r => r !== ""),
+            roles: typeof form.roles === 'string' 
+                ? form.roles.split(',').map(r => r.trim()).filter(r => r !== "") 
+                : form.roles,
             duration: months <= 3 ? "단기" : months <= 6 ? "중기" : "장기",
             author: authorName,
-            
-            members: [
-                { 
-                    id: Date.now(), 
-                    name: authorName, 
-                    role: "리더",
-                    joinedAt: new Date().toLocaleDateString()
-                }
-            ],
-            
-            applicants: [],
-            status: "recruiting",
-            createdAt: new Date().toLocaleDateString(),
         };
 
         try {
-            await projectService.createProject(postData);
-            alert("🚀 모집 글이 성공적으로 등록되었습니다!");
-            navigate("/");
+            if (isEditMode) {
+                // 수정 처리 (PUT)
+                await projectService.updateProject(id, commonData);
+                alert("✨ 프로젝트 정보가 성공적으로 수정되었습니다!");
+                navigate(`/project/manage/${id}`); // 관리 페이지로 복귀
+            } else {
+                // 신규 등록 처리 (POST)
+                const newData = {
+                    ...commonData,
+                    members: [
+                        { 
+                            id: Date.now(), 
+                            name: authorName, 
+                            role: "리더",
+                            joinedAt: new Date().toLocaleDateString()
+                        }
+                    ],
+                    applicants: [],
+                    status: "recruiting",
+                    createdAt: new Date().toLocaleDateString(),
+                };
+                await projectService.createProject(newData);
+                alert("🚀 모집 글이 성공적으로 등록되었습니다!");
+                navigate("/");
+            }
         } catch (error) {
-            console.error("글 등록 실패:", error);
-            alert("글 등록 중 오류가 발생했습니다.");
+            console.error("저장 실패:", error);
+            alert("저장 중 오류가 발생했습니다.");
         }
     }
 
@@ -108,8 +147,12 @@ function WritePage() {
                 <button className="btn-back" onClick={() => navigate(-1)}>← 뒤로가기</button>
 
                 <div className="write-header">
-                    <h1 className="write-title">팀원 모집 글 작성</h1>
-                    <p className="write-subtitle">멋진 팀원을 찾고 있나요? 프로젝트를 소개해주세요.</p>
+                    <h1 className="write-title">
+                        {isEditMode ? "프로젝트 정보 수정" : "팀원 모집 글 작성"}
+                    </h1>
+                    <p className="write-subtitle">
+                        {isEditMode ? "프로젝트의 변경된 내용을 업데이트하세요." : "멋진 팀원을 찾고 있나요? 프로젝트를 소개해주세요."}
+                    </p>
                 </div>
 
                 <div className="write-form">
@@ -214,8 +257,10 @@ function WritePage() {
                     </div>
 
                     <div className="form-actions">
-                        <button type="button" className="btn-cancel" onClick={() => navigate("/")}>취소</button>
-                        <button type="button" className="btn-submit" onClick={handleSubmit}>모집 글 등록하기</button>
+                        <button type="button" className="btn-cancel" onClick={() => navigate(-1)}>취소</button>
+                        <button type="button" className="btn-submit" onClick={handleSubmit}>
+                            {isEditMode ? "수정 완료하기" : "모집 글 등록하기"}
+                        </button>
                     </div>
                 </div>
             </main>

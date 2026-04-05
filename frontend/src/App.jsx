@@ -60,6 +60,7 @@ function App() {
 
                     {/* 게시글 관련 */}
                     <Route path="/write" element={<WritePage />} />
+                    <Route path="/write/:id" element={<WritePage />} />
                     <Route path="/post/:id" element={<DetailPage />} />
                     
                     {/*마이페이지에 추가한 2개*/}

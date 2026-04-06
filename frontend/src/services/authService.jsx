@@ -12,23 +12,31 @@ export const authService = {
     login: async (credentials) => {
         const response = await axios.post(`${API_URL}/login`, credentials);
         
-        if (response.data) {
-
-            const token = response.data.accessToken || response.data.token;
+        if (response.data && response.data.accessToken) {
+            const token = response.data.accessToken;
+            localStorage.setItem("token", token);
+            localStorage.setItem("isLoggedIn", "true");
             
-            if (token) {
-                localStorage.setItem("token", token);
-                localStorage.setItem("isLoggedIn", "true");
-                
-                const userInfo = response.data.user || { id: credentials.email };
-                localStorage.setItem("user", JSON.stringify(userInfo));
+            try {
+                const userRes = await axios.get(`${API_URL}/me`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                localStorage.setItem("user", JSON.stringify(userRes.data));
+            } catch (e) {
+                localStorage.setItem("user", JSON.stringify({ id: credentials.email }));
             }
         }
         return response.data;
     },
 
+    getSocialLoginUrl: async (provider) => {
+        const response = await axios.get(`${API_URL}/oauth2/url/${provider}`);
+        return response.data;
+    },
+
     logout: () => {
         localStorage.clear(); 
+        window.location.href = '/login'; 
     },
 
     getCurrentUser: () => {

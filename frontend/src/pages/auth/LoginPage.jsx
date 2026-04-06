@@ -29,24 +29,38 @@ const LoginPage = ({ onLoginSuccess }) => {
 
     const handleLogin = async () => {
         try {
+
             const data = await authService.login({ email, password });
-
-            console.log("응답 전체:", data);
-
             const { accessToken } = data;
+            
             localStorage.setItem("token", accessToken);
             localStorage.setItem("isLoggedIn", "true");
-            localStorage.setItem("user", JSON.stringify({ id: email, name: data.name }));
+
+            const response = await fetch("http://localhost:8080/api/auth/me", {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${accessToken}`
+                }
+            });
+
+            if (response.ok) {
+
+                const result = await response.text();
+                console.log("서버가 준 데이터:", result);
+
+                let finalName = result;
+
+                localStorage.setItem("user", JSON.stringify({ 
+                    id: email, 
+                    name: finalName 
+                }));
+            }
 
             alert("로그인 성공!");
             if (onLoginSuccess) onLoginSuccess();
             navigate('/');
         } catch (error) {
-            if (error.response) {
-                alert(`로그인 실패: ${error.response.data.message || '이메일 또는 비밀번호를 확인해주세요.'}`);
-            } else {
-                alert("서버에 연결할 수 없습니다.");
-            }
+            alert("로그인 실패: 이메일 또는 비밀번호를 확인해주세요.");
         }
     };
 

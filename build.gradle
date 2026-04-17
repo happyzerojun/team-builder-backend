@@ -19,7 +19,7 @@ java {
 // ==============================
 springBoot {
 	// 실제 실행할 main class 패키지/클래스명으로 변경
-	mainClass = 'com.capstone.backend.BackendApplication'
+	mainClass = 'com.matching.team_builder.TeamBuilderApplication'
 }
 
 configurations {
@@ -35,6 +35,15 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+    // 스웨거 2.8.4 (Spring Boot 3.4~3.5 호환)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.4'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

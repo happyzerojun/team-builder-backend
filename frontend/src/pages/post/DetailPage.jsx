@@ -15,7 +15,7 @@ function DetailPage() {
     const [isApplied, setIsApplied] = useState(false);
     const [showApplyModal, setShowApplyModal] = useState(false);
     const [myApplicationId, setMyApplicationId] = useState(null);
-
+//.
     useEffect(() => {
         const fetchPostDetail = async () => {
             try {

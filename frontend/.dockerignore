@@ -1,0 +1,4 @@
+# 프론트엔드 .dockerignore
+node_modules/
+dist/
+.git

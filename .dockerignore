@@ -1,0 +1,8 @@
+# 백엔드 .dockerignore
+.git
+.gradle
+build/
+out/
+.idea/
+# 🔥 핵심: 백엔드 컨테이너에는 프론트엔드 폴더가 필요 없다! 빼버려!
+frontend/

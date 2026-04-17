@@ -1,0 +1,59 @@
+/* ReviewPage.css */
+.review-page-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 30px;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.review-page-container h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.review-card {
+  padding: 20px;
+  border: 1px solid #495057;
+  border-radius: 12px;
+  background-color: #fff;
+  transition: transform 0.2s;
+}
+
+.r-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.r-author {
+  font-weight: bold;
+  color: #444;
+}
+
+.r-stars {
+  color: #ffc107;
+  letter-spacing: 2px;
+}
+
+.r-comment {
+  color: #666;
+  line-height: 1.5;
+  margin: 0;
+  font-size: 15px;
+}
+
+.r-project-name {
+  font-size: 15px;              
+  color: #495057;    
+  margin-left: 10px;    
+}

@@ -35,8 +35,7 @@ out/
 
 ### VS Code ###
 .vscode/
-<<<<<<< HEAD
-=======
+.vs/
 # mac
 .DS_Store
 
@@ -49,4 +48,4 @@ out/
 # local config
 application-local.yml
 application-secret.yml
->>>>>>> afda2d7 (spring boot setup)
+

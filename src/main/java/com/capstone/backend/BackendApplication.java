@@ -1,13 +1,13 @@
-package com.matching.team_builder;
+package com.capstone.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class TeamBuilderApplication {
+public class BackendApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(TeamBuilderApplication.class, args);
+		SpringApplication.run(BackendApplication.class, args);
 	}
 
 }

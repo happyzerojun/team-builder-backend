@@ -1,10 +1,10 @@
-package com.matching.team_builder;
+package com.capstone.backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class TeamBuilderApplicationTests {
+class BackendApplicationTests {
 
 	@Test
 	void contextLoads() {

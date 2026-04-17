@@ -36,3 +36,16 @@ out/
 ### VS Code ###
 .vscode/
 .vs/
+# mac
+.DS_Store
+
+# logs
+*.log
+
+# env
+.env
+
+# local config
+application-local.yml
+application-secret.yml
+

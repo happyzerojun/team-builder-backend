@@ -1,101 +1,97 @@
 ﻿import axios from "axios";
 
-const API_URL = "https://69c516f18a5b6e2dec2bcb85.mockapi.io/api/projects";
+const API_URL = "http://localhost:8080/api/project";
+const APPLICATION_API = "http://localhost:8080/api/application";
 
 export const projectService = {
     getAllProjects: async () => {
         try {
-            const response = await axios.get(API_URL);
-            return response.data;
-        } catch (error) {
-            console.error("데이터 로딩 실패:", error);
+            const res = await axios.get(API_URL);
+            return res.data;
+        } catch (e) {
+            console.error(e);
             return [];
         }
     },
 
-    getProjectById: async (id) => {
+    getProjectById: async (projectId) => {
         try {
-            const response = await axios.get(`${API_URL}/${id}`);
-            return response.data;
-        } catch (error) {
-            console.error("프로젝트 상세 로딩 실패:", error);
+            const res = await axios.get(`${API_URL}/${projectId}`);
+            return res.data;
+        } catch (e) {
+            console.error(e);
             return null;
         }
     },
 
-    createProject: async (projectData) => {
-        try {
-            const response = await axios.post(API_URL, projectData);
-            return response.data;
-        } catch (error) {
-            console.error("프로젝트 생성 실패:", error);
-            throw error;
-        }
+    createProject: async (data) => {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+        const res = await axios.post(API_URL, {
+            title: data.title,
+            content: data.content,
+            region: data.region,
+            status: "모집중",
+            leader_id: user.user_id,
+            term: data.term
+        });
+
+        return res.data;
     },
 
-    updateProject: async (id, updatedData) => {
-        try {
-            const response = await axios.put(`${API_URL}/${id}`, updatedData);
-            return response.data;
-        } catch (error) {
-            console.error("프로젝트 업데이트 실패:", error);
-            throw error; 
-        }
+    updateProject: async (projectId, data) => {
+        const res = await axios.put(`${API_URL}/${projectId}`, {
+            title: data.title,
+            content: data.content,
+            region: data.region,
+            status: data.status,
+            term: data.term
+        });
+
+        return res.data;
     },
 
     deleteProject: async (projectId) => {
         try {
             await axios.delete(`${API_URL}/${projectId}`);
             return true;
-        } catch (error) {
-            console.error("프로젝트 삭제 실패:", error);
+        } catch (e) {
+            console.error(e);
             return false;
         }
     },
 
-    applyToProjectServer: async (projectId, user) => {
-        try {
-            const response = await axios.get(`${API_URL}/${projectId}`);
-            const currentProject = response.data;
+    applyToProject: async (projectId) => {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-            const currentApplicants = currentProject.applicants || [];
+        await axios.post(APPLICATION_API, {
+            project_id: projectId,
+            applicant_id: user.user_id,
+            support_role: "지원자",
+            message: "",
+            status: "pending"
+        });
 
-            if (currentApplicants.some(app => String(app.id) === String(user.id))) {
-                return { success: false, message: "이미 지원한 프로젝트입니다." };
-            }
-
-            const updatedData = {
-                ...currentProject,
-                applicants: [...currentApplicants, { id: user.id, name: user.name, role: "지원자" }]
-            };
-
-            await axios.put(`${API_URL}/${projectId}`, updatedData);
-            return { success: true };
-        } catch (error) {
-            console.error("지원하기 통신 실패:", error);
-            throw error;
-        }
+        return true;
     },
 
-    cancelApplicationServer: async (projectId, userId) => {
-        try {
-            const response = await axios.get(`${API_URL}/${projectId}`);
-            const currentProject = response.data;
+    cancelApplication: async (applicationId) => {
+        await axios.delete(`${APPLICATION_API}/${applicationId}`);
+        return true;
+    },
 
-            const updatedApplicants = (currentProject.applicants || []).filter(
-                app => String(app.id) !== String(userId)
-            );
+    getProjectMembers: async (projectId) => {
+        const res = await axios.get(`${API_URL}/${projectId}/members`);
+        return Array.isArray(res.data) ? res.data : [];
+    },
 
-            const updatedData = {
-                ...currentProject,
-                applicants: updatedApplicants
-            };
+    removeProjectMember: async (projectId, memberId) => {
+        const res = await axios.delete(`${API_URL}/${projectId}/members/${memberId}`);
+        return res.data;
+    },
 
-            await axios.put(`${API_URL}/${projectId}`, updatedData);
-            return true;
-        } catch (error) {
-            console.error("지원 취소 실패:", error);
-            return false;
-        }
+    updateProjectStatus: async (projectId, status) => {
+        const res = await axios.patch(`${API_URL}/${projectId}/status`, { status });
+        return res.data;
     }
 };

@@ -1,27 +1,60 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { projectService } from "../../services/projectService"; 
+import { projectService } from "../../services/projectService";
+import { applicationService } from "../../services/applicationService";
 import Navbar from "@/components/common/Navbar";
 import "./DetailPage.css";
-import { applyToProject } from "../../services/applyService";
 import ApplyModal from "@/components/post/ApplyModal";
 
 function DetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    const [post, setPost] = useState(null); 
-    const [loading, setLoading] = useState(true); 
-    const [isApplied, setIsApplied] = useState(false); 
-    const [showApplyModal, setShowApplyModal] = useState(false); 
+    const [post, setPost] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [isApplied, setIsApplied] = useState(false);
+    const [showApplyModal, setShowApplyModal] = useState(false);
+    const [myApplicationId, setMyApplicationId] = useState(null);
 
-    // 서버에서 데이터 가져오기 및 지원 여부 확인
     useEffect(() => {
         const fetchPostDetail = async () => {
             try {
                 setLoading(true);
+
                 const data = await projectService.getProjectById(id);
                 setPost(data);
+
+                // 내가 이 프로젝트에 이미 지원했는지 확인
+                try {
+                    const myApplications = await applicationService.getMyApplications();
+
+                    const matchedApplication = myApplications.find((app) => {
+                        // 1순위: project 객체 포함 응답
+                        if (app.project && String(app.project.project_id) === String(id)) {
+                            return true;
+                        }
+
+                        // 2순위: project_id 직접 포함 응답
+                        if (String(app.project_id) === String(id)) {
+                            return true;
+                        }
+
+                        return false;
+                    });
+
+                    if (matchedApplication) {
+                        setIsApplied(true);
+                        setMyApplicationId(matchedApplication.application_id);
+                    } else {
+                        setIsApplied(false);
+                        setMyApplicationId(null);
+                    }
+                } catch (applicationError) {
+                    console.error("내 지원 여부 확인 실패:", applicationError);
+                    setIsApplied(false);
+                    setMyApplicationId(null);
+                }
+
             } catch (error) {
                 console.error("상세 정보 로딩 실패:", error);
             } finally {
@@ -30,23 +63,26 @@ function DetailPage() {
         };
 
         fetchPostDetail();
-
-        const appliedIds = JSON.parse(localStorage.getItem("appliedProjects") || "[]");
-
-        const alreadyApplied = appliedIds.some(appliedId => String(appliedId) === String(id));
-        setIsApplied(alreadyApplied);
     }, [id]);
 
-    const handleCancel = () => {
-        if (window.confirm("정말 이 프로젝트 지원을 취소하시겠습니까?")) {
-            const appliedIds = JSON.parse(localStorage.getItem("appliedProjects") || "[]");
+    const handleCancel = async () => {
+        try {
+            if (!window.confirm("정말 이 프로젝트 지원을 취소하시겠습니까?")) return;
 
-            const updatedIds = appliedIds.filter((appliedId) => String(appliedId) !== String(id));
-            
-            localStorage.setItem("appliedProjects", JSON.stringify(updatedIds));
+            if (!myApplicationId) {
+                alert("지원 취소에 필요한 신청 정보가 없습니다.");
+                return;
+            }
+
+            await applicationService.cancel(myApplicationId);
             setIsApplied(false);
+            setMyApplicationId(null);
+
             alert("지원이 취소되었습니다.");
             navigate("/MyPage");
+        } catch (error) {
+            console.error("지원 취소 실패:", error);
+            alert("지원 취소에 실패했습니다.");
         }
     };
 
@@ -54,21 +90,33 @@ function DetailPage() {
         setShowApplyModal(true);
     };
 
-    const handleConfirmApply = () => {
-        const applyLink = post.applyType === "kakao" ? post.kakaoLink : post.googleFormLink;
+    const handleConfirmApply = async () => {
+        try {
+            if (!post) return;
 
-        if (applyLink) {
-            window.open(applyLink, "_blank", "noopener,noreferrer");
-        }
+            const createdApplication = await applicationService.apply(id);
 
-        const success = applyToProject(id);
-        if (success) {
+            const applyLink =
+                post.applyType === "kakao"
+                    ? post.kakaoLink
+                    : post.googleFormLink;
+
+            if (applyLink) {
+                window.open(applyLink, "_blank", "noopener,noreferrer");
+            }
+
             setIsApplied(true);
             setShowApplyModal(false);
-            alert(`"${post.title}" 프로젝트에 지원했습니다! 마이페이지로 이동합니다.`);
+
+            if (createdApplication?.application_id) {
+                setMyApplicationId(createdApplication.application_id);
+            }
+
+            alert(`"${post.title}" 프로젝트에 지원했습니다!`);
             navigate("/MyPage");
-        } else {
-            alert("이미 지원한 프로젝트입니다.");
+        } catch (error) {
+            console.error("지원 실패:", error);
+            alert("지원 처리 중 문제가 발생했습니다.");
             setShowApplyModal(false);
         }
     };
@@ -77,7 +125,7 @@ function DetailPage() {
         return (
             <div className="detail-page">
                 <Navbar />
-                <div className="loading-state" style={{ textAlign: 'center', marginTop: '100px' }}>
+                <div className="loading-state" style={{ textAlign: "center", marginTop: "100px" }}>
                     <p>데이터를 불러오는 중입니다...</p>
                 </div>
             </div>
@@ -111,55 +159,32 @@ function DetailPage() {
 
                 <article className="detail-card">
                     <div className="detail-meta">
-                        <span className="badge-category">{post.category}</span>
+                        <span className="badge-category">{post.category || "프로젝트"}</span>
                         <span className="meta-divider">·</span>
-                        <span className="meta-text">👥 {post.headcount}명 모집 중</span>
+                        <span className="meta-text">📍 {post.region || "지역 미정"}</span>
                         <span className="meta-divider">·</span>
-                        <span className="meta-text">{new Date(post.createdAt).toLocaleDateString()}</span>
+                        <span className="meta-text">{post.status || "모집중"}</span>
                     </div>
 
                     <h1 className="detail-title">{post.title}</h1>
 
                     <div className="detail-author">
-                        <div className="author-avatar">{(post.author || "익")[0]}</div>
-                        <span>{post.author || "익명 사용자"}</span>
+                        <div className="author-avatar">{(post.author_name || "익")[0]}</div>
+                        <span>{post.author_name || "익명 사용자"}</span>
                     </div>
 
                     <hr className="divider" />
 
                     <section className="detail-section">
                         <h2 className="section-title">📋 프로젝트 소개</h2>
-                        <p className="detail-description">{post.description}</p>
+                        <p className="detail-description">{post.content || "내용이 없습니다."}</p>
                     </section>
 
                     <section className="detail-section">
-                        <h2 className="section-title">🙋 모집 분야</h2>
-                        <div className="roles-list">
-                            {Array.isArray(post.roles) ? post.roles.map((role) => (
-                                <span key={role} className="badge-role">{role}</span>
-                            )) : <span className="badge-role">{post.roles}</span>}
-                        </div>
-                    </section>
-
-                    <section className="detail-section">
-                        <h2 className="section-title">🛠 기술 스택</h2>
-                        <div className="tags-list">
-                            {Array.isArray(post.tags) && post.tags.map((tag) => (
-                                <span key={tag} className="tag">{tag}</span>
-                            ))}
-                        </div>
-                    </section>
-
-                    <section className="detail-section">
-                        <h2 className="section-title">📋 모집 조건</h2>
-                        <div className="tags-list">
-                            <span className={`badge-level ${post.level}`}>
-                                {post.level === "초보" ? "🌱 초보" : post.level === "중급" ? "⚡ 중급" : "🔥 고수"}
-                            </span>
-                            <span className="badge-exp">
-                                {post.hasTeamExp === "있음" ? "🤝 협업 경험 있음" : "🙋 협업 경험 무관"}
-                            </span>
-                        </div>
+                        <h2 className="section-title">⏳ 진행 기간</h2>
+                        <p className="detail-description">
+                            {post.term ? `${post.term}개월` : "미정"}
+                        </p>
                     </section>
 
                     {applyLink && (
@@ -171,16 +196,20 @@ function DetailPage() {
                                 <span className="apply-info-icon">{isKakao ? "💬" : "📋"}</span>
                                 <div className="apply-info-text">
                                     <strong>{isKakao ? "카카오 오픈채팅" : "구글폼 신청서"}로 지원</strong>
-                                    <p>{isKakao
-                                        ? "아래 버튼을 눌러 카카오 오픈채팅방에 입장 후 지원해주세요."
-                                        : "아래 버튼을 눌러 구글폼 신청서를 작성해주세요."
-                                    }</p>
+                                    <p>
+                                        {isKakao
+                                            ? "아래 버튼을 눌러 카카오 오픈채팅방에 입장 후 지원해주세요."
+                                            : "아래 버튼을 눌러 구글폼 신청서를 작성해주세요."}
+                                    </p>
                                 </div>
                             </div>
                         </section>
                     )}
 
-                    <div className="detail-footer" style={{ marginTop: "40px", display: "flex", justifyContent: "center" }}>
+                    <div
+                        className="detail-footer"
+                        style={{ marginTop: "40px", display: "flex", justifyContent: "center" }}
+                    >
                         {isApplied ? (
                             <button className="btn-cancle" onClick={handleCancel}>
                                 지원 취소하기

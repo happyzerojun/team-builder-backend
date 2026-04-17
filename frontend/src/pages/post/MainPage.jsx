@@ -1,8 +1,6 @@
-// 📁 src/pages/MainPage.jsx
-
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { projectService } from "../../services/projectService"; 
+import { projectService } from "../../services/projectService";
 import PostCard from "@/components/post/PostCard";
 import Navbar from "@/components/common/Navbar";
 import "./MainPage.css";
@@ -33,31 +31,27 @@ function MainPage({ isLoggedIn, onLogout }) {
     const [activeTab, setActiveTab] = useState("인기");
 
     const [isTagOpen, setIsTagOpen] = useState(false);
-
-
     const [isDurationOpen, setIsDurationOpen] = useState(false);
     const [durationPreset, setDurationPreset] = useState("전체");
     const [customMin, setCustomMin] = useState("");
     const [customMax, setCustomMax] = useState("");
     const [useCustom, setUseCustom] = useState(false);
 
-
     useEffect(() => {
         const fetchPosts = async () => {
             try {
                 setLoading(true);
                 const data = await projectService.getAllProjects();
-                setPosts(data);
+                setPosts(Array.isArray(data) ? data : []);
             } catch (error) {
                 console.error("데이터 로딩 실패:", error);
             } finally {
                 setLoading(false);
             }
         };
+
         fetchPosts();
     }, []);
-
- 
 
     function toggleTag(tag) {
         setSelectedTags((prev) =>
@@ -73,6 +67,7 @@ function MainPage({ isLoggedIn, onLogout }) {
                 max: customMax !== "" ? Number(customMax) : Infinity,
             };
         }
+
         const preset = DURATION_PRESETS.find((p) => p.label === durationPreset);
         return preset ? { min: preset.min, max: preset.max } : { min: 0, max: Infinity };
     }, [useCustom, customMin, customMax, durationPreset]);
@@ -89,23 +84,30 @@ function MainPage({ isLoggedIn, onLogout }) {
     const isDurationFiltered = durationLabel !== "전체";
 
     const filteredPosts = useMemo(() => {
-        return posts.filter((post) => {
-            const matchesSearch =
-                searchText === "" ||
-                (post.title || "").includes(searchText) ||
-                (post.description || "").includes(searchText);
+        return posts
+            .filter((post) => {
+                const matchesSearch =
+                    searchText === "" ||
+                    (post.title || "").includes(searchText) ||
+                    (post.content || "").includes(searchText);
 
-            const matchesTags =
-                selectedTags.length === 0 ||
-                selectedTags.every((tag) => (post.tags || []).includes(tag));
+                // 현재 DB 구조상 tags 없을 가능성 높아서 안전 처리
+                const matchesTags =
+                    selectedTags.length === 0 ||
+                    selectedTags.every((tag) => (post.tags || []).includes(tag));
 
-            const months = Number(post.durationMonths) || 0;
-            const { min, max } = activeDurationRange;
-            const matchesDuration = months >= min && months <= max;
+                // term이 숫자(개월)라고 가정
+                const months = Number(post.term) || 0;
+                const { min, max } = activeDurationRange;
+                const matchesDuration = months >= min && months <= max;
 
-            return matchesSearch && matchesTags && matchesDuration;
-        })
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                return matchesSearch && matchesTags && matchesDuration;
+            })
+            .sort((a, b) => {
+                const dateA = new Date(a.created_at || a.createdAt || 0);
+                const dateB = new Date(b.created_at || b.createdAt || 0);
+                return dateB - dateA;
+            });
     }, [posts, searchText, selectedTags, activeDurationRange]);
 
     const totalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
@@ -113,16 +115,6 @@ function MainPage({ isLoggedIn, onLogout }) {
         (currentPage - 1) * POSTS_PER_PAGE,
         currentPage * POSTS_PER_PAGE
     );
-
-    function getPageNumbers() {
-        const groupSize = 10;
-        const groupStart = Math.floor((currentPage - 1) / groupSize) * groupSize + 1;
-        const groupEnd = Math.min(groupStart + groupSize - 1, totalPages);
-        const pages = [];
-        for (let i = groupStart; i <= groupEnd; i++) pages.push(i);
-        return { pages, groupStart, groupEnd };
-    }
-    const { pages, groupStart, groupEnd } = getPageNumbers();
 
     function handlePageChange(page) {
         setCurrentPage(page);
@@ -145,36 +137,58 @@ function MainPage({ isLoggedIn, onLogout }) {
                 <section className="hero">
                     <div className="hero-badge">🚀 사이드 프로젝트 팀 빌딩 플랫폼</div>
                     <h1 className="hero-title">
-                        함께할 팀원을<br />
+                        함께할 팀원을
+                        <br />
                         <span className="hero-highlight">찾고 있나요?</span>
                     </h1>
-                    <p className="hero-subtitle">개발자, 디자이너, 기획자들이 모여 아이디어를 현실로 만드는 공간</p>
+                    <p className="hero-subtitle">
+                        개발자, 디자이너, 기획자들이 모여 아이디어를 현실로 만드는 공간
+                    </p>
                 </section>
 
                 <SearchBar
                     searchText={searchText}
-                    onSearchChange={(value) => { setSearchText(value); setCurrentPage(1); }}
+                    onSearchChange={(value) => {
+                        setSearchText(value);
+                        setCurrentPage(1);
+                    }}
                 />
 
                 <section className="filter-bar">
                     <TagFilterDropdown
                         selectedTags={selectedTags}
                         onToggleTag={toggleTag}
-                        onClear={() => { setSelectedTags([]); setCurrentPage(1); }}
+                        onClear={() => {
+                            setSelectedTags([]);
+                            setCurrentPage(1);
+                        }}
                         activeTab={activeTab}
                         onTabChange={setActiveTab}
                         isOpen={isTagOpen}
                         onToggleOpen={() => setIsTagOpen((prev) => !prev)}
                     />
+
                     <DurationFilterDropdown
                         isOpen={isDurationOpen}
                         onToggleOpen={() => setIsDurationOpen((prev) => !prev)}
                         durationPreset={durationPreset}
-                        onPresetChange={(label) => { setDurationPreset(label); setUseCustom(false); setCurrentPage(1); }}
+                        onPresetChange={(label) => {
+                            setDurationPreset(label);
+                            setUseCustom(false);
+                            setCurrentPage(1);
+                        }}
                         customMin={customMin}
                         customMax={customMax}
-                        onCustomMinChange={(v) => { setCustomMin(v); setUseCustom(true); setCurrentPage(1); }}
-                        onCustomMaxChange={(v) => { setCustomMax(v); setUseCustom(true); setCurrentPage(1); }}
+                        onCustomMinChange={(v) => {
+                            setCustomMin(v);
+                            setUseCustom(true);
+                            setCurrentPage(1);
+                        }}
+                        onCustomMaxChange={(v) => {
+                            setCustomMax(v);
+                            setUseCustom(true);
+                            setCurrentPage(1);
+                        }}
                         useCustom={useCustom}
                         durationLabel={durationLabel}
                         isDurationFiltered={isDurationFiltered}
@@ -182,11 +196,16 @@ function MainPage({ isLoggedIn, onLogout }) {
                     />
                 </section>
 
-                {/* 선택된 태그 칩 */}
                 {selectedTags.length > 0 && (
                     <div className="selected-tag-preview">
                         {selectedTags.map((tag) => (
-                            <span key={tag} className="selected-tag-chip" onClick={() => toggleTag(tag)}>{tag} ✕</span>
+                            <span
+                                key={tag}
+                                className="selected-tag-chip"
+                                onClick={() => toggleTag(tag)}
+                            >
+                                {tag} ✕
+                            </span>
                         ))}
                     </div>
                 )}
@@ -195,13 +214,16 @@ function MainPage({ isLoggedIn, onLogout }) {
                     총 <strong>{filteredPosts.length}</strong>개의 모집 글
                 </div>
 
-                {/* 로딩 상태 표시 */}
                 {loading ? (
                     <div className="empty-state">데이터를 불러오는 중입니다...</div>
                 ) : pagedPosts.length > 0 ? (
                     <div className="post-grid">
                         {pagedPosts.map((post) => (
-                            <PostCard key={post.id} post={post} onClick={() => navigate(`/post/${post.id}`)} />
+                            <PostCard
+                                key={post.project_id}
+                                post={post}
+                                onClick={() => navigate(`/post/${post.project_id}`)}
+                            />
                         ))}
                     </div>
                 ) : (

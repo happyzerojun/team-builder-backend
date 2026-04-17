@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './LoginPage.css';
 import { Link, useNavigate } from 'react-router-dom';
-import { authService } from '../../services/authService'; 
+import { authService } from '../../services/authService';
 
 const LoginPage = ({ onLoginSuccess }) => {
     const navigate = useNavigate();
@@ -9,9 +9,7 @@ const LoginPage = ({ onLoginSuccess }) => {
     const [password, setPassword] = useState('');
 
     useEffect(() => {
-
         const urlParams = new URLSearchParams(window.location.search);
-
         const code = urlParams.get("code");
         const state = urlParams.get("state");
 
@@ -24,48 +22,22 @@ const LoginPage = ({ onLoginSuccess }) => {
         if (state === "kakao") {
             getKakaoToken(code);
         }
-
     }, []);
 
     const handleLogin = async () => {
         try {
-
-            const data = await authService.login({ email, password });
-            const { accessToken } = data;
-            
-            localStorage.setItem("token", accessToken);
-            localStorage.setItem("isLoggedIn", "true");
-
-            const response = await fetch("http://localhost:8080/api/auth/me", {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${accessToken}`
-                }
-            });
-
-            if (response.ok) {
-
-                const result = await response.text();
-                console.log("서버가 준 데이터:", result);
-
-                let finalName = result;
-
-                localStorage.setItem("user", JSON.stringify({ 
-                    id: email, 
-                    name: finalName 
-                }));
-            }
+            await authService.login({ email, password });
 
             alert("로그인 성공!");
             if (onLoginSuccess) onLoginSuccess();
             navigate('/');
         } catch (error) {
+            console.error("로그인 실패:", error);
             alert("로그인 실패: 이메일 또는 비밀번호를 확인해주세요.");
         }
     };
 
     const handleKakaoLogin = () => {
-
         const REST_API_KEY = "55637b734996119177991d81b29f76a5";
         const REDIRECT_URI = "http://localhost:5173/login";
 
@@ -74,7 +46,7 @@ const LoginPage = ({ onLoginSuccess }) => {
             `?client_id=${REST_API_KEY}` +
             `&redirect_uri=${REDIRECT_URI}` +
             `&response_type=code` +
-            `&state=kakao`; 
+            `&state=kakao`;
     };
 
     const handleGoogleLogin = () => {
@@ -94,111 +66,136 @@ const LoginPage = ({ onLoginSuccess }) => {
     };
 
     const getGoogleToken = async (code) => {
+        try {
+            const CLIENT_ID = "825299339140-qss5ti06pv76gc0bb2s8rkqbv8o00g4i.apps.googleusercontent.com";
+            const CLIENT_SECRET = "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";
+            const REDIRECT_URI = "http://localhost:5173/login";
 
-        const CLIENT_ID = "825299339140-qss5ti06pv76gc0bb2s8rkqbv8o00g4i.apps.googleusercontent.com";
-        const CLIENT_SECRET = "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";
-        const REDIRECT_URI = "http://localhost:5173/login";
+            const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: new URLSearchParams({
+                    code: code,
+                    client_id: CLIENT_ID,
+                    client_secret: CLIENT_SECRET,
+                    redirect_uri: REDIRECT_URI,
+                    grant_type: "authorization_code"
+                })
+            });
 
-        const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: new URLSearchParams({
-                code: code,
-                client_id: CLIENT_ID,
-                client_secret: CLIENT_SECRET,
-                redirect_uri: REDIRECT_URI,
-                grant_type: "authorization_code"
-            })
-        });
+            const tokenData = await tokenRes.json();
+            const accessToken = tokenData.access_token;
 
-        const tokenData = await tokenRes.json();
+            if (!accessToken) {
+                throw new Error("구글 access token 없음");
+            }
 
-        const accessToken = tokenData.access_token;
-
-        getGoogleUser(accessToken);
+            await getGoogleUser(accessToken);
+        } catch (error) {
+            console.error("구글 토큰 요청 실패:", error);
+            alert("구글 로그인에 실패했습니다.");
+        }
     };
 
     const getGoogleUser = async (accessToken) => {
-
-        const userRes = await fetch(
-            "https://www.googleapis.com/oauth2/v2/userinfo",
-            {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
+        try {
+            const userRes = await fetch(
+                "https://www.googleapis.com/oauth2/v2/userinfo",
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    }
                 }
-            }
-        );
+            );
 
-        const user = await userRes.json();
+            const user = await userRes.json();
 
-        const socialUser = {
-            id: user.email,
-            name: user.name,
-            picture: user.picture,
-            isSocial: true
-        };
+            const socialUser = {
+                user_id: user.id || null,
+                email: user.email || "",
+                name: user.name || "",
+                picture: user.picture || "",
+                isSocial: true
+            };
 
-        localStorage.setItem("user", JSON.stringify(socialUser));
-        localStorage.setItem("isLoggedIn", "true");
+            localStorage.setItem("user", JSON.stringify(socialUser));
+            localStorage.setItem("isLoggedIn", "true");
 
-        if (onLoginSuccess) onLoginSuccess();
-        navigate("/", { replace: true });
+            if (onLoginSuccess) onLoginSuccess();
+            navigate("/", { replace: true });
+        } catch (error) {
+            console.error("구글 사용자 정보 조회 실패:", error);
+            alert("구글 로그인에 실패했습니다.");
+        }
     };
 
     const getKakaoToken = async (code) => {
+        try {
+            const REST_API_KEY = "20a0b697b5c6300c4a61d4a14313c77e";
+            const REDIRECT_URI = "http://localhost:5173/login";
 
-        const REST_API_KEY = "20a0b697b5c6300c4a61d4a14313c77e";
-        const REDIRECT_URI = "http://localhost:5173/login";
+            const res = await fetch("https://kauth.kakao.com/oauth/token", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: new URLSearchParams({
+                    grant_type: "authorization_code",
+                    client_id: REST_API_KEY,
+                    redirect_uri: REDIRECT_URI,
+                    code: code
+                })
+            });
 
-        const res = await fetch("https://kauth.kakao.com/oauth/token", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: new URLSearchParams({
-                grant_type: "authorization_code",
-                client_id: REST_API_KEY,
-                redirect_uri: REDIRECT_URI,
-                code: code
-            })
-        });
+            const data = await res.json();
+            const accessToken = data.access_token;
 
-        const data = await res.json();
+            if (!accessToken) {
+                throw new Error("카카오 access token 없음");
+            }
 
-        const accessToken = data.access_token;
-
-        getKakaoUser(accessToken);
+            await getKakaoUser(accessToken);
+        } catch (error) {
+            console.error("카카오 토큰 요청 실패:", error);
+            alert("카카오 로그인에 실패했습니다.");
+        }
     };
 
     const getKakaoUser = async (accessToken) => {
+        try {
+            const res = await fetch("https://kapi.kakao.com/v2/user/me", {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            });
 
-        const res = await fetch("https://kapi.kakao.com/v2/user/me", {
-            headers: {
-                Authorization: `Bearer ${accessToken}`
-            }
-        });
+            const data = await res.json();
 
-        const data = await res.json();
+            const user = {
+                user_id: data.id || null,
+                email: data.kakao_account?.email || "",
+                name: data.kakao_account?.profile?.nickname || "",
+                isSocial: true
+            };
 
-        const user = {
-            id: data.id,
-            name: data.kakao_account.profile.nickname,
-            isSocial: true
-        };
+            localStorage.setItem("user", JSON.stringify(user));
+            localStorage.setItem("isLoggedIn", "true");
 
-        localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("isLoggedIn", "true");
-
-        if (onLoginSuccess) onLoginSuccess();
-        navigate("/", { replace: true });
+            if (onLoginSuccess) onLoginSuccess();
+            navigate("/", { replace: true });
+        } catch (error) {
+            console.error("카카오 사용자 정보 조회 실패:", error);
+            alert("카카오 로그인에 실패했습니다.");
+        }
     };
 
     return (
         <div className="login-container">
             <div className="login-card">
                 <h2 className="login-title">프로젝트 팀원 매칭 플랫폼</h2>
+
                 <div className="input-group">
                     <input
                         type="email"
@@ -215,13 +212,20 @@ const LoginPage = ({ onLoginSuccess }) => {
                         onChange={(e) => setPassword(e.target.value)}
                     />
                 </div>
+
                 <button className="login-button" onClick={handleLogin}>
                     로그인
                 </button>
+
                 <div className="social-login-group">
-                    <button className="kakao-btn" onClick={handleKakaoLogin}>카카오 로그인</button>
-                    <button className="google-btn" onClick={handleGoogleLogin}>구글 로그인</button>
+                    <button className="kakao-btn" onClick={handleKakaoLogin}>
+                        카카오 로그인
+                    </button>
+                    <button className="google-btn" onClick={handleGoogleLogin}>
+                        구글 로그인
+                    </button>
                 </div>
+
                 <div className="login-footer">
                     계정이 없으신가요?
                     <Link className="a" to="/Signup">회원가입</Link>

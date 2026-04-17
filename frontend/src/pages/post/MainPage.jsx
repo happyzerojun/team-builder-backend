@@ -151,6 +151,15 @@ function MainPage({ isLoggedIn, onLogout }) {
                     <p className="hero-subtitle">개발자, 디자이너, 기획자들이 모여 아이디어를 현실로 만드는 공간</p>
                 </section>
 
+                <div className="ai-btn-wrapper">
+                    <button
+                        className="btn-ai"
+                        onClick={() => navigate("/ai")}
+                    >
+                                🤖 AI 추천 받기
+                    </button>
+                </div>
+
                 <SearchBar
                     searchText={searchText}
                     onSearchChange={(value) => { setSearchText(value); setCurrentPage(1); }}

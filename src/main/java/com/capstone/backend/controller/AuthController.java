@@ -1,5 +1,6 @@
 package com.capstone.backend.controller;
 
+import com.capstone.backend.dto.AuthMeResponse;
 import com.capstone.backend.dto.LoginRequest;
 import com.capstone.backend.dto.SignupRequest;
 import com.capstone.backend.dto.TokenResponse;
@@ -37,8 +38,8 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public String me(Authentication auth) {
-        return auth.getName();
+    public ResponseEntity<AuthMeResponse> me(Authentication auth) {
+        return ResponseEntity.ok(authService.getCurrentUser(auth.getName()));
     }
 
     @GetMapping("/oauth2/url/{provider}")

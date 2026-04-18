@@ -1,5 +1,6 @@
 package com.capstone.backend.security;
 
+import com.capstone.backend.global.jwt.ApiAuthenticationFilter;
 import com.capstone.backend.global.jwt.JwtFilter;
 import com.capstone.backend.security.oauth.CustomOAuth2UserService;
 import com.capstone.backend.security.oauth.OAuth2AuthenticationSuccessHandler;
@@ -7,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -20,6 +22,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final ApiAuthenticationFilter apiAuthenticationFilter;
     private final JwtFilter jwtFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
@@ -27,6 +30,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
+                .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
 
                 // 🔥 기본 로그인 완전 차단
@@ -42,6 +46,7 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/signup", "/api/auth/oauth2/**", "/oauth2/**", "/login/oauth2/**").permitAll()
 
                         // 🔥 영준님이 추가: 기술 스택 API 누구나 조회 가능하게 열어두기!
@@ -64,6 +69,7 @@ public class SecurityConfig {
 
                 .addFilterBefore(jwtFilter,
                         org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(apiAuthenticationFilter, JwtFilter.class)
 
                 .build();
     }

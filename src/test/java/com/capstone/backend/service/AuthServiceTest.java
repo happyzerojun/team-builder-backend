@@ -1,5 +1,6 @@
 package com.capstone.backend.service;
 
+import com.capstone.backend.dto.AuthMeResponse;
 import com.capstone.backend.dto.LoginRequest;
 import com.capstone.backend.dto.SignupRequest;
 import com.capstone.backend.entity.AuthProvider;
@@ -86,5 +87,25 @@ class AuthServiceTest {
 
         assertEquals(AuthProvider.LOCAL, saved.getProvider());
         assertTrue(passwordEncoder.matches("pw1234", saved.getPassword()));
+    }
+
+    @Test
+    void getCurrentUserReturnsFrontendCompatibleJsonFields() {
+        AuthService authService = new AuthService(userRepository, jwtUtil, passwordEncoder);
+        User user = User.builder()
+                .id(1L)
+                .email("user@example.com")
+                .name("User")
+                .password(passwordEncoder.encode("pw1234"))
+                .provider(AuthProvider.LOCAL)
+                .build();
+
+        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+
+        AuthMeResponse response = authService.getCurrentUser("user@example.com");
+
+        assertEquals(1L, response.userId());
+        assertEquals("user@example.com", response.email());
+        assertEquals("User", response.name());
     }
 }

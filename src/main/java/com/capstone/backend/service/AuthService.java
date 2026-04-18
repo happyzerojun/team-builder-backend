@@ -1,5 +1,6 @@
 package com.capstone.backend.service;
 
+import com.capstone.backend.dto.AuthMeResponse;
 import com.capstone.backend.dto.LoginRequest;
 import com.capstone.backend.dto.SignupRequest;
 import com.capstone.backend.entity.AuthProvider;
@@ -50,5 +51,12 @@ public class AuthService {
         }
 
         return jwtUtil.createToken(user.getEmail()); // ⭐ 토큰 반환
+    }
+
+    public AuthMeResponse getCurrentUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException("사용자 정보를 찾을 수 없습니다."));
+
+        return new AuthMeResponse(user.getId(), user.getEmail(), user.getName());
     }
 }

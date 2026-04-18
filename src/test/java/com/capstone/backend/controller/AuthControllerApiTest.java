@@ -1,5 +1,6 @@
 package com.capstone.backend.controller;
 
+import com.capstone.backend.dto.AuthMeResponse;
 import com.capstone.backend.dto.SignupRequest;
 import com.capstone.backend.entity.User;
 import com.capstone.backend.global.exception.GlobalExceptionHandler;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -44,6 +46,9 @@ class AuthControllerApiTest {
 
     @MockBean
     private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+
+    @MockBean
+    private JpaMetamodelMappingContext jpaMetamodelMappingContext;
 
     @Test
     void signupReturnsCreated() throws Exception {
@@ -90,11 +95,15 @@ class AuthControllerApiTest {
     @Test
     void meReturnsAuthenticatedEmailWithValidToken() throws Exception {
         String token = jwtUtil.createToken("user@example.com");
+        when(authService.getCurrentUser("user@example.com"))
+                .thenReturn(new AuthMeResponse(1L, "user@example.com", "User"));
 
         mockMvc.perform(get("/api/auth/me")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(content().string("user@example.com"));
+                .andExpect(jsonPath("$.user_id").value(1L))
+                .andExpect(jsonPath("$.email").value("user@example.com"))
+                .andExpect(jsonPath("$.name").value("User"));
     }
 
     @Test

@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "*") // 프론트엔드 접속 허락
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor

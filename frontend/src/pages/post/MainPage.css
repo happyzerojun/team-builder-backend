@@ -46,6 +46,26 @@
     color: var(--color-text-muted);
 }
 
+.ai-btn-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin: 10px 0;
+}
+
+.btn-ai {
+    padding: 10px 20px;
+    border-radius: 8px;
+    background: #5a52d6;
+    color: white;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+    .btn-ai:hover {
+        background: #4a43c4;
+    }
+
 .search-section {
     display: flex;
     gap: 12px;

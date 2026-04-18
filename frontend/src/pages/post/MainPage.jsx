@@ -146,6 +146,15 @@ function MainPage({ isLoggedIn, onLogout }) {
                     </p>
                 </section>
 
+                <div className="ai-btn-wrapper">
+                    <button
+                        className="btn-ai"
+                        onClick={() => navigate("/ai")}
+                    >
+                                🤖 AI 추천 받기
+                    </button>
+                </div>
+
                 <SearchBar
                     searchText={searchText}
                     onSearchChange={(value) => {

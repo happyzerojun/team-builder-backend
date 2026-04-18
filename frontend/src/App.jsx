@@ -11,6 +11,7 @@ import WritePage from "./pages/post/WritePage";
 import DetailPage from "./pages/post/DetailPage";
 import ManagePage from './pages/user/ManagePage';
 import ReviewPage from './pages/user/ReviewPage';
+import AiChatPage from "./pages/post/AiChatPage";
 
 import "./styles/global.css";
 
@@ -66,6 +67,8 @@ function App() {
                     {/*마이페이지에 추가한 2개*/}
                     <Route path="/manage/:id" element={<ManagePage />} />
                     <Route path="/reviews" element={<ReviewPage />} />
+
+                    <Route path="/ai" element={<AiChatPage />} />
 
                     {/* 존재하지 않는 주소 → 메인으로 */}
                     <Route path="*" element={<Navigate to="/" />} />

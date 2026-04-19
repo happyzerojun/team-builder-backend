@@ -27,7 +27,7 @@ services:
   # 3. 프론트엔드 (React / Vite)
   frontend:
     build:
-      context: C:\projects\team-builder\team-builder\frontend
+      context: frontend
     ports:
       - "5173:5173"
     depends_on:

@@ -1,5 +1,7 @@
 ﻿import api from "./api";
 
+const API_URL = "http://localhost:8080/api/projects";
+const APPLICATION_API = "http://localhost:8080/api/application";
 const API_URL = "/api/post";
 const APPLICATION_API = "/api/application";
 

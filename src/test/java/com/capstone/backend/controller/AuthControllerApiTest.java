@@ -82,9 +82,10 @@ class AuthControllerApiTest {
     }
 
     @Test
-    void meReturnsUnauthorizedWithoutToken() throws Exception {
+    void meReturnsOkWithoutTokenWhenSecurityIsOpenForFrontendDevelopment() throws Exception {
         mockMvc.perform(get("/api/auth/me"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isOk())
+                .andExpect(content().string(""));
     }
 
     @Test

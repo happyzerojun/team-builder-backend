@@ -19,7 +19,7 @@ java {
 // ==============================
 springBoot {
 	// 실제 실행할 main class 패키지/클래스명으로 변경
-	mainClass = 'com.matching.team_builder.TeamBuilderApplication'
+	mainClass = 'com.capstone.backend.BackendApplication'
 }
 
 configurations {

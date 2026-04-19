@@ -1,6 +1,6 @@
 ﻿import api from "./api";
 
-const API_URL = "/api/post";
+const API_URL = "/api/project";
 const APPLICATION_API = "/api/application";
 
 export const projectService = {
@@ -83,11 +83,6 @@ export const projectService = {
     getProjectMembers: async (projectId) => {
         const res = await api.get(`${API_URL}/${projectId}/members`);
         return Array.isArray(res.data) ? res.data : [];
-    },
-
-    removeProjectMember: async (projectId, memberId) => {
-        const res = await api.delete(`${API_URL}/${projectId}/members/${memberId}`);
-        return res.data;
     },
 
     updateProjectStatus: async (projectId, status) => {

@@ -24,17 +24,36 @@ const MyPage = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+        const token = localStorage.getItem("token");
+
+        if (!token || !savedUser || (!savedUser.email && !savedUser.name)) {
+            navigate("/login");
+            return;
+        }
+
+        // user_id가 없으면 마이페이지 기본 정보만 보여주고 API 호출은 막음
+        if (!savedUser.user_id) {
+            setUser({
+                name: savedUser.name || "",
+                email: savedUser.email || "",
+                organization: savedUser.organization || "",
+                introduction: savedUser.introduction || "",
+                tags: savedUser.tags || [],
+                job_role: savedUser.job_role || "",
+                profileImg: savedUser.profileImg || null
+            });
+            setMyLead([]);
+            setMyPart([]);
+            setAppliedPosts([]);
+            setIsLoading(false);
+            return;
+        }
+
         const fetchData = async () => {
             setIsLoading(true);
 
             try {
-                const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
-                const token = localStorage.getItem("token");
-                if (!token || !savedUser || (!savedUser.email && !savedUser.name)) {
-                    navigate("/login");
-                    return;
-                }
-
                 setUser({
                     name: savedUser.name || "",
                     email: savedUser.email || "",
@@ -49,18 +68,19 @@ const MyPage = () => {
                 const projects = Array.isArray(data) ? data : [];
                 setAllProjects(projects);
 
-                // 1. 내가 만든 프로젝트
                 const myCreatedProjects = projects.filter(
                     (project) => String(project.leader_id) === String(savedUser.user_id)
                 );
                 setMyLead(myCreatedProjects);
 
-                // 2. 내 지원 내역 조회
                 const myApplications = await applicationService.getMyApplications();
 
-                // 3. 지원한 프로젝트
                 const applied = myApplications
-                    .filter((app) => app.status === "pending" || app.status === "accepted" || app.status === "rejected")
+                    .filter((app) =>
+                        app.status === "pending" ||
+                        app.status === "accepted" ||
+                        app.status === "rejected"
+                    )
                     .map((app) => {
                         if (app.project) {
                             return {
@@ -86,8 +106,6 @@ const MyPage = () => {
 
                 setAppliedPosts(applied);
 
-                // 4. 참여 중인 프로젝트
-                // accepted 된 지원을 참여 프로젝트로 간주
                 const participating = myApplications
                     .filter((app) => app.status === "accepted")
                     .map((app) => {

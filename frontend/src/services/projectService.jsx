@@ -1,6 +1,6 @@
 ﻿import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/project";
+const API_URL = "http://localhost:8080/api/projects";
 const APPLICATION_API = "http://localhost:8080/api/application";
 
 export const projectService = {

@@ -1,11 +1,11 @@
-﻿import axios from "axios";
+﻿import api from "./api";
 
-const API_URL = "http://localhost:8080/api/review";
+const API_URL = "/api/review";
 
 export const reviewService = {
     getProjectMyReviews: async (projectId) => {
         const user = JSON.parse(localStorage.getItem("user") || "{}");
-        const res = await axios.get(`${API_URL}/project/${projectId}/reviewer/${user.user_id}`);
+        const res = await api.get(`${API_URL}/project/${projectId}/reviewer/${user.user_id}`);
         return Array.isArray(res.data) ? res.data : [];
     },
 
@@ -20,13 +20,13 @@ export const reviewService = {
             comment: r.comment
         }));
 
-        const res = await axios.post(`${API_URL}/bulk`, payload);
+        const res = await api.post(`${API_URL}/bulk`, payload);
         return res.data;
     },
 
     getMyReceivedReviews: async () => {
         const user = JSON.parse(localStorage.getItem("user") || "{}");
-        const res = await axios.get(`${API_URL}/received/${user.user_id}`);
+        const res = await api.get(`${API_URL}/received/${user.user_id}`);
         return Array.isArray(res.data) ? res.data : [];
     }
 };

@@ -29,8 +29,8 @@ const MyPage = () => {
 
             try {
                 const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
-
-                if (!savedUser?.user_id) {
+                const token = localStorage.getItem("token");
+                if (!token || !savedUser || (!savedUser.email && !savedUser.name)) {
                     navigate("/login");
                     return;
                 }

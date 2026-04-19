@@ -4,7 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/project")
+@RequestMapping("/api/projects")
 public class ProjectController {
 
     // 4. 프로젝트 확정 팀원 목록 조회 (GET /api/project/{projectId}/members)

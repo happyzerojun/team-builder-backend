@@ -12,8 +12,8 @@ const ReviewPage = () => {
     const loadMyReviews = async () => {
       try {
         setLoading(true);
-        const data = await reviewService.getMyReviews();
-        setReviews(data);
+        const myReviews = await reviewService.getMyReceivedReviews();
+        setReviews(myReviews);
       } catch (error) {
         console.error("리뷰 로드 실패:", error);
       } finally {

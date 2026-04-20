@@ -1,6 +1,6 @@
 ﻿import api from "./api";
 
-const API_URL = "/api/project";
+const API_URL = "/api/projects";
 const APPLICATION_API = "/api/application";
 
 export const projectService = {

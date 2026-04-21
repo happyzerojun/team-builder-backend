@@ -26,6 +26,7 @@ export const reviewService = {
 
     getMyReceivedReviews: async () => {
         const user = JSON.parse(localStorage.getItem("user") || "{}");
+        if (!user.user_id)  return [];
         const res = await api.get(`${API_URL}/received/${user.user_id}`);
         return Array.isArray(res.data) ? res.data : [];
     }

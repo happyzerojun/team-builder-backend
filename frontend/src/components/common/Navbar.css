@@ -48,9 +48,14 @@
   color: #38bdf8;
 }
 
+.user-greet:hover .user-name {
+  color: #38bdf8;
+}
+
 .user-name {
   font-weight: 600;
   color: #f8fafc;
+  transition: color 0.2s;
 }
 
 /* 공통 버튼 스타일 */

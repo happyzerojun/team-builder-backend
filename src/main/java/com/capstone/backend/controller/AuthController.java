@@ -1,5 +1,8 @@
 package com.capstone.backend.controller;
 
+import com.capstone.backend.entity.User;
+import com.capstone.backend.service.UserService;
+import com.capstone.backend.dto.UserResponseDto;
 import com.capstone.backend.dto.LoginRequest;
 import com.capstone.backend.dto.SignupRequest;
 import com.capstone.backend.dto.TokenResponse;
@@ -17,7 +20,8 @@ import org.springframework.security.core.Authentication;
 public class AuthController {
 
     private final AuthService authService;
-
+    private final UserService userService;
+    
     // 회원가입
     @PostMapping("/signup")
     public ResponseEntity<String> signup(@Valid @RequestBody SignupRequest request) {
@@ -37,11 +41,14 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public String me(Authentication auth) {
-        if (auth == null) {
-            return "";
-        }
-        return auth.getName();
+    public ResponseEntity<UserResponseDto> me(Authentication auth) {
+        User user = userService.findByEmail(auth.getName());
+
+        return ResponseEntity.ok(new UserResponseDto(
+            user.getId(),
+            user.getEmail(),
+            user.getName()
+        ));
     }
 
     @GetMapping("/oauth2/url/{provider}")

@@ -1,53 +1,59 @@
 package com.capstone.backend.controller;
 
+import com.capstone.backend.dto.ProjectResponseDto;
+import com.capstone.backend.service.ProjectService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/projects")
+@RequiredArgsConstructor
 public class ProjectController {
 
-    // 4. 프로젝트 확정 팀원 목록 조회 (GET /api/project/{projectId}/members)
-    @GetMapping("/{projectId}/members")
-    public ResponseEntity<String> getProjectMembers(@PathVariable Long projectId) {
-        // TODO: projectId에 해당하는 프로젝트의 '승인된(ACCEPTED)' 팀원 목록 조회 로직 추가
-        return ResponseEntity.ok("프로젝트 " + projectId + "의 확정 팀원 목록 조회 성공 (API 연결 테스트)");
-    }
+    private final ProjectService projectService;
 
-    // 5. 프로젝트 모집 상태 변경 (PATCH /api/project/{projectId}/status)
-    @PatchMapping("/{projectId}/status")
-    public ResponseEntity<String> updateProjectStatus(@PathVariable Long projectId) {
-        // TODO: projectId에 해당하는 프로젝트의 모집 상태(모집중, 완료 등) 변경 로직 추가
-        return ResponseEntity.ok("프로젝트 " + projectId + " 모집 상태 변경 완료 (API 연결 테스트)");
-    }
-
-    // 1. 전체 프로젝트 조회 (GET /api/project)
+    // 1. 전체 프로젝트 조회 (GET /api/projects)
     @GetMapping("")
-    public ResponseEntity<String> getAllProjects() {
-        return ResponseEntity.ok("전체 프로젝트 조회 성공 (API 연결 테스트)");
+    public ResponseEntity<List<ProjectResponseDto>> getAllProjects() {
+        return ResponseEntity.ok(projectService.getAllProjects());
     }
 
-    // 2. 프로젝트 상세 조회 (GET /api/project/{projectId})
+    // 2. 프로젝트 상세 조회 (GET /api/projects/{projectId})
     @GetMapping("/{projectId}")
-    public ResponseEntity<String> getProjectById(@PathVariable Long projectId) {
-        return ResponseEntity.ok("프로젝트 " + projectId + " 상세 조회 성공 (API 연결 테스트)");
+    public ResponseEntity<ProjectResponseDto> getProjectById(@PathVariable Long projectId) {
+        return ResponseEntity.ok(projectService.getProjectById(projectId));
     }
 
-    // 3. 프로젝트 생성 (POST /api/project)
+    // 3. 프로젝트 생성 (POST /api/projects)
     @PostMapping("")
     public ResponseEntity<String> createProject() {
-        return ResponseEntity.ok("프로젝트 생성 성공 (API 연결 테스트)");
+        return ResponseEntity.ok("프로젝트 생성 성공 (임시)");
     }
 
-    // 4. 프로젝트 수정 (PUT /api/project/{projectId})
+    // 4. 프로젝트 수정 (PUT /api/projects/{projectId})
     @PutMapping("/{projectId}")
     public ResponseEntity<String> updateProject(@PathVariable Long projectId) {
-        return ResponseEntity.ok("프로젝트 " + projectId + " 수정 성공 (API 연결 테스트)");
+        return ResponseEntity.ok("프로젝트 " + projectId + " 수정 성공 (임시)");
     }
 
-    // 5. 프로젝트 삭제 (DELETE /api/project/{projectId})
+    // 5. 프로젝트 삭제 (DELETE /api/projects/{projectId})
     @DeleteMapping("/{projectId}")
     public ResponseEntity<String> deleteProject(@PathVariable Long projectId) {
-        return ResponseEntity.ok("프로젝트 " + projectId + " 삭제 성공 (API 연결 테스트)");
+        return ResponseEntity.ok("프로젝트 " + projectId + " 삭제 성공 (임시)");
+    }
+
+    // 6. 프로젝트 팀원 목록
+    @GetMapping("/{projectId}/members")
+    public ResponseEntity<String> getProjectMembers(@PathVariable Long projectId) {
+        return ResponseEntity.ok("프로젝트 " + projectId + " 팀원 조회 (임시)");
+    }
+
+    // 7. 상태 변경
+    @PatchMapping("/{projectId}/status")
+    public ResponseEntity<String> updateProjectStatus(@PathVariable Long projectId) {
+        return ResponseEntity.ok("프로젝트 " + projectId + " 상태 변경 (임시)");
     }
 }

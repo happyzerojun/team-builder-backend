@@ -15,6 +15,8 @@ const LoginPage = ({ onLoginSuccess }) => {
 
         if (!code) return;
 
+        window.history.replaceState({}, document.title, "/login");
+
         if (state === "google") {
             getGoogleToken(code);
         }

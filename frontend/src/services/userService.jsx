@@ -4,7 +4,7 @@ const API_BASE_URL = "/api/users";
 
 export const getUserProfile = async () => {
     try {
-        const res = await api.get(`${API_BASE_URL}/me`);
+        const res = await api.get("/api/auth/me");
         return res.data;
     } catch {
         return null;
@@ -29,10 +29,11 @@ export const getUserById = async (userId) => {
 export const updateUserProfile = async (newInfo) => {
     const res = await api.put(`${API_BASE_URL}/me/profile`, newInfo);
 
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+
     const updatedUser = {
-        user_id: res.data.user_id,
-        email: res.data.email,
-        name: res.data.name
+        ...currentUser,
+        ...newInfo
     };
 
     localStorage.setItem("user", JSON.stringify(updatedUser));

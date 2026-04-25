@@ -21,11 +21,10 @@ export const authService = {
                 const userRes = await api.get(`${API_URL}/me`);
 
                 const user = {
-                    user_id: null,
-                    email: credentials.email,
-                    name: userRes.data
+                    user_id: userRes.data.user_id,
+                    email: userRes.data.email,
+                    name: userRes.data.name
                 };
-
                 localStorage.setItem("user", JSON.stringify(user));
             } catch {
                 localStorage.setItem("user", JSON.stringify({

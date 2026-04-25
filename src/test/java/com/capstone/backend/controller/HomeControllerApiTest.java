@@ -5,6 +5,7 @@ import com.capstone.backend.global.jwt.JwtFilter;
 import com.capstone.backend.global.jwt.JwtUtil;
 import com.capstone.backend.security.SecurityConfig;
 import com.capstone.backend.security.oauth.CustomOAuth2UserService;
+import com.capstone.backend.security.oauth.OAuth2AuthenticationFailureHandler;
 import com.capstone.backend.security.oauth.OAuth2AuthenticationSuccessHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(HomeController.class)
+@WebMvcTest(
+        value = HomeController.class,
+        properties = "jwt.secret=4f9a2c7e1b6d8a0c3e5f7b9d2a4c6e8f"
+)
 @Import({SecurityConfig.class, JwtFilter.class, JwtUtil.class, GlobalExceptionHandler.class})
 class HomeControllerApiTest {
 
@@ -32,6 +36,9 @@ class HomeControllerApiTest {
 
     @MockBean
     private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+
+    @MockBean
+    private OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 
     @Test
     void rootReturnsOkWithoutAuthentication() throws Exception {

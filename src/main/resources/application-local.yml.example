@@ -14,7 +14,7 @@ spring:
             client-secret: your-naver-client-secret
 
 jwt:
-  secret: replace-with-a-long-random-secret
+  secret: replace-with-a-random-32-byte-secret-like-4f9a2c7e1b6d8a0c3e5f7b9d2a4c6e8f
 
 app:
   oauth2:

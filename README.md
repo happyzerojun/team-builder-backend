@@ -152,7 +152,15 @@ Success Response
 
 ### `GET /api/auth/me`
 
-현재 인증된 사용자의 이메일을 반환합니다. 인증 정보가 없으면 빈 문자열을 반환합니다.
+현재 인증된 사용자의 이메일을 반환합니다. 인증 정보가 없으면 빈 문자열을 담은 JSON을 반환합니다.
+
+Response
+
+```json
+{
+  "email": "user@example.com"
+}
+```
 
 ### `GET /api/auth/oauth2/url/{provider}`
 

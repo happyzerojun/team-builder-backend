@@ -1,6 +1,7 @@
 package com.capstone.backend.service;
 
 import com.capstone.backend.dto.LoginRequest;
+import com.capstone.backend.dto.MeResponse;
 import com.capstone.backend.dto.SignupRequest;
 import com.capstone.backend.entity.AuthProvider;
 import com.capstone.backend.entity.User;
@@ -52,5 +53,15 @@ public class AuthService {
         }
 
         return jwtUtil.createToken(user.getEmail()); // ⭐ 토큰 반환
+    }
+
+    public MeResponse getCurrentUserProfile(String email) {
+        if (email == null || email.isBlank()) {
+            return MeResponse.empty();
+        }
+
+        return userRepository.findByEmail(email)
+                .map(user -> new MeResponse(user.getId(), user.getEmail(), user.getName()))
+                .orElseGet(() -> new MeResponse(0L, email, ""));
     }
 }

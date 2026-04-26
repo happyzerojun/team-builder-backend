@@ -147,17 +147,23 @@ class AuthControllerApiTest {
     void meReturnsOkWithoutTokenWhenSecurityIsOpenForFrontendDevelopment() throws Exception {
         mockMvc.perform(get("/api/auth/me"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(""));
+                .andExpect(jsonPath("$.user_id").value(0))
+                .andExpect(jsonPath("$.email").value(""))
+                .andExpect(jsonPath("$.name").value(""));
     }
 
     @Test
     void meReturnsAuthenticatedEmailWithValidToken() throws Exception {
         String token = jwtUtil.createToken("user@example.com");
+        when(authService.getCurrentUserProfile("user@example.com"))
+                .thenReturn(new com.capstone.backend.dto.MeResponse(1L, "user@example.com", "User"));
 
         mockMvc.perform(get("/api/auth/me")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(content().string("user@example.com"));
+                .andExpect(jsonPath("$.user_id").value(1))
+                .andExpect(jsonPath("$.email").value("user@example.com"))
+                .andExpect(jsonPath("$.name").value("User"));
     }
 
     @Test

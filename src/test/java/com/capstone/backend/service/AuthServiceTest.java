@@ -1,6 +1,7 @@
 package com.capstone.backend.service;
 
 import com.capstone.backend.dto.LoginRequest;
+import com.capstone.backend.dto.MeResponse;
 import com.capstone.backend.dto.SignupRequest;
 import com.capstone.backend.entity.AuthProvider;
 import com.capstone.backend.entity.User;
@@ -141,5 +142,34 @@ class AuthServiceTest {
 
         ConflictException exception = assertThrows(ConflictException.class, () -> authService.signup(request));
         assertEquals(LOGIN_FAILURE_MESSAGE, exception.getMessage());
+    }
+
+    @Test
+    void getCurrentUserProfileReturnsEmptyPayloadWithoutEmail() {
+        AuthService authService = new AuthService(userRepository, jwtUtil, passwordEncoder);
+
+        MeResponse response = authService.getCurrentUserProfile(null);
+
+        assertEquals(0L, response.getUserId());
+        assertEquals("", response.getEmail());
+        assertEquals("", response.getName());
+    }
+
+    @Test
+    void getCurrentUserProfileReturnsUserFieldsForExistingUser() {
+        AuthService authService = new AuthService(userRepository, jwtUtil, passwordEncoder);
+        User user = User.builder()
+                .id(7L)
+                .email("user@example.com")
+                .name("User Name")
+                .build();
+
+        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+
+        MeResponse response = authService.getCurrentUserProfile("user@example.com");
+
+        assertEquals(7L, response.getUserId());
+        assertEquals("user@example.com", response.getEmail());
+        assertEquals("User Name", response.getName());
     }
 }

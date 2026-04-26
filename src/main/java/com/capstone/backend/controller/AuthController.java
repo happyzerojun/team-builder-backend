@@ -1,11 +1,13 @@
 package com.capstone.backend.controller;
 
 import com.capstone.backend.dto.LoginRequest;
+import com.capstone.backend.dto.MeResponse;
 import com.capstone.backend.dto.SignupRequest;
 import com.capstone.backend.dto.TokenResponse;
 import jakarta.validation.Valid;
 import com.capstone.backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,12 +37,16 @@ public class AuthController {
         return ResponseEntity.ok(new TokenResponse(authService.login(request)));
     }
 
-    @GetMapping("/me")
-    public String me(Authentication auth) {
+    @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<MeResponse> me(Authentication auth) {
         if (auth == null) {
-            return "";
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(MeResponse.empty());
         }
-        return auth.getName();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(authService.getCurrentUserProfile(auth.getName()));
     }
 
     @GetMapping("/oauth2/url/{provider}")

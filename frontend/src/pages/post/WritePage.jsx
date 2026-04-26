@@ -44,8 +44,9 @@ function WritePage() {
 
     useEffect(() => {
         const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+        const token = localStorage.getItem("token");
 
-        if (!savedUser?.user_id) {
+        if (!token || !savedUser || (!savedUser.email && !savedUser.name)) {
             alert("로그인이 필요한 페이지입니다.");
             navigate("/login");
             return;

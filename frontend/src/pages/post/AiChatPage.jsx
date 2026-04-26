@@ -107,7 +107,7 @@ export default function AiChatPage() {
 
                         {loading && (
                             <div style={styles.loadingText}>
-                                🤖 AI가 채팅을 생각중입니다...
+                                🤖 AI가 열심히 생각중입니다...
                             </div>
                         )}
                     </div>

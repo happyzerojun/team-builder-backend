@@ -1,5 +1,6 @@
 package com.capstone.backend.controller;
 
+import com.capstone.backend.dto.ProjectRequestDto;
 import com.capstone.backend.dto.ProjectResponseDto;
 import com.capstone.backend.service.ProjectService;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +30,8 @@ public class ProjectController {
 
     // 3. 프로젝트 생성 (POST /api/projects)
     @PostMapping("")
-    public ResponseEntity<String> createProject() {
-        return ResponseEntity.ok("프로젝트 생성 성공 (임시)");
+    public ResponseEntity<ProjectResponseDto> createProject(@RequestBody ProjectRequestDto request) {
+        return ResponseEntity.ok(projectService.createProject(request));
     }
 
     // 4. 프로젝트 수정 (PUT /api/projects/{projectId})

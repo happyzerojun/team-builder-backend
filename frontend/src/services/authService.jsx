@@ -21,7 +21,7 @@ export const authService = {
                 const userRes = await api.get(`${API_URL}/me`);
 
                 const user = {
-                    user_id: userRes.data.user_id,
+                    user_id: userRes.data.userId,
                     email: userRes.data.email,
                     name: userRes.data.name
                 };

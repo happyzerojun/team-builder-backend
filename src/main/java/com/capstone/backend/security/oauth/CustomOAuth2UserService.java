@@ -36,9 +36,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     }
 
     private User updateExistingUser(User user, AuthProvider provider, OAuth2UserInfo userInfo) {
-        user.setName(userInfo.getName());
-        user.setProvider(provider);
-        user.setProviderId(userInfo.getProviderId());
+        // ✅ 객체지향적인 코드로 교체!
+        user.updateOAuthInfo(userInfo.getName(), provider, userInfo.getProviderId());
         return userRepository.save(user);
     }
 

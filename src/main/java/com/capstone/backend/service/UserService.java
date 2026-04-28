@@ -1,6 +1,6 @@
 package com.capstone.backend.service;
 
-import com.capstone.backend.dto.UserProfileUpdateRequestDto;
+import com.capstone.backend.dto.UserProfileResponseDto;
 import com.capstone.backend.entity.TechStack;
 import com.capstone.backend.entity.User;
 import com.capstone.backend.entity.UserTechStack;
@@ -18,51 +18,64 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final TechStackRepository techStackRepository; // 기술 스택 마스터 테이블 리포지토리
+    private final TechStackRepository techStackRepository;
 
-    /**
-     * 이메일로 유저 정보를 조회하는 메서드 (조회 전용)
-     */
+    // --- 프로필 조회 (DTO 변환) ---
     @Transactional(readOnly = true)
-    public User getUserByEmail(String email) {
-        // userRepository에 findByEmail이 정의되어 있어야 합니다.
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("해당 이메일을 가진 유저가 없습니다: " + email));
+    public UserProfileResponseDto getUserProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
+
+        List<String> techStackNames = user.getUserTechStacks().stream()
+                .map(userTechStack -> userTechStack.getTechStack().getName())
+                .collect(Collectors.toList());
+
+        return UserProfileResponseDto.builder()
+                .email(user.getEmail())
+                .name(user.getName())
+                .nickname(user.getNickname())
+                .jobRole(user.getJobRole())
+                .organization(user.getOrganization())
+                .introduction(user.getIntroduction())
+                .profileImg(user.getProfileImg())
+                .techStacks(techStackNames)
+                .build();
     }
 
+    // --- 프로필 수정 (새로운 스택 매핑) ---
     @Transactional
-    public User updateUserProfile(String email, UserProfileUpdateRequestDto requestDto) {
+    public User updateUserProfile(String email, UserProfileResponseDto requestDto) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("유저 없음"));
 
-        // 🚨 [핵심 로직] 문자열을 TechStack 엔티티로 변환
-        List<UserTechStack> newStacks = requestDto.getTags().stream()
-                .map(tagName -> {
-                    // 1. DB에 해당 이름의 기술 스택이 있는지 확인
-                    TechStack techStack = techStackRepository.findByName(tagName)
-                            .orElseGet(() -> techStackRepository.save(
-                                    TechStack.builder().name(tagName).build()
-                            )); // 2. 없으면 새로 생성해서 저장
+        // 문자열 리스트를 UserTechStack 엔티티 리스트로 변환
+        List<UserTechStack> newStacks = null;
+        if (requestDto.getTechStacks() != null) {
+            newStacks = requestDto.getTechStacks().stream()
+                    .map(tagName -> {
+                        TechStack techStack = techStackRepository.findByName(tagName)
+                                .orElseGet(() -> techStackRepository.save(
+                                        TechStack.builder().name(tagName).build()
+                                ));
+                        return UserTechStack.builder()
+                                .techStack(techStack)
+                                // user는 User.updateProfile() 내부에서 세팅됨
+                                .build();
+                    })
+                    .collect(Collectors.toList());
+        }
 
-                    // 3. User와 TechStack을 연결하는 중간 엔티티 생성
-                    return UserTechStack.builder()
-                            .user(user)
-                            .techStack(techStack)
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        // 4. 업데이트 메서드 호출
+        // 업데이트 수행
         user.updateProfile(
                 requestDto.getName(),
                 requestDto.getNickname(),
                 requestDto.getJobRole(),
                 requestDto.getOrganization(),
                 requestDto.getIntroduction(),
-                newStacks, // 변환된 엔티티 리스트 전달
+                newStacks,
                 requestDto.getProfileImg()
         );
 
-        return user;
+        return user; // 컨트롤러에서는 저장된 결과를 DTO로 다시 바꿔서 응답하면 완벽합니다!
     }
 }

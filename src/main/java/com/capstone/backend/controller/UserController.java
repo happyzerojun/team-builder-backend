@@ -1,6 +1,6 @@
 package com.capstone.backend.controller;
 
-import com.capstone.backend.dto.UserProfileUpdateRequestDto;
+import com.capstone.backend.dto.UserProfileResponseDto;
 import com.capstone.backend.entity.User;
 import com.capstone.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -19,30 +19,23 @@ public class UserController {
 
     // UserController.java 내부에 추가
 
+
+
     @GetMapping("/me")
-    public ResponseEntity<?> getMyProfile(Authentication authentication) { // 반환 타입을 ?로 유연하게
-        // 1. 보안 체크
-        if (authentication == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
-        }
+    public ResponseEntity<UserProfileResponseDto> getMyProfile(Authentication authentication) {
+        String email = authentication.getName();
 
-        try {
-            String email = authentication.getName();
-            User user = userService.getUserByEmail(email);
+        // 엔티티가 아닌 DTO를 받아서 프론트에 넘깁니다.
+        // 잭슨(Jackson)은 더 이상 무한 루프에 빠지지 않고 이 DTO만 예쁘게 JSON으로 만듭니다.
+        UserProfileResponseDto responseDto = userService.getUserProfile(email);
 
-            // 🚨 만약 무한루프 문제가 계속되면, 여기서 DTO로 변환해서 보내는 게 정석입니다!
-            return ResponseEntity.ok(user);
-        } catch (Exception e) {
-            // 백엔드 로그에 에러 원인을 찍어줍니다.
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 내부 오류: " + e.getMessage());
-        }
+        return ResponseEntity.ok(responseDto);
     }
 
 
 
     @PutMapping("/me/profile")
-    public ResponseEntity<?> updateProfile(Authentication authentication, @RequestBody UserProfileUpdateRequestDto requestDto) {
+    public ResponseEntity<?> updateProfile(Authentication authentication, @RequestBody UserProfileResponseDto requestDto) {
         // 🚨 이 줄을 무조건 1빠따로 추가해 주세요!
         System.out.println("====== [도착] 프론트에서 프로필 수정 요청이 들어왔습니다! ======");
 

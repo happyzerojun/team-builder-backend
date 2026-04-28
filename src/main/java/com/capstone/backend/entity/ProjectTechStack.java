@@ -4,21 +4,23 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "project_tech_stack")
 @Getter
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+@Table(name = "project_tech_stack")
 public class ProjectTechStack {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "project_tech_stack_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id", nullable = false)
+    @JoinColumn(name = "project_id")
     private Project project;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "stack_id", nullable = false)
+    @JoinColumn(name = "tech_stack_id")
     private TechStack techStack;
 }

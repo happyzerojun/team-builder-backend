@@ -1,9 +1,7 @@
 package com.capstone.backend.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -11,9 +9,11 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "review")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+@Table(name = "review")
 @EntityListeners(AuditingEntityListener.class)
 public class Review {
 
@@ -22,23 +22,26 @@ public class Review {
     @Column(name = "review_id")
     private Long id;
 
+    // 별점 (1~5점)
     @Column(nullable = false)
-    private Integer rating; // 별점 (NN)
+    private Integer rating;
 
+    // 한 줄 평가
     @Column(length = 500)
-    private String comment; // 한줄평 (Null 허용)
+    private String comment;
 
-    // 평가자 (누가 썼는가)
+    // 🚨 [핵심 1] 평가를 남기는 사람 (글쓴이)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewer_id", nullable = false)
     private User reviewer;
 
-    // 피평가자 (누구에게 썼는가)
+    // 🚨 [핵심 2] 평가를 받는 사람 (대상자)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewee_id", nullable = false)
     private User reviewee;
 
-    // 어떤 프로젝트에 대한 리뷰인가
+    // 🚨 [핵심 3] 어떤 프로젝트에서 만났는지 연결
+    // (주의: Project 엔티티가 아직 안 만들어졌다면 빨간 줄이 뜰 수 있습니다! Project 클래스 생성 후 매핑해 주세요)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;

@@ -9,12 +9,9 @@ const API_BASE_URL = "/api/users"; // 유저 관련 API 공통 경로
  */
 export const getUserProfile = async () => {
     try {
-        // 백엔드의 UserController @GetMapping("/me")와 통신합니다.
-        const res = await api.get(`${API_BASE_URL}/me`);
-        return res.data; // 서버에서 던져준 User 엔티티(혹은 DTO) 데이터
-    } catch (error) {
-        // 401(인증안됨)이나 500 에러 발생 시 처리
-        console.error("내 프로필 조회 실패:", error);
+        const res = await api.get("/api/auth/me");
+        return res.data;
+    } catch {
         return null;
     }
 };

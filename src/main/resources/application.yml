@@ -77,8 +77,7 @@ spring:
 
 gemini:
   api:
-    # 🚨 진짜 키를 직접 적지 말고 아래처럼 변수 처리하세요!
-    key: ${GEMINI_API_KEY}
+    key: ${GEMINI_API_KEY:dummy-gemini-api-key}
     url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
 jwt:
   secret: ${JWT_SECRET:mysecretkeymysecretkeymysecretkey}
@@ -87,3 +86,4 @@ jwt:
 app:
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth/callback}
+

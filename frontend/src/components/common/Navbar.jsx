@@ -37,7 +37,9 @@ const Navbar = () => {
             <div className="nav-user-area">
               <span className="user-greet" onClick={() => navigate('/MyPage')} style={{ cursor: 'pointer' }}>
                 {/* 닉네임 필드명을 user.id에서 user.name으로 수정 */}
-                <span className="user-name">{user.name || "사용자"}</span>님
+                <span className="user-name">
+                  {user?.name || user?.email || "사용자"}
+                </span>님
               </span>
               <button className="nav-btn logout" onClick={handleLogout}>로그아웃</button>
             </div>

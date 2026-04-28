@@ -1,12 +1,7 @@
 ﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// import PostCard from "@/components/post/PostCard";
 import PostCard from "../../components/post/PostCard";
 
-/**
- * ✅ 날짜 포맷 함수
- * API 응답에 날짜가 없을 경우를 대비해 오늘 날짜를 기본값으로 설정합니다.
- */
 const formatDate = (dateString) => {
     const date = dateString ? new Date(dateString) : new Date();
     return new Intl.DateTimeFormat("ko-KR", {
@@ -18,18 +13,23 @@ const formatDate = (dateString) => {
 
 export default function AiChatPage() {
     const navigate = useNavigate();
-    const [input, setInput] = useState("");
-    const [messages, setMessages] = useState([{ role: "ai", text: "안녕하세요! 어떤 프로젝트를 찾고 있나요?" }]);
-    const [loading, setLoading] = useState(false);
 
-    // 추천 카드용 상태 (백엔드 명세에 맞춰 단일 객체 혹은 배열로 관리)
+    const [input, setInput] = useState("");
+    const [messages, setMessages] = useState([
+        { role: "ai", text: "안녕하세요! 어떤 프로젝트를 찾고 있나요?" }
+    ]);
+    const [loading, setLoading] = useState(false);
     const [recommendPosts, setRecommendPosts] = useState([]);
+
+    // 👉 사용자 이름
+    const username = localStorage.getItem("username") || "사용자";
 
     const handleSend = async () => {
         if (!input.trim()) return;
 
         const userMessage = { role: "user", text: input };
         setMessages((prev) => [...prev, userMessage]);
+
         const currentInput = input;
         setInput("");
 
@@ -37,12 +37,10 @@ export default function AiChatPage() {
         setLoading(true);
 
         try {
-            // 🔗 백엔드 API 호출 (명세서 반영)
             const response = await fetch("http://localhost:8080/api/ai/recommend", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    // "Authorization": "Bearer {JWT토큰}" // 시큐리티 해제 상태이므로 일단 주석 처리
                 },
                 body: JSON.stringify({ prompt: currentInput })
             });
@@ -51,27 +49,27 @@ export default function AiChatPage() {
 
             const data = await response.json();
 
-            // 1. AI 채팅 메시지 추가
+            // 👉 채팅 메시지
             setMessages((prev) => [
                 ...prev,
-                { role: "ai", text: "수연 님을 위한 맞춤 프로젝트를 찾았어요! 아래 카드를 확인해 보세요." }
+                {
+                    role: "ai",
+                    text: `${username}님을 위한 맞춤 프로젝트를 찾았어요!`
+                }
             ]);
 
-            /**
-             * ✅ 2. 데이터 매핑 (가장 중요한 부분!)
-             * 백엔드 명세서의 필드명을 PostCard 컴포넌트가 사용하는 필드명으로 변환합니다.
-             */
+            // 👉 카드 데이터
             const mappedProject = {
-                id: Date.now(), // 상세 페이지 이동을 위한 임시 ID
+                id: Date.now(),
                 title: data.title,
                 description: data.description,
-                tags: data.techStack ? data.techStack.split(", ") : [], // "Spring Boot, PostgreSQL" -> ["Spring Boot", "PostgreSQL"]
+                tags: data.techStack ? data.techStack.split(", ") : [],
                 level: data.experienceLevel,
-                createdAt: formatDate(null), // 명세서에 날짜가 없으므로 생성 시점 날짜 적용
+                createdAt: formatDate(null),
                 author: "AI 추천"
             };
 
-            setRecommendPosts([mappedProject]); // 카드가 배열 기반이므로 배열에 담아줌
+            setRecommendPosts([mappedProject]);
 
         } catch (error) {
             console.error("연동 실패:", error);
@@ -87,46 +85,145 @@ export default function AiChatPage() {
     return (
         <div style={styles.container}>
             <h1 style={styles.title}>🤖 AI 프로젝트 추천</h1>
-            <div style={styles.chatBox}>
-                {messages.map((msg, i) => (
-                    <div key={i} style={{ ...styles.message, alignSelf: msg.role === "user" ? "flex-end" : "flex-start", background: msg.role === "user" ? "#5a52d6" : "#eee", color: msg.role === "user" ? "white" : "black" }}>
-                        {msg.text}
-                    </div>
-                ))}
-            </div>
 
-            <div style={styles.inputBox}>
-                <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="예: 백엔드 공부용 프로젝트 추천해줘" style={styles.input} onKeyDown={(e) => e.key === "Enter" && handleSend()} />
-                <button onClick={handleSend} style={styles.button}>전송</button>
-            </div>
+            <div style={styles.wrapper}>
 
-            {(loading || recommendPosts.length > 0) && (
-                <div style={{ marginTop: "20px" }}>
-                    <h3 style={{ marginBottom: "10px" }}>📌 추천 프로젝트</h3>
-                    <div style={styles.cardGrid}>
-                        {loading ? (
-                            <><div style={styles.skeletonCard}></div><div style={styles.skeletonCard}></div></>
-                        ) : (
-                            recommendPosts.map((post) => (
-                                <PostCard key={post.id} post={post} onClick={() => navigate(`/post/${post.id}`)} />
-                            ))
+                {/* 🔹 왼쪽: 채팅 */}
+                <div style={styles.chatSection}>
+                    <div style={styles.chatBox}>
+                        {messages.map((msg, i) => (
+                            <div
+                                key={i}
+                                style={{
+                                    ...styles.message,
+                                    alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
+                                    background: msg.role === "user" ? "#5a52d6" : "#eee",
+                                    color: msg.role === "user" ? "white" : "black"
+                                }}
+                            >
+                                {msg.text}
+                            </div>
+                        ))}
+
+                        {loading && (
+                            <div style={styles.loadingText}>
+                                🤖 AI가 열심히 생각중입니다...
+                            </div>
                         )}
                     </div>
+
+                    <div style={styles.inputBox}>
+                        <input
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder="예: 백엔드 공부용 프로젝트 추천해줘"
+                            style={styles.input}
+                            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                        />
+                        <button onClick={handleSend} style={styles.button}>
+                            전송
+                        </button>
+                    </div>
                 </div>
-            )}
-            <style>{`@keyframes skeleton-gradient { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }`}</style>
+
+                {/* 🔹 오른쪽: 카드 */}
+                <div style={styles.cardSection}>
+                    <h3>📌 추천 프로젝트</h3>
+
+                    {recommendPosts.length === 0 ? (
+                        <div style={styles.emptyText}>
+                            아직 추천 결과가 없습니다
+                        </div>
+                    ) : (
+                        <div style={styles.cardGrid}>
+                            {recommendPosts.map((post) => (
+                                <PostCard
+                                    key={post.id}
+                                    post={post}
+                                    onClick={() => navigate(`/post/${post.id}`)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+            </div>
         </div>
     );
 }
 
 const styles = {
-    container: { maxWidth: "600px", margin: "0 auto", padding: "20px", display: "flex", flexDirection: "column", height: "100vh" },
-    title: { textAlign: "center" },
-    chatBox: { flex: 1, display: "flex", flexDirection: "column", gap: "10px", padding: "10px", border: "1px solid #ddd", borderRadius: "10px", overflowY: "auto", marginBottom: "10px" },
-    message: { padding: "10px 14px", borderRadius: "12px", maxWidth: "70%" },
-    inputBox: { display: "flex", gap: "10px" },
-    input: { flex: 1, padding: "10px", borderRadius: "8px", border: "1px solid #ccc" },
-    button: { padding: "10px 16px", borderRadius: "8px", background: "#5a52d6", color: "white", border: "none", cursor: "pointer" },
-    cardGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" },
-    skeletonCard: { height: "150px", borderRadius: "12px", background: "linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)", backgroundSize: "200% 100%", animation: "skeleton-gradient 1.5s infinite linear" }
+    container: {
+        maxWidth: "1000px",
+        margin: "0 auto",
+        padding: "20px"
+    },
+    title: {
+        textAlign: "center",
+        marginBottom: "20px"
+    },
+    wrapper: {
+        display: "flex",
+        gap: "20px",
+        height: "80vh"
+    },
+    chatSection: {
+        flex: 1,
+        display: "flex",
+        flexDirection: "column"
+    },
+    chatBox: {
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+        padding: "10px",
+        border: "1px solid #ddd",
+        borderRadius: "10px",
+        overflowY: "auto",
+        marginBottom: "10px"
+    },
+    message: {
+        padding: "10px 14px",
+        borderRadius: "12px",
+        maxWidth: "70%"
+    },
+    loadingText: {
+        color: "#888",
+        fontSize: "14px",
+        padding: "4px 10px"
+    },
+    inputBox: {
+        display: "flex",
+        gap: "10px"
+    },
+    input: {
+        flex: 1,
+        padding: "10px",
+        borderRadius: "8px",
+        border: "1px solid #ccc"
+    },
+    button: {
+        padding: "10px 16px",
+        borderRadius: "8px",
+        background: "#5a52d6",
+        color: "white",
+        border: "none",
+        cursor: "pointer"
+    },
+    cardSection: {
+        width: "320px",
+        borderLeft: "1px solid #ddd",
+        paddingLeft: "15px",
+        overflowY: "auto"
+    },
+    cardGrid: {
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px"
+    },
+    emptyText: {
+        color: "#888",
+        marginTop: "20px"
+    }
 };

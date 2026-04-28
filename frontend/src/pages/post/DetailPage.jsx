@@ -170,7 +170,9 @@ function DetailPage() {
 
                     <div className="detail-author">
                         <div className="author-avatar">{(post.author_name || "익")[0]}</div>
-                        <span>{post.author_name || "익명 사용자"}</span>
+                        <span>
+                            {post.author_name?.name || post.author_name || "익명 사용자"}
+                        </span>
                     </div>
 
                     <hr className="divider" />

@@ -381,3 +381,19 @@
 .modal-btn-confirm:hover {
     opacity: 0.9;
 }
+
+.detail-tech-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.detail-tech-tag {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #1e3a5f;
+  color: #7dd3fc;
+  font-size: 13px;
+  font-weight: 700;
+}

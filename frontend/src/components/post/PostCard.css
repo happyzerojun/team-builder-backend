@@ -96,3 +96,20 @@
 }
 .card-author { font-size: 0.8rem; color: var(--color-text-muted); }
 .card-date   { font-size: 0.8rem; color: var(--color-text-muted); }
+
+
+.post-tech-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.post-tech-tag {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, 0.1);
+  color: rgba(249, 115, 22, 0.3);
+  font-size: 12px;
+  font-weight: 700;
+}

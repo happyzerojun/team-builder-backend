@@ -1,0 +1,131 @@
+.apply-container {
+  min-height: calc(100vh - 64px);
+  background: #0f172a; /* 전체 배경 */
+  display: flex;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.apply-card {
+  width: 100%;
+  max-width: 720px;
+  background: #1e293b; /* 카드 */
+  border-radius: 20px;
+  padding: 36px;
+  border: 1px solid #334155;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.apply-back-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 14px;
+  cursor: pointer;
+  margin-bottom: 24px;
+}
+
+.apply-back-btn:hover {
+  color: #38bdf8;
+}
+
+.apply-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: #f8fafc;
+  margin-bottom: 8px;
+}
+
+.apply-subtitle {
+  font-size: 15px;
+  color: #94a3b8;
+  margin-bottom: 32px;
+}
+
+.apply-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.apply-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.apply-input-group label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+/* 입력창 */
+.apply-input-group input,
+.apply-input-group textarea {
+  width: 100%;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #f8fafc;
+  background: #0f172a;
+  outline: none;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.apply-input-group textarea {
+  min-height: 130px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+/* 포커스 효과 */
+.apply-input-group input:focus,
+.apply-input-group textarea:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+}
+
+/* 버튼 영역 */
+.apply-button-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+/* 취소 버튼 */
+.apply-cancel-btn {
+  background: #334155;
+  color: #cbd5e1;
+  border: 1px solid #475569;
+  border-radius: 12px;
+  padding: 12px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.apply-cancel-btn:hover {
+  background: #475569;
+}
+
+/* 제출 버튼 */
+.apply-submit-btn {
+  background: #38bdf8;
+  color: #0f172a;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.apply-submit-btn:hover {
+  background: #7dd3fc;
+}

@@ -12,7 +12,7 @@ import DetailPage from "./pages/post/DetailPage";
 import ManagePage from './pages/user/ManagePage';
 import ReviewPage from './pages/user/ReviewPage';
 import AiChatPage from "./pages/post/AiChatPage";
-
+import ApplyPage from "./pages/post/ApplyPage";
 import "./styles/global.css";
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -72,7 +72,8 @@ function App() {
 
                     {/* 존재하지 않는 주소 → 메인으로 */}
                     <Route path="*" element={<Navigate to="/" />} />
-
+                    
+                    <Route path="/apply/:projectId" element={<ApplyPage />} />
                 </Routes>
 
 

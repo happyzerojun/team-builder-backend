@@ -16,12 +16,12 @@ export const getUserProfile = async () => {
     }
 };
 
-/**
- * 2. 특정 유저의 정보 가져오기 (타인 프로필 조회 등)
- * [GET] /api/users/{userId}
- * @param {number|string} userId 조회할 유저의 PK(id)
- * @returns {Object|null} 유저 데이터 + 본인 여부(isMe) 포함
- */
+
+//  * 2. 특정 유저의 정보 가져오기 (타인 프로필 조회 등)
+//  * [GET] /api/users/{userId}
+//  * @param {number|string} userId 조회할 유저의 PK(id)
+//  * @returns {Object|null} 유저 데이터 + 본인 여부(isMe) 포함
+
 export const getUserById = async (userId) => {
     try {
         // 로컬스토리지에서 현재 로그인한 유저 정보를 꺼내옵니다. (본인 확인용)
@@ -42,28 +42,29 @@ export const getUserById = async (userId) => {
     }
 };
 
-/**
- * 3. 내 프로필 정보 수정하기
- * [PUT] /api/users/me/profile
- * @param {Object} newInfo 수정할 프로필 데이터 (Payload)
- * @returns {Object} 서버에서 반환한 최신 유저 정보
- */
+// /**
+//  * 3. 내 프로필 정보 수정하기
+//  * [PUT] /api/users/me/profile
+//  * @param {Object} newInfo 수정할 프로필 데이터 (Payload)
+//  * @returns {Object} 서버에서 반환한 최신 유저 정보
+//  */
 export const updateUserProfile = async (newInfo) => {
-    // 백엔드의 UserController @PutMapping("/me/profile")와 통신합니다.
-    // 사진(Base64), 닉네임, 기술스택 리스트 등이 newInfo에 담겨 전송됩니다.
+    // 1. API 통신
     const res = await api.put(`${API_BASE_URL}/me/profile`, newInfo);
 
-    // 🚨 [주의] 백엔드 응답(res.data)에 user_id, email, name이 반드시 포함되어야 합니다.
-    // 만약 백엔드에서 "성공"이라는 문자열만 보내면 아래 객체는 모두 undefined가 됩니다.
+    // 2. 기존 브라우저 저장소에 있던 내 전체 정보를 일단 꺼내옵니다.
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+    // 3. 기존 정보 위에 백엔드가 돌려준 최신 정보를 덮어씌웁니다. (전체 데이터 보존!)
     const updatedUser = {
-        user_id: res.data.user_id, // 서버에서 리턴한 PK
-        email: res.data.email,     // 서버에서 리턴한 이메일
-        name: res.data.name        // 서버에서 리턴한 이름(혹은 닉네임)
+        ...currentUser,
+        ...res.data,
+        // 🚨 혹시 백엔드가 id로 주고 프론트는 user_id를 쓴다면 맞춰줍니다.
+        user_id: res.data.id || res.data.user_id || currentUser.user_id
     };
 
-    // 💾 수정한 정보를 브라우저 저장소(LocalStorage)에 갱신합니다.
-    // 이렇게 해야 페이지를 새로고침해도 상단 헤더에 바뀐 내 정보가 즉시 반영됩니다.
+    // 4. 안전하게 다시 저장!
     localStorage.setItem("user", JSON.stringify(updatedUser));
 
-    return res.data; // 최신화된 전체 유저 데이터를 반환
+    return res.data;
 };

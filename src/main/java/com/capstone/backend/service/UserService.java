@@ -1,6 +1,7 @@
 package com.capstone.backend.service;
 
 import com.capstone.backend.dto.UserProfileResponseDto;
+import com.capstone.backend.dto.UserProfileUpdateRequest;
 import com.capstone.backend.entity.TechStack;
 import com.capstone.backend.entity.User;
 import com.capstone.backend.entity.UserTechStack;
@@ -44,7 +45,7 @@ public class UserService {
 
     // --- 프로필 수정 (새로운 스택 매핑) ---
     @Transactional
-    public User updateUserProfile(String email, UserProfileResponseDto requestDto) {
+    public User updateUserProfile(String email, UserProfileUpdateRequest requestDto) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("유저 없음"));
 

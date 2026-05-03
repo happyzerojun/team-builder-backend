@@ -4,7 +4,7 @@ import { projectService } from "../../services/projectService";
 import { applicationService } from "../../services/applicationService";
 import Navbar from "@/components/common/Navbar";
 import "./DetailPage.css";
-import ApplyModal from "@/components/post/ApplyModal";
+
 
 function DetailPage() {
     const { id } = useParams();
@@ -13,7 +13,6 @@ function DetailPage() {
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isApplied, setIsApplied] = useState(false);
-    const [showApplyModal, setShowApplyModal] = useState(false);
     const [myApplicationId, setMyApplicationId] = useState(null);
 
     useEffect(() => {
@@ -87,38 +86,7 @@ function DetailPage() {
     };
 
     const handleApply = () => {
-        setShowApplyModal(true);
-    };
-
-    const handleConfirmApply = async () => {
-        try {
-            if (!post) return;
-
-            const createdApplication = await applicationService.apply(id);
-
-            const applyLink =
-                post.applyType === "kakao"
-                    ? post.kakaoLink
-                    : post.googleFormLink;
-
-            if (applyLink) {
-                window.open(applyLink, "_blank", "noopener,noreferrer");
-            }
-
-            setIsApplied(true);
-            setShowApplyModal(false);
-
-            if (createdApplication?.application_id) {
-                setMyApplicationId(createdApplication.application_id);
-            }
-
-            alert(`"${post.title}" 프로젝트에 지원했습니다!`);
-            navigate("/MyPage");
-        } catch (error) {
-            console.error("지원 실패:", error);
-            alert("지원 처리 중 문제가 발생했습니다.");
-            setShowApplyModal(false);
-        }
+        navigate(`/apply/${id}`);
     };
 
     if (loading) {
@@ -145,9 +113,6 @@ function DetailPage() {
             </div>
         );
     }
-
-    const isKakao = post.applyType === "kakao";
-    const applyLink = isKakao ? post.kakaoLink : post.googleFormLink;
 
     return (
         <div className="detail-page">
@@ -189,24 +154,21 @@ function DetailPage() {
                         </p>
                     </section>
 
-                    {applyLink && (
-                        <section className="detail-section">
-                            <h2 className="section-title">
-                                {isKakao ? "💬 지원 방법" : "📋 지원 방법"}
-                            </h2>
-                            <div className="apply-info-banner">
-                                <span className="apply-info-icon">{isKakao ? "💬" : "📋"}</span>
-                                <div className="apply-info-text">
-                                    <strong>{isKakao ? "카카오 오픈채팅" : "구글폼 신청서"}로 지원</strong>
-                                    <p>
-                                        {isKakao
-                                            ? "아래 버튼을 눌러 카카오 오픈채팅방에 입장 후 지원해주세요."
-                                            : "아래 버튼을 눌러 구글폼 신청서를 작성해주세요."}
-                                    </p>
-                                </div>
+                    <section className="detail-section">
+                        <h2 className="section-title">🛠 기술 스택</h2>
+
+                        {post.techStacks && post.techStacks.length > 0 ? (
+                            <div className="detail-tech-list">
+                            {post.techStacks.map((tech) => (
+                                <span key={tech.tech_stack_id} className="detail-tech-tag">
+                                {tech.name}
+                                </span>
+                            ))}
                             </div>
-                        </section>
-                    )}
+                        ) : (
+                            <p className="detail-description">등록된 기술 스택이 없습니다.</p>
+                        )}
+                    </section>
 
                     <div
                         className="detail-footer"
@@ -225,13 +187,6 @@ function DetailPage() {
                 </article>
             </main>
 
-            {showApplyModal && (
-                <ApplyModal
-                    post={post}
-                    onClose={() => setShowApplyModal(false)}
-                    onConfirm={handleConfirmApply}
-                />
-            )}
         </div>
     );
 }

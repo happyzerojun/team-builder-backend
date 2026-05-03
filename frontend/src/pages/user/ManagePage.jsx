@@ -23,82 +23,90 @@ const ManagePage = () => {
     const [memberRatings, setMemberRatings] = useState({});
 
     useEffect(() => {
-        const loadData = async () => {
-            try {
-                setLoading(true);
+            const loadData = async () => {
+                try {
+                    setLoading(true);
 
-                const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
-                const myName = savedUser?.nickname || savedUser?.name || "";
-                const myUserId = savedUser?.user_id;
+                    const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+                    const myName = savedUser?.nickname || savedUser?.name || "";
+                    const myUserId = savedUser?.user_id;
 
-                setCurrentMyName(myName);
-                setCurrentUserId(myUserId);
+                    setCurrentMyName(myName);
+                    setCurrentUserId(myUserId);
 
-                const currentProject = await projectService.getProjectById(id);
+                    // 1. 필수 데이터 불러오기 (이게 실패하면 페이지 접근 불가)
+                    const currentProject = await projectService.getProjectById(id);
 
-                if (!currentProject) {
-                    alert("프로젝트를 찾을 수 없습니다.");
-                    navigate("/mypage");
-                    return;
-                }
+                    if (!currentProject) {
+                        alert("프로젝트를 찾을 수 없습니다.");
+                        navigate("/mypage");
+                        return;
+                    }
 
-                setProject(currentProject);
+                    setProject(currentProject);
 
-                const leaderCheck =
-                    String(currentProject.leader_id) === String(myUserId);
-                setIsLeader(leaderCheck);
+                    const leaderCheck = String(currentProject.leader_id) === String(myUserId);
+                    setIsLeader(leaderCheck);
 
-                const memberData = await projectService.getProjectMembers(id);
-                const normalizedMembers = Array.isArray(memberData) ? memberData : [];
-                setMembers(normalizedMembers);
+                    const memberData = await projectService.getProjectMembers(id);
+                    const normalizedMembers = Array.isArray(memberData) ? memberData : [];
+                    setMembers(normalizedMembers);
 
-                const applicationData = await applicationService.getProjectApplications(id);
-                const pendingApplicants = applicationData.filter(
-                    (app) => app.status === "pending"
-                );
-                setApplicants(pendingApplicants);
+                    const applicationData = await applicationService.getProjectApplications(id);
+                    const pendingApplicants = applicationData.filter(
+                        (app) => app.status === "pending"
+                    );
+                    setApplicants(pendingApplicants);
 
-                const reviewData = await reviewService.getProjectMyReviews(id);
+                    // 2. 리뷰 데이터 불러오기 (여기를 따로 분리! 에러가 나도 무시하고 진행)
+                    try {
+                        const reviewData = await reviewService.getProjectMyReviews(id);
 
-                if (reviewData.length > 0) {
-                    const reviewsObj = {};
-                    const ratingsObj = {};
+                        if (reviewData.length > 0) {
+                            const reviewsObj = {};
+                            const ratingsObj = {};
 
-                    reviewData.forEach((review) => {
-                        const key = review.reviewee_id;
-                        reviewsObj[key] = review.comment || "";
-                        ratingsObj[key] = review.rating || 5;
-                    });
+                            reviewData.forEach((review) => {
+                                const key = review.reviewee_id;
+                                reviewsObj[key] = review.comment || "";
+                                ratingsObj[key] = review.rating || 5;
+                            });
 
-                    setMemberReviews(reviewsObj);
-                    setMemberRatings(ratingsObj);
-                    setIsReviewed(true);
-                } else {
-                    const initialReviews = {};
-                    const initialRatings = {};
-
-                    normalizedMembers.forEach((member) => {
-                        if (String(member.user_id) !== String(myUserId)) {
-                            initialReviews[member.user_id] = "";
-                            initialRatings[member.user_id] = 5;
+                            setMemberReviews(reviewsObj);
+                            setMemberRatings(ratingsObj);
+                            setIsReviewed(true);
+                        } else {
+                            throw new Error("리뷰 데이터 없음 처리"); // 강제로 catch로 넘겨서 초기화
                         }
-                    });
+                    } catch (reviewError) {
+                        console.warn("리뷰 데이터를 불러오지 못했지만 무시합니다 (백엔드 에러 또는 데이터 없음).");
+                        // 에러가 나거나 데이터가 없으면 초기 상태 세팅
+                        const initialReviews = {};
+                        const initialRatings = {};
 
-                    setMemberReviews(initialReviews);
-                    setMemberRatings(initialRatings);
-                    setIsReviewed(false);
+                        normalizedMembers.forEach((member) => {
+                            if (String(member.user_id) !== String(myUserId)) {
+                                initialReviews[member.user_id] = "";
+                                initialRatings[member.user_id] = 5;
+                            }
+                        });
+
+                        setMemberReviews(initialReviews);
+                        setMemberRatings(initialRatings);
+                        setIsReviewed(false);
+                    }
+
+                } catch (error) {
+                    // 프로젝트 정보나 멤버 정보 등 '필수' 데이터가 터졌을 때만 이 팝업이 뜹니다.
+                    console.error("필수 데이터 로드 실패:", error);
+                    alert("관리 페이지 데이터를 불러오지 못했습니다.");
+                } finally {
+                    setLoading(false);
                 }
+            };
 
-            } catch (error) {
-                console.error("데이터 로드 실패:", error);
-                alert("관리 페이지 데이터를 불러오지 못했습니다.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadData();
-    }, [id, navigate]);
+            loadData();
+        }, [id, navigate]);
 
     const refreshApplicants = async () => {
         try {

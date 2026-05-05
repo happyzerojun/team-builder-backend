@@ -19,7 +19,7 @@ const MyPageSetting = () => {
     // 폼 데이터 상태 (백엔드 DTO 규격과 일치)
     const [formData, setFormData] = useState({
         nickname: '',
-        job_role: '',
+        jobRole: '',
         organization: '',
         introduction: '',
         tags: []
@@ -32,25 +32,34 @@ const MyPageSetting = () => {
         const fetchProfile = async () => {
             try {
                 setLoading(true);
-                const profile = await getUserProfile();
+                const profile = await getUserProfile(); // 서버에서 데이터 가져오기
                 const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
 
-                const baseUser = profile || savedUser;
+                // [디버깅 로그] 이 로그를 개발자 도구(F12) 콘솔에서 꼭 확인하세요!
+                console.log("서버 응답 데이터:", profile);
+                console.log("로컬 저장 데이터:", savedUser);
 
+                // 1. 데이터 병합 전략: 서버 데이터가 있으면 우선하되, 없으면 로컬 데이터로 보충
+                const baseUser = { ...savedUser, ...profile };
+
+                // 2. 폼 데이터 세팅 (이름표가 다를 경우를 대비해 모두 체크)
                 setFormData({
                     nickname: baseUser.nickname || baseUser.name || '',
-                    job_role: baseUser.job_role || '',
+                    // jobRole(카멜케이스)과 job_role(스네이크케이스) 둘 다 확인
+                    jobRole: baseUser.jobRole || baseUser.job_role || '',
                     organization: baseUser.organization || '',
                     introduction: baseUser.introduction || '',
-                    tags: baseUser.tags || []
+                    // 백엔드 DTO에서 @JsonProperty("tags")를 썼으므로 tags로 올 겁니다.
+                    tags: baseUser.tags || baseUser.techStacks || []
                 });
 
-                if (baseUser.profileImg) {
-                    setProfileImg(baseUser.profileImg);
+                // 3. 프로필 이미지 세팅
+                if (baseUser.profileImg || baseUser.profile_img) {
+                    setProfileImg(baseUser.profileImg || baseUser.profile_img);
                 }
             } catch (error) {
                 console.error("프로필 불러오기 실패:", error);
-                alert("프로필 정보를 불러오지 못했습니다.");
+                // profile이 없어도 로컬 데이터로라도 보여주기 위해 에러 처리를 유연하게 합니다.
             } finally {
                 setLoading(false);
             }
@@ -117,7 +126,7 @@ const MyPageSetting = () => {
             const payload = {
                 name: formData.nickname,
                 nickname: formData.nickname,
-                job_role: formData.job_role,
+                jobRole: formData.jobRole,
                 organization: formData.organization,
                 introduction: formData.introduction,
                 tags: formData.tags,
@@ -200,9 +209,9 @@ const MyPageSetting = () => {
                     <label>희망 직무</label>
                     <input
                         className="ms-input"
-                        name="job_role"
+                        name="jobRole"
                         placeholder="예: 프론트엔드 개발자"
-                        value={formData.job_role}
+                        value={formData.jobRole}
                         onChange={handleChange}
                     />
                 </div>

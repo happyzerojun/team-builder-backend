@@ -10,22 +10,14 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Builder
-@AllArgsConstructor // <-- 빌더를 위해 모든 필드를 인자로 받는 생성자 추가
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "project")
 @Getter
-@EntityListeners(AuditingEntityListener.class) // 생성/수정 시간 자동 기록
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+@Table(name = "project")
+@EntityListeners(AuditingEntityListener.class)
 public class Project {
-
-    @Builder.Default
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProjectTechStack> projectTechStacks = new ArrayList<>();
-
-    @Builder.Default
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProjectPosition> projectPositions = new ArrayList<>();
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,15 +33,26 @@ public class Project {
     @Column(nullable = false, length = 30)
     private String region;
 
-    @Column(nullable = false, length = 30)
-    private String status;
-
     @Column(nullable = false, length = 20)
     private String term;
 
+    @Column(nullable = false, length = 30)
+    private String status; // RECRUITING, PROCEEDING, COMPLETED
+
+    // 🚨 [핵심 1] 팀장(User) 매핑
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leader_id", nullable = false)
     private User leader;
+
+    // 🚨 [핵심 2] 프로젝트가 요구하는 기술 스택 (N:M)
+    @Builder.Default
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProjectTechStack> projectTechStacks = new ArrayList<>();
+
+    // 🚨 [핵심 3] 이 프로젝트에 들어온 지원서들
+    @Builder.Default
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
+    private List<Application> applications = new ArrayList<>();
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -58,4 +61,9 @@ public class Project {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    // 🚨 [새로 추가] 이 프로젝트에서 모집하는 포지션 리스트 (N:M 구조가 아닌 1:N 구조입니다)
+    @Builder.Default
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProjectPosition> projectPositions = new ArrayList<>();
 }

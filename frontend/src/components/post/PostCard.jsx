@@ -85,6 +85,16 @@ function PostCard({ post, onClick }) {
                             : "🙋 협업 경험 없음"}
                     </span>
                 )}
+
+                {post.techStacks && post.techStacks.length > 0 && (
+                    <div className="post-tech-list">
+                        {post.techStacks.map((tech) => (
+                        <span key={tech.tech_stack_id} className="post-tech-tag">
+                            {tech.name}
+                        </span>
+                        ))}
+                    </div>
+                )}
             </div>
         </article>
     );

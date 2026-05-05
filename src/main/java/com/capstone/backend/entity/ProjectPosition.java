@@ -2,39 +2,60 @@ package com.capstone.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "project_position")
 @Getter
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+@Table(name = "project_position")
+@EntityListeners(AuditingEntityListener.class)
 public class ProjectPosition {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "position_id") // SQL 설계와 ID 이름 통일
+    @Column(name = "position_id")
     private Long id;
 
-    @Column(name = "role_name", nullable = false, length = 30) // SQL의 role_name과 매핑
-    private String positionName;
+    // 예: "백엔드", "프론트엔드", "UI/UX 디자이너"
+    @Column(name = "role_name", length = 30)
+    private String roleName;
 
-    @Column(nullable = false)
-    private Integer requiredCount; // 모집 정원
+    // 모집해야 할 총 인원
+    @Column(name = "required_count")
+    private Integer requiredCount;
 
+    // 현재 합류(승인) 완료된 인원
+    @Column(name = "current_count")
     @Builder.Default
-    @Column(nullable = false)
-    private Integer currentCount = 0; // 현재 참여 인원 (기본값 0)
+    private Integer currentCount = 0;
 
+    // 🚨 [핵심] 어떤 프로젝트의 모집 포지션인가?
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
-    // 시간 기록이 필요하다면 아래 필드들도 추가하세요 (선택사항)
-    /*
     @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-    */
+
+    // --- 비즈니스 로직 ---
+
+    // 팀장이 지원자를 '승인(ACCEPTED)' 했을 때 호출할 메서드
+    public void increaseCurrentCount() {
+        if (this.currentCount < this.requiredCount) {
+            this.currentCount += 1;
+        } else {
+            throw new IllegalStateException("이미 해당 포지션의 모집 인원이 꽉 찼습니다.");
+        }
+    }
 }

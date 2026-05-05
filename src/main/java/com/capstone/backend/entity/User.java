@@ -34,7 +34,7 @@ public class User {
     @Column(nullable = false, length = 255)
     private String password;
 
-    // 중복 제거 및 준원님 초기값 설정 병합
+    // --- 유저 기본 정보 ---
     @Column(name = "experience_level", nullable = false, length = 20)
     @Builder.Default
     private String experienceLevel = "BEGINNER";
@@ -45,22 +45,40 @@ public class User {
     @Column(name = "baekjoon_id", length = 50)
     private String baekjoonId;
 
-    // --- 준원님이 추가한 OAuth2(소셜 로그인) 관련 필드 ---
+    @Column(length = 50)
+    private String nickname;
+
+    @Column(name = "job_role", length = 50)
+    private String jobRole;
+
+    @Column(length = 100)
+    private String organization;
+
+    @Column(columnDefinition = "TEXT")
+    private String introduction;
+
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String profileImg;
+
+    // --- 소셜 로그인 (준원님 필드 유지) ---
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
     @Setter
-    private AuthProvider provider = AuthProvider.LOCAL; // AuthProvider Enum이 있어야 정상 작동합니다.
+    private AuthProvider provider = AuthProvider.LOCAL;
 
     @Setter
     @Column(unique = true)
     private String providerId;
 
-    // --- 영준님이 추가한 기술 스택 양방향 매핑 필드 ---
+    // --- 🚨 [정석 반영] 기술 스택 매핑 (영준님 설계 유지 및 강화) ---
+    // 기존의 임시 tags(List<String>)는 삭제했습니다.
     @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserTechStack> userTechStacks = new ArrayList<>();
 
+    // --- 메타 데이터 ---
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -69,10 +87,34 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // 26.3.19 추가 메서드
-    public void updateProfile(String experienceLevel, String githubUrl, String baekjoonId) {
-        this.experienceLevel = experienceLevel;
-        this.githubUrl = githubUrl;
-        this.baekjoonId = baekjoonId;
+    /**
+     * 🚨 프로필 업데이트 비즈니스 로직
+     * @param newStacks : 서비스 레이어에서 변환되어 넘어온 새로운 기술 스택 리스트
+     */
+// User.java 내부의 메서드 수정
+
+    public void updateProfile(String name, String nickname, String jobRole,
+                              String organization, String introduction,
+                              List<UserTechStack> newStacks, String profileImg) {
+        this.name = name;
+        this.nickname = nickname;
+        this.jobRole = jobRole;
+        this.organization = organization;
+        this.introduction = introduction;
+        this.profileImg = profileImg;
+
+        // 1. 기존 관계를 끊습니다. (orphanRemoval=true에 의해 DB에서도 삭제됨)
+        this.userTechStacks.clear();
+
+        // 2. 새로운 관계를 맺어줍니다.
+        if (newStacks != null) {
+            newStacks.forEach(stack -> {
+                // 🚨 이 부분이 핵심입니다!
+                // 연결 테이블 객체(stack)에게 "너의 주인은 나(this)야"라고 알려줘야
+                // DB 외래키(FK) 칸에 내 user_id가 쏙 들어갑니다.
+                stack.setUser(this);
+                this.userTechStacks.add(stack);
+            });
+        }
     }
 }

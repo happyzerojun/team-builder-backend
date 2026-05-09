@@ -1,30 +1,68 @@
 package com.capstone.backend.controller;
 
+import com.capstone.backend.dto.ApplicationRequestDto;
+import com.capstone.backend.dto.ApplicationResponseDto;
+import com.capstone.backend.service.ApplicationService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/application")
+@RequiredArgsConstructor
 public class ApplicationController {
 
-    // 1. 특정 유저의 지원 내역 조회 (GET /api/application/user/{userId})
+    private final ApplicationService applicationService; // 비즈니스 로직을 처리할 Service 클래스
+
+    /**
+     * 1. 프로젝트 지원 (POST /api/application)
+     */
+    @PostMapping
+    public ResponseEntity<ApplicationResponseDto> apply(@RequestBody ApplicationRequestDto.Create requestDto) {
+        // 실제로는 세션이나 JWT 토큰에서 로그인한 유저 정보(applicant_id)를 가져오는 것이 보안상 안전합니다.
+        ApplicationResponseDto response = applicationService.createApplication(requestDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * 2. 지원 취소 (DELETE /api/application/{applicationId})
+     */
+    @DeleteMapping("/{applicationId}")
+    public ResponseEntity<Void> cancelApplication(@PathVariable Long applicationId) {
+        applicationService.deleteApplication(applicationId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 3. 내 지원 내역 조회 (GET /api/application/user/{userId})
+     */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<String> getUserApplications(@PathVariable Long userId) {
-        // TODO: userId로 해당 유저가 지원한 내역 목록(Application) 조회 로직 추가
-        return ResponseEntity.ok("유저 " + userId + "의 지원 내역 조회 성공 (API 연결 테스트)");
+    public ResponseEntity<List<ApplicationResponseDto>> getMyApplications(@PathVariable Long userId) {
+        List<ApplicationResponseDto> responses = applicationService.getApplicationsByUserId(userId);
+        return ResponseEntity.ok(responses);
     }
 
-    // 2. 특정 프로젝트의 지원자 목록 조회 (GET /api/application/project/{projectId})
+    /**
+     * 4. 프로젝트별 지원자 목록 조회 (GET /api/application/project/{projectId})
+     */
     @GetMapping("/project/{projectId}")
-    public ResponseEntity<String> getProjectApplications(@PathVariable Long projectId) {
-        // TODO: projectId로 해당 프로젝트에 들어온 지원서 목록 조회 로직 추가
-        return ResponseEntity.ok("프로젝트 " + projectId + "의 지원자 목록 조회 성공 (API 연결 테스트)");
+    public ResponseEntity<List<ApplicationResponseDto>> getProjectApplications(@PathVariable Long projectId) {
+        List<ApplicationResponseDto> responses = applicationService.getApplicationsByProjectId(projectId);
+        return ResponseEntity.ok(responses);
     }
 
-    // 3. 지원서 승인/거절 상태 변경 (PATCH /api/application/{id})
-    @PatchMapping("/{id}")
-    public ResponseEntity<String> updateApplicationStatus(@PathVariable Long id) {
-        // TODO: id(지원서 PK)에 해당하는 지원서의 상태(status) 업데이트 로직 추가
-        return ResponseEntity.ok("지원서 " + id + " 상태 변경 완료 (API 연결 테스트)");
+    /**
+     * 5. 지원서 상태 변경 (수락/거절) (PATCH /api/application/{applicationId})
+     */
+    @PatchMapping("/{applicationId}")
+    public ResponseEntity<ApplicationResponseDto> updateApplicationStatus(
+            @PathVariable Long applicationId,
+            @RequestBody ApplicationRequestDto.UpdateStatus requestDto) {
+
+        ApplicationResponseDto response = applicationService.updateStatus(applicationId, requestDto.getStatus());
+        return ResponseEntity.ok(response);
     }
 }

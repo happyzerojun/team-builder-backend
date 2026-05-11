@@ -66,4 +66,10 @@ public class Project {
     @Builder.Default
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectPosition> projectPositions = new ArrayList<>();
+
+    @Column(name = "meeting_type", length = 20)
+    private String meetingType;
+
+    @Column(name = "is_local_only")
+    private Boolean isLocalOnly;
 }

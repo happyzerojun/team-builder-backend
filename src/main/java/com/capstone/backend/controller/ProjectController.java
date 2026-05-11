@@ -1,8 +1,10 @@
 package com.capstone.backend.controller;
 
+import com.capstone.backend.dto.MemberResponseDto;
 import com.capstone.backend.dto.ProjectRequestDto;
 import com.capstone.backend.dto.ProjectResponseDto;
 import com.capstone.backend.service.ProjectService;
+import com.capstone.backend.dto.MemberResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,8 +50,8 @@ public class ProjectController {
 
     // 6. 프로젝트 팀원 목록
     @GetMapping("/{projectId}/members")
-    public ResponseEntity<String> getProjectMembers(@PathVariable Long projectId) {
-        return ResponseEntity.ok("프로젝트 " + projectId + " 팀원 조회 (임시)");
+    public ResponseEntity<List<MemberResponseDto>> getProjectMembers(@PathVariable Long projectId) {
+        return ResponseEntity.ok(projectService.getProjectMembers(projectId));
     }
 
     // 7. 상태 변경

@@ -5,7 +5,6 @@ import { applicationService } from "../../services/applicationService";
 import Navbar from "@/components/common/Navbar";
 import "./DetailPage.css";
 
-
 function DetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -23,18 +22,15 @@ function DetailPage() {
                 const data = await projectService.getProjectById(id);
                 setPost(data);
 
-                // 내가 이 프로젝트에 이미 지원했는지 확인
                 try {
                     const myApplications = await applicationService.getMyApplications();
 
                     const matchedApplication = myApplications.find((app) => {
-                        // 1순위: project 객체 포함 응답
                         if (app.project && String(app.project.project_id) === String(id)) {
                             return true;
                         }
 
-                        // 2순위: project_id 직접 포함 응답
-                        if (String(app.project_id) === String(id)) {
+                        if (String(app.project_id || app.projectId) === String(id)) {
                             return true;
                         }
 
@@ -43,7 +39,9 @@ function DetailPage() {
 
                     if (matchedApplication) {
                         setIsApplied(true);
-                        setMyApplicationId(matchedApplication.application_id);
+                        setMyApplicationId(
+                            matchedApplication.application_id || matchedApplication.applicationId
+                        );
                     } else {
                         setIsApplied(false);
                         setMyApplicationId(null);
@@ -53,7 +51,6 @@ function DetailPage() {
                     setIsApplied(false);
                     setMyApplicationId(null);
                 }
-
             } catch (error) {
                 console.error("상세 정보 로딩 실패:", error);
             } finally {
@@ -114,6 +111,9 @@ function DetailPage() {
         );
     }
 
+    const meetingType = post.meetingType || "비대면";
+    const isLocalOnly = post.isLocalOnly === true;
+
     return (
         <div className="detail-page">
             <Navbar />
@@ -155,15 +155,30 @@ function DetailPage() {
                     </section>
 
                     <section className="detail-section">
+                        <h2 className="section-title">🤝 모임 방식</h2>
+                        <div className="detail-meeting-list">
+                            <span className="detail-meeting-tag">
+                                {meetingType === "대면" ? "🤝 대면" : "💻 비대면"}
+                            </span>
+
+                            {meetingType === "대면" && (
+                                <span className="detail-meeting-tag">
+                                    {isLocalOnly ? "📍 해당 지역만" : "🌍 타지역 가능"}
+                                </span>
+                            )}
+                        </div>
+                    </section>
+
+                    <section className="detail-section">
                         <h2 className="section-title">🛠 기술 스택</h2>
 
                         {post.techStacks && post.techStacks.length > 0 ? (
                             <div className="detail-tech-list">
-                            {post.techStacks.map((tech) => (
-                                <span key={tech.tech_stack_id} className="detail-tech-tag">
-                                {tech.name}
-                                </span>
-                            ))}
+                                {post.techStacks.map((tech) => (
+                                    <span key={tech.tech_stack_id} className="detail-tech-tag">
+                                        {tech.name}
+                                    </span>
+                                ))}
                             </div>
                         ) : (
                             <p className="detail-description">등록된 기술 스택이 없습니다.</p>
@@ -186,7 +201,6 @@ function DetailPage() {
                     </div>
                 </article>
             </main>
-
         </div>
     );
 }

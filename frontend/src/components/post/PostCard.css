@@ -113,3 +113,20 @@
   font-size: 12px;
   font-weight: 700;
 }
+
+.post-meeting-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.post-meeting-tag {
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 700;
+}

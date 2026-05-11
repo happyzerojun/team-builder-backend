@@ -15,6 +15,8 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     // 프로젝트 ID로 지원자 목록 조회 (프로젝트 리더용)
     List<Application> findByProjectId(Long projectId);
 
+    List<Application> findByProjectIdAndStatus(Long projectId, String status);
+
     // 중복 지원 방지를 위한 확인 메서드
     boolean existsByApplicantIdAndProjectId(Long applicantId, Long projectId);
 }

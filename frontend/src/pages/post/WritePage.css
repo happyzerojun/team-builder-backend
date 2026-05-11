@@ -278,7 +278,53 @@
     cursor: pointer;
 }
 
-    .detail-img-add:hover {
-        border-color: #7c3aed;
-        background: #1a1a1a;
-    }
+.detail-img-add:hover {
+    border-color: #7c3aed;
+    background: #1a1a1a;
+}
+
+.meeting-type-options {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.meeting-option-btn,
+.local-option-btn {
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #cbd5e1;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.meeting-option-btn:hover,
+.local-option-btn:hover {
+    border-color: #38bdf8;
+    color: #38bdf8;
+}
+
+.meeting-option-btn.selected,
+.local-option-btn.selected {
+    background: #38bdf8;
+    border-color: #38bdf8;
+    color: #0f172a;
+}
+
+.local-only-box {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.local-only-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #cbd5e1;
+}

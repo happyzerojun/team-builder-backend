@@ -138,7 +138,7 @@ const ManagePage = () => {
         }
 
         try {
-            await applicationService.acceptApplication(app.application_id);
+            await applicationService.acceptApplication(app.application_id || app.applicationId);
             await refreshApplicants();
             await refreshMembers();
             alert("신청자를 승인했습니다.");
@@ -157,7 +157,7 @@ const ManagePage = () => {
         }
 
         try {
-            await applicationService.rejectApplication(app.application_id);
+            await applicationService.rejectApplication(app.application_id || app.applicationId);
             await refreshApplicants();
             alert("신청을 거절했습니다.");
         } catch (error) {

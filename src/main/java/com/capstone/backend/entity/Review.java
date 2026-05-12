@@ -53,4 +53,9 @@ public class Review {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public void update(Integer rating, String comment) {
+        this.rating = rating;
+        this.comment = comment;
+    }
 }

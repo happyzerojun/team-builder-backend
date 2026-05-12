@@ -19,4 +19,6 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
     // 중복 지원 방지를 위한 확인 메서드
     boolean existsByApplicantIdAndProjectId(Long applicantId, Long projectId);
+
+    boolean existsByProjectIdAndApplicantIdAndStatus(Long projectId, Long applicantId, String status);
 }

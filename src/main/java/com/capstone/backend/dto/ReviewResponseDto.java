@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Builder
 public class ReviewResponseDto {
@@ -20,18 +22,40 @@ public class ReviewResponseDto {
     @JsonProperty("reviewee_id")
     private Long revieweeId;
 
+    @JsonProperty("reviewer_name")
+    private String reviewerName;
+
+    @JsonProperty("reviewee_name")
+    private String revieweeName;
+
+    @JsonProperty("project_title")
+    private String projectTitle;
+
     private Integer rating;
     private String comment;
 
-    // Entity를 DTO로 변환하는 편의 메서드
+    @JsonProperty("created_at")
+    private LocalDateTime createdAt;
+
     public static ReviewResponseDto from(Review review) {
         return ReviewResponseDto.builder()
                 .reviewId(review.getId())
-                .projectId(review.getProject().getId()) // Project 엔티티의 ID (getter 이름에 맞게 수정 필요할 수 있음)
-                .reviewerId(review.getReviewer().getId()) // User 엔티티의 ID
-                .revieweeId(review.getReviewee().getId()) // User 엔티티의 ID
+                .projectId(review.getProject().getId())
+                .reviewerId(review.getReviewer().getId())
+                .revieweeId(review.getReviewee().getId())
+                .reviewerName(resolveDisplayName(review.getReviewer().getNickname(), review.getReviewer().getName()))
+                .revieweeName(resolveDisplayName(review.getReviewee().getNickname(), review.getReviewee().getName()))
+                .projectTitle(review.getProject().getTitle())
                 .rating(review.getRating())
                 .comment(review.getComment())
+                .createdAt(review.getCreatedAt())
                 .build();
+    }
+
+    private static String resolveDisplayName(String nickname, String name) {
+        if (nickname != null && !nickname.isBlank()) {
+            return nickname;
+        }
+        return name;
     }
 }

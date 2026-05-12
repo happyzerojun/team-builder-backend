@@ -2,12 +2,17 @@ package com.capstone.backend.repository;
 
 import com.capstone.backend.entity.Review;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
+
 import java.util.List;
+import java.util.Optional;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
-    // 1. 특정 프로젝트에서 내가 작성한 리뷰 목록 찾기
-    List<Review> findAllByProjectIdAndReviewerId(Long projectId, Long reviewerId);
+    @EntityGraph(attributePaths = {"project", "reviewer", "reviewee"})
+    List<Review> findAllByProjectIdAndReviewerIdOrderByCreatedAtAsc(Long projectId, Long reviewerId);
 
-    // 2. 내가 받은 모든 리뷰 찾기 (마이페이지용)
-    List<Review> findAllByRevieweeId(Long revieweeId);
+    @EntityGraph(attributePaths = {"project", "reviewer", "reviewee"})
+    List<Review> findAllByRevieweeIdOrderByCreatedAtDesc(Long revieweeId);
+
+    Optional<Review> findByProjectIdAndReviewerIdAndRevieweeId(Long projectId, Long reviewerId, Long revieweeId);
 }

@@ -397,3 +397,20 @@
   font-size: 13px;
   font-weight: 700;
 }
+
+.detail-meeting-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.detail-meeting-tag {
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #cbd5e1;
+    font-size: 13px;
+    font-weight: 700;
+}

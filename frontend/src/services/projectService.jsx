@@ -33,7 +33,10 @@ export const projectService = {
             region: data.region,
             status: "모집중",
             leader_id: user.user_id,
-            term: data.term
+            term: data.term,
+            techStackIds: data.techStackIds,
+            meetingType: data.meetingType,
+            isLocalOnly: data.isLocalOnly
         });
 
         return res.data;
@@ -45,7 +48,10 @@ export const projectService = {
             content: data.content,
             region: data.region,
             status: data.status,
-            term: data.term
+            term: data.term,
+            techStackIds: data.techStackIds,
+            meetingType: data.meetingType,
+            isLocalOnly: data.isLocalOnly
         });
 
         return res.data;
@@ -69,7 +75,7 @@ export const projectService = {
             applicant_id: user.user_id,
             support_role: "지원자",
             message: "",
-            status: "pending"
+            status: "PENDING"
         });
 
         return true;

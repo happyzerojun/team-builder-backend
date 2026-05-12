@@ -11,7 +11,7 @@ export const applicationService = {
             applicant_id: user.user_id,
             support_role: "지원자",
             message: "",
-            status: "pending"
+            status: "PENDING"
         });
 
         return res.data;
@@ -40,14 +40,14 @@ export const applicationService = {
 
     acceptApplication: async (applicationId) => {
         const res = await api.patch(`${API_URL}/${applicationId}`, {
-            status: "accepted"
+            status: "ACCEPTED"
         });
         return res.data;
     },
 
     rejectApplication: async (applicationId) => {
         const res = await api.patch(`${API_URL}/${applicationId}`, {
-            status: "rejected"
+            status: "REJECTED"
         });
         return res.data;
     }

@@ -1,6 +1,7 @@
 package com.capstone.backend.dto;
 
 import com.capstone.backend.entity.Project;
+import java.util.List;
 
 public record ProjectResponseDto(
         Long project_id,
@@ -10,7 +11,12 @@ public record ProjectResponseDto(
         String status,
         Long leader_id,
         String author_name,
-        String term
+        String term,
+
+        String meetingType,
+        Boolean isLocalOnly,
+
+        List<TechStackDto> techStacks
 ) {
     public static ProjectResponseDto from(Project project) {
         return new ProjectResponseDto(
@@ -21,7 +27,19 @@ public record ProjectResponseDto(
                 project.getStatus(),
                 project.getLeader().getId(),
                 project.getLeader().getName(),
-                project.getTerm()
+                project.getTerm(),
+
+                project.getMeetingType(),
+                project.getIsLocalOnly(),
+
+                project.getProjectTechStacks() == null
+                        ? List.of()
+                        : project.getProjectTechStacks().stream()
+                            .map(projectTechStack -> new TechStackDto(
+                                    projectTechStack.getTechStack().getId(),
+                                    projectTechStack.getTechStack().getName()
+                            ))
+                            .toList()
         );
     }
 }

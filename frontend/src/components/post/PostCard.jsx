@@ -20,6 +20,9 @@ function PostCard({ post, onClick }) {
             ? "⚡ 단기"
             : "📅 장기";
 
+    const meetingType = post.meetingType || "비대면";
+    const isLocalOnly = post.isLocalOnly === true;
+
     return (
         <article className="post-card" onClick={onClick}>
             <div className="card-header">
@@ -39,6 +42,18 @@ function PostCard({ post, onClick }) {
             <p className="card-description">
                 {post.content || post.description || "프로젝트 소개가 없습니다."}
             </p>
+
+            <div className="post-meeting-list">
+                <span className="post-meeting-tag">
+                    {meetingType === "대면" ? "🤝 대면" : "💻 비대면"}
+                </span>
+
+                {meetingType === "대면" && (
+                    <span className="post-meeting-tag">
+                        {isLocalOnly ? "📍 해당 지역만" : "🌍 타지역 가능"}
+                    </span>
+                )}
+            </div>
 
             {roles.length > 0 && (
                 <div className="card-roles">
@@ -89,9 +104,9 @@ function PostCard({ post, onClick }) {
                 {post.techStacks && post.techStacks.length > 0 && (
                     <div className="post-tech-list">
                         {post.techStacks.map((tech) => (
-                        <span key={tech.tech_stack_id} className="post-tech-tag">
-                            {tech.name}
-                        </span>
+                            <span key={tech.tech_stack_id} className="post-tech-tag">
+                                {tech.name}
+                            </span>
                         ))}
                     </div>
                 )}

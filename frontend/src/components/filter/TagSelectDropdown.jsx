@@ -1,12 +1,17 @@
 const AVAILABLE_TAGS = [
-    "React", "Vue.js", "Next.js", "TypeScript", "JavaScript",
-    "Node.js", "Spring Boot", "Django", "Express", "FastAPI",
-    "React Native", "Flutter", "Swift", "Kotlin",
-    "MySQL", "MongoDB", "PostgreSQL", "Firebase", "Redis",
-    "Docker", "AWS", "Git", "Tailwind", "Python",
+    "React", "Vue", "Angular", "Next.js", "Svelte", "TypeScript", "JavaScript", "HTML/CSS", "Tailwind",
+    "Spring Boot", "Node.js", "Django", "FastAPI", "Flask", "Express", "NestJS", "Java", "Python", "Go", "Kotlin",
+    "MySQL", "PostgreSQL", "MongoDB", "Redis", "Oracle", "SQLite", "Firebase",
+    "AWS", "Docker", "Kubernetes", "CI/CD", "GCP", "Azure", "Nginx", "Linux",
+    "Git", "Figma", "Unity", "Flutter", "React Native", "Swift", "Kotlin(Android)", "Kotlin(iOS)"
 ];
 
-function TagSelectDropdown({ selectedTags, onToggleTag, isOpen, onToggleOpen }) {
+function TagSelectDropdown({
+    selectedTags = [],
+    onToggleTag,
+    isOpen,
+    onToggleOpen
+}) {
     return (
         <div style={{ position: "relative" }}>
             <button

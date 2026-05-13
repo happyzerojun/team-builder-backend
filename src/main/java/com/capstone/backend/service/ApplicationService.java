@@ -99,15 +99,17 @@ public class ApplicationService {
      * 🚨 Entity를 DTO로 변환하는 공통 내부 메서드 (빨간 줄 해결 핵심!)
      */
     private ApplicationResponseDto convertToDto(Application application) {
-        return ApplicationResponseDto.builder()
-                .applicationId(application.getId()) // getApplicationId() -> getId() 로 수정
-                .supportRole(application.getSupportRole())
-                .message(application.getMessage())
-                .status(application.getStatus())
-                .applicantId(application.getApplicant().getId()) // getApplicantId() -> getApplicant().getId() 로 수정
-                .projectId(application.getProject().getId())     // getProjectId() -> getProject().getId() 로 수정
-                .createdAt(application.getCreatedAt())
-                .updatedAt(application.getUpdatedAt())
-                .build();
-    }
+    return ApplicationResponseDto.builder()
+            .applicationId(application.getId())
+            .supportRole(application.getSupportRole())
+            .message(application.getMessage())
+            .status(application.getStatus())
+            .applicantId(application.getApplicant().getId())
+            .applicantName(application.getApplicant().getName())
+            .projectId(application.getProject().getId())
+            .projectTitle(application.getProject().getTitle())
+            .createdAt(application.getCreatedAt())
+            .updatedAt(application.getUpdatedAt())
+            .build();
+}
 }

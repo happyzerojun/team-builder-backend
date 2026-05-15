@@ -12,10 +12,9 @@ public class ApplicationResponseDto {
     private String message;
     private String status;
     private Long applicantId;
+    private String applicantName;
     private Long projectId;
+    private String projectTitle;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
-    // Entity -> DTO 변환 메서드 예시
-    // public static ApplicationResponseDto from(Application application) { ... }
 }

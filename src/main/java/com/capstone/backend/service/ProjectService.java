@@ -96,4 +96,13 @@ public class ProjectService {
 
     return ProjectResponseDto.from(project);
     }
+
+    @Transactional
+    public void removeProjectMember(Long projectId, Long memberId) {
+    Application application = applicationRepository
+        .findByProjectIdAndApplicantIdAndStatus(projectId, memberId, "ACCEPTED")
+        .orElseThrow(() -> new IllegalArgumentException("해당 팀원을 찾을 수 없습니다."));
+    applicationRepository.delete(application);
+    }
+
 }

@@ -131,7 +131,7 @@ const ManagePage = () => {
 
     const handleAccept = async (app) => {
         const applicantName =
-            app.applicant_name || app.name || "지원자";
+            app.applicantName || app.applicant_name || app.name || "지원자"
 
         if (!window.confirm(`${applicantName} 님을 팀원으로 승인하시겠습니까?`)) {
             return;
@@ -150,7 +150,7 @@ const ManagePage = () => {
 
     const handleReject = async (app) => {
         const applicantName =
-            app.applicant_name || app.name || "지원자";
+            app.applicantName || app.applicant_name || app.name || "지원자"
 
         if (!window.confirm(`${applicantName} 님의 신청을 거절하시겠습니까?`)) {
             return;
@@ -288,7 +288,7 @@ const ManagePage = () => {
                                 <div key={app.application_id} className="applicant-card">
                                     <div className="app-info">
                                         <span className="app-name">
-                                            {app.applicant_name || app.name || "이름 없음"}
+                                            {app.applicantName || app.applicant_name || app.name || "이름 없음"}
                                         </span>
                                         <span className="app-role">
                                             {app.support_role || app.role || "지원자"}

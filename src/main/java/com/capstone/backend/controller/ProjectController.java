@@ -62,4 +62,13 @@ public class ProjectController {
     ) {
         return ResponseEntity.ok(projectService.updateProjectStatus(projectId, request.getStatus()));
     }
+
+    // 8. 팀원 제외 (DELETE /api/projects/{projectId}/members/{memberId})
+    @DeleteMapping("/{projectId}/members/{memberId}")
+    public ResponseEntity<String> removeProjectMember(
+        @PathVariable Long projectId,
+        @PathVariable Long memberId) {
+    projectService.removeProjectMember(projectId, memberId);
+    return ResponseEntity.ok("팀원 제외 성공");
+}
 }

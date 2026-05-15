@@ -72,4 +72,8 @@ public class Project {
 
     @Column(name = "is_local_only")
     private Boolean isLocalOnly;
+
+    public void updateStatus(String status) {
+        this.status = status;
+    }
 }

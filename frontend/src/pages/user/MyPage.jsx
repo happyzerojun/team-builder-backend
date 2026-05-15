@@ -3,6 +3,8 @@ import './MyPage.css';
 import { useNavigate } from 'react-router-dom'; // 페이지 강제 이동(리다이렉트)을 도와주는 도구
 import { projectService } from "../../services/projectService"; // 백엔드의 Project 컨트롤러와 통신
 import { applicationService } from "../../services/applicationService"; // 백엔드의 Application 컨트롤러와 통신
+import { getUserProfile } from "../../services/userService";
+
 
 const MyPage = () => {
     // 스프링의 'return "redirect:/경로"' 와 같은 역할을 합니다.
@@ -62,14 +64,17 @@ const MyPage = () => {
 
             try {
                 // 1. 유저 정보 세팅
+                // 1. 서버에서 최신 프로필 가져오기
+                const profile = await getUserProfile();
+
                 setUser({
-                    name: savedUser.name || "",
-                    email: savedUser.email || "",
-                    organization: savedUser.organization || "",
-                    introduction: savedUser.introduction || "",
-                    tags: savedUser.tags || [],
-                    job_role: savedUser.job_role || "",
-                    profileImg: savedUser.profileImg || null
+                    name: profile.name || savedUser.name || "",
+                    email: profile.email || savedUser.email || "",
+                    organization: profile.organization || "",
+                    introduction: profile.introduction || "",
+                    tags: profile.tags || profile.techStacks || [],
+                    jobRole: profile.jobRole || "",
+                    profileImg: profile.profileImg || null
                 });
 
                 // 2. 전체 프로젝트 목록을 백엔드에서 가져옵니다. (SELECT * FROM project)
@@ -189,6 +194,11 @@ const MyPage = () => {
                             </div>
 
                             <div className="mp-inline-details">
+                                <div className="mp-info-row">
+                                    <span className="mp-label">소속</span>
+                                    <span className="mp-value">{user.organization || "미입력"}</span>
+                                </div>
+                                <span className="mp-inline-divider">|</span>
                                 <span className="mp-detail-item">
                                     <span className="mp-label">이메일</span>
                                     <span className="mp-value">{user.email || "정보 없음"}</span>
@@ -196,7 +206,7 @@ const MyPage = () => {
                                 <span className="mp-inline-divider">|</span>
                                 <span className="mp-detail-item">
                                     <span className="mp-label">희망 직무</span>
-                                    <span className="mp-value">{user.job_role || "미입력"}</span>
+                                    <span className="mp-value">{user.jobRole || user.job_role || "미입력"}</span>
                                 </span>
                             </div>
 

@@ -9,9 +9,10 @@ const API_BASE_URL = "/api/users"; // 유저 관련 API 공통 경로
  */
 export const getUserProfile = async () => {
     try {
-        const res = await api.get("/api/auth/me");
+        const res = await api.get(`${API_BASE_URL}/me/profile`);
         return res.data;
-    } catch {
+    } catch (error) {
+        console.error("내 프로필 정보 조회 실패:", error);
         return null;
     }
 };

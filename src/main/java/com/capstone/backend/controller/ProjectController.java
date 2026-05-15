@@ -8,7 +8,7 @@ import com.capstone.backend.dto.MemberResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import com.capstone.backend.dto.ProjectStatusUpdateRequestDto;
 import java.util.List;
 
 @RestController
@@ -56,7 +56,10 @@ public class ProjectController {
 
     // 7. 상태 변경
     @PatchMapping("/{projectId}/status")
-    public ResponseEntity<String> updateProjectStatus(@PathVariable Long projectId) {
-        return ResponseEntity.ok("프로젝트 " + projectId + " 상태 변경 (임시)");
+    public ResponseEntity<ProjectResponseDto> updateProjectStatus(
+            @PathVariable Long projectId,
+            @RequestBody ProjectStatusUpdateRequestDto request
+    ) {
+        return ResponseEntity.ok(projectService.updateProjectStatus(projectId, request.getStatus()));
     }
 }

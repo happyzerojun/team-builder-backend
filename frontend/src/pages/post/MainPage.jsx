@@ -86,22 +86,26 @@ function MainPage({ isLoggedIn, onLogout }) {
     const filteredPosts = useMemo(() => {
         return posts
             .filter((post) => {
+                const matchesStatus = post.status === "모집중";
+
                 const matchesSearch =
                     searchText === "" ||
                     (post.title || "").includes(searchText) ||
                     (post.content || "").includes(searchText);
 
-                // 현재 DB 구조상 tags 없을 가능성 높아서 안전 처리
+                const postTechNames = Array.isArray(post.techStacks)
+                    ? post.techStacks.map((tech) => tech.name)
+                    : [];
+
                 const matchesTags =
                     selectedTags.length === 0 ||
-                    selectedTags.every((tag) => (post.tags || []).includes(tag));
+                    selectedTags.every((tag) => postTechNames.includes(tag));
 
-                // term이 숫자(개월)라고 가정
                 const months = Number(post.term) || 0;
                 const { min, max } = activeDurationRange;
                 const matchesDuration = months >= min && months <= max;
 
-                return matchesSearch && matchesTags && matchesDuration;
+                return matchesStatus && matchesSearch && matchesTags && matchesDuration;
             })
             .sort((a, b) => {
                 const dateA = new Date(a.created_at || a.createdAt || 0);

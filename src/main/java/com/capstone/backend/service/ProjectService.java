@@ -86,4 +86,14 @@ public class ProjectService {
                 ))
                 .toList();
     }
+
+    @Transactional
+    public ProjectResponseDto updateProjectStatus(Long projectId, String status) {
+        Project project = projectRepository.findById(projectId)
+            .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
+
+    project.updateStatus(status);
+
+    return ProjectResponseDto.from(project);
+    }
 }

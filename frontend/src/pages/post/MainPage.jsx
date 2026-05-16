@@ -38,20 +38,25 @@ function MainPage({ isLoggedIn, onLogout }) {
     const [useCustom, setUseCustom] = useState(false);
 
     useEffect(() => {
-        const fetchPosts = async () => {
-            try {
-                setLoading(true);
-                const data = await projectService.getAllProjects();
-                setPosts(Array.isArray(data) ? data : []);
-            } catch (error) {
-                console.error("데이터 로딩 실패:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchPosts = async () => {
+        try {
+            setLoading(true);
+            const data = await projectService.getAllProjects();
+            
+            // ✅ 여기에 추가
+            console.log("전체 글 목록:", data);
+            console.log("status 값들:", data?.map(p => p.status));
+            
+            setPosts(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error("데이터 로딩 실패:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        fetchPosts();
-    }, []);
+    fetchPosts();
+}, []);
 
     function toggleTag(tag) {
         setSelectedTags((prev) =>
@@ -86,7 +91,7 @@ function MainPage({ isLoggedIn, onLogout }) {
     const filteredPosts = useMemo(() => {
         return posts
             .filter((post) => {
-                const matchesStatus = post.status === "모집중";
+                const matchesStatus = post.status === "OPEN";
 
                 const matchesSearch =
                     searchText === "" ||
@@ -254,6 +259,7 @@ function MainPage({ isLoggedIn, onLogout }) {
             </main>
         </div>
     );
+
 }
 
 export default MainPage;

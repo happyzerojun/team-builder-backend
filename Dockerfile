@@ -10,4 +10,4 @@ RUN chmod +x ./gradlew
 RUN ./gradlew build -x test
 
 # 주의: build/libs/ 폴더 안에 실제로 저 이름의 jar 파일이 생기는지 확인 필요!
-CMD ["java", "-jar", "build/libs/backend-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-Dfile.encoding=UTF-8", "-Dserver.servlet.encoding.charset=UTF-8", "-jar", "build/libs/backend-0.0.1-SNAPSHOT.jar"]

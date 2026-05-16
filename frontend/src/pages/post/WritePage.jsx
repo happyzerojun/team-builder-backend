@@ -278,7 +278,7 @@ function WritePage() {
                 content: form.content.trim(),
                 region: form.region,
                 term: Number(form.term),
-                status: "모집중",
+                status: "OPEN",
                 techStackIds: form.techStackIds,
                 meetingType: form.meetingType,
                 isLocalOnly: form.meetingType === "대면" ? form.isLocalOnly : false,
@@ -289,14 +289,28 @@ function WritePage() {
             if (isEditMode) {
                 savedProject = await projectService.updateProject(id, projectPayload);
                 alert("프로젝트 정보가 성공적으로 수정되었습니다.");
-                navigate(`/post/${id}`);
-            } else {
-                savedProject = await projectService.createProject(projectPayload);
-                alert("모집 글이 성공적으로 등록되었습니다.");
-
-                const newProjectId = savedProject?.project_id || savedProject?.id;
                 navigate("/");
-            }
+            } else {
+                    console.log("전송 payload:", projectPayload);
+                    savedProject = await projectService.createProject(projectPayload);
+
+                    const newProjectId = savedProject?.project_id || savedProject?.id;
+                    const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+             // ✅ 작성자를 자동으로 팀원에 추가
+             if (newProjectId && user.user_id) {
+             try {
+                await projectService.addProjectMember(newProjectId, user.user_id);
+                console.log("작성자 팀원 자동 등록 완료");
+             } catch (memberError) {
+                console.error("팀원 자동 등록 실패:", memberError);
+             // 글 등록은 성공했으므로 사용자에게 별도 알림 없음
+              }
+    }
+
+    alert("모집 글이 성공적으로 등록되었습니다.");
+    navigate("/");
+}
         } catch (error) {
             console.error("저장 실패:", error);
             alert("저장 중 오류가 발생했습니다.");

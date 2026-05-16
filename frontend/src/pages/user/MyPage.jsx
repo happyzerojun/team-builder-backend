@@ -95,9 +95,10 @@ const MyPage = () => {
                 // 5. [분류 작업 2: 지원 현황 (대기중/수락됨/거절됨)]
                 const applied = myApplications
                     .filter((app) =>
-                        app.status === "pending" ||
-                        app.status === "accepted" ||
-                        app.status === "rejected"
+                        app.status === "pending" || app.status === "PENDING" ||
+                        app.status === "accepted" || app.status === "ACCEPTED" ||
+                        app.status === "rejected" || app.status === "REJECTED"
+
                     )
                     .map((app) => {
                         // 백엔드에서 조인(Join)해서 프로젝트 정보를 같이 줬다면 그대로 씁니다.
@@ -111,8 +112,9 @@ const MyPage = () => {
 
                         // 조인해서 주지 않았다면, 아까 받아둔 전체 프로젝트 리스트에서 ID로 직접 찾아 끼워 맞춥니다.
                         const matchedProject = projects.find(
-                            (project) => String(project.project_id) === String(app.project_id)
-                        );
+    (project) => String(project.project_id) === String(app.projectId || app.project_id)
+);
+                        
                         if (!matchedProject) return null;
 
                         return {
@@ -127,10 +129,10 @@ const MyPage = () => {
 
                 // 6. [분류 작업 3: 참여 확정된 프로젝트 (팀원)]
                 const participating = myApplications
-                    .filter((app) => app.status === "accepted") // 수락된 것만 고름
+                    .filter((app) => app.status === "accepted" || app.status === "ACCEPTED") // 수락된 것만 고름
                     .map((app) => {
                         if (app.project) return app.project;
-                        return projects.find((project) => String(project.project_id) === String(app.project_id));
+                        return projects.find((project) => String(project.project_id) === String(app.projectId || app.project_id));
                     })
                     .filter(Boolean)
                     // 🚨 중요: 수락된 것들 중에서도 '내가 방장인 프로젝트'는 제외합니다!
@@ -294,9 +296,9 @@ const MyPage = () => {
                                     </div>
                                     {/* 상태값(accepted, rejected, pending)에 따라 배지 색상과 글씨를 다르게 보여줍니다. */}
                                     <span className={`mp-badge ${
-                                        proj.application_status === 'accepted' ? 'status-ongoing' : proj.application_status === 'rejected' ? 'status-complete' : 'status-pending'
+                                        (proj.application_status === 'accepted' || proj.application_status === 'ACCEPTED') ? 'status-ongoing' : (proj.application_status === 'rejected' || proj.application_status === 'REJECTED') ? 'status-complete' : 'status-pending'
                                     }`}>
-                                        {proj.application_status === 'accepted' ? '승인됨' : proj.application_status === 'rejected' ? '거절됨' : '지원완료'}
+                                        {(proj.application_status === 'accepted' || proj.application_status === 'ACCEPTED') ? '승인됨' : (proj.application_status === 'rejected' || proj.application_status === 'REJECTED') ? '거절됨' : '지원완료'}
                                     </span>
                                 </div>
                             ))

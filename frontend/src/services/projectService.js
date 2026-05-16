@@ -1,5 +1,4 @@
-ï»¿import api from "./api";
-
+import api from "./api";
 const API_URL = "/api/projects";
 const APPLICATION_API = "/api/application";
 
@@ -13,7 +12,6 @@ export const projectService = {
             return [];
         }
     },
-
     getProjectById: async (projectId) => {
         try {
             const res = await api.get(`${API_URL}/${projectId}`);
@@ -23,25 +21,21 @@ export const projectService = {
             return null;
         }
     },
-
     createProject: async (data) => {
         const user = JSON.parse(localStorage.getItem("user") || "{}");
-
         const res = await api.post(API_URL, {
             title: data.title,
             content: data.content,
             region: data.region,
-            status: "ëª¨ì§‘ì¤‘",
+            status: "¸ðÁýÁß",
             leader_id: user.user_id,
             term: data.term,
             techStackIds: data.techStackIds,
             meetingType: data.meetingType,
             isLocalOnly: data.isLocalOnly
         });
-
         return res.data;
     },
-
     updateProject: async (projectId, data) => {
         const res = await api.put(`${API_URL}/${projectId}`, {
             title: data.title,
@@ -53,10 +47,8 @@ export const projectService = {
             meetingType: data.meetingType,
             isLocalOnly: data.isLocalOnly
         });
-
         return res.data;
     },
-
     deleteProject: async (projectId) => {
         try {
             await api.delete(`${API_URL}/${projectId}`);
@@ -66,33 +58,37 @@ export const projectService = {
             return false;
         }
     },
-
     applyToProject: async (projectId) => {
         const user = JSON.parse(localStorage.getItem("user") || "{}");
-
         await api.post(APPLICATION_API, {
             project_id: projectId,
             applicant_id: user.user_id,
-            support_role: "ì§€ì›ìž",
+            support_role: "Áö¿øÀÚ",
             message: "",
             status: "PENDING"
         });
-
         return true;
     },
-
     cancelApplication: async (applicationId) => {
         await api.delete(`${APPLICATION_API}/${applicationId}`);
         return true;
     },
-
     getProjectMembers: async (projectId) => {
         const res = await api.get(`${API_URL}/${projectId}/members`);
         return Array.isArray(res.data) ? res.data : [];
     },
-
     updateProjectStatus: async (projectId, status) => {
         const res = await api.patch(`${API_URL}/${projectId}/status`, { status });
         return res.data;
-    }
+    },
+    removeProjectMember: async (projectId, memberId) => {
+        const res = await api.delete(`${API_URL}/${projectId}/members/${memberId}`);
+        return res.data;
+    },
+    addProjectMember: async (projectId, userId) => {
+    const res = await api.post(`${API_URL}/${projectId}/members`, {
+        user_id: userId
+    });
+        return res.data;
+    },
 };

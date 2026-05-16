@@ -18,6 +18,7 @@ import java.util.List;
 import com.capstone.backend.dto.MemberResponseDto;
 import com.capstone.backend.entity.Application;
 import com.capstone.backend.repository.ApplicationRepository;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -35,15 +36,16 @@ public class ProjectService {
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
 
         Project project = Project.builder()
-                .title(request.getTitle())
-                .content(request.getContent())
-                .region(request.getRegion())
-                .status(request.getStatus())
-                .term(String.valueOf(request.getTerm()))
-                .leader(leader)
-                .meetingType(request.getMeetingType())
-                .isLocalOnly(request.getIsLocalOnly())
-                .build();
+            .title(request.getTitle())
+            .content(request.getContent())
+            .region(request.getRegion())
+            .status("OPEN")  // ← 이것만 남기고
+            .term(String.valueOf(request.getTerm()))
+            .leader(leader)
+            .meetingType(request.getMeetingType())
+            .isLocalOnly(request.getIsLocalOnly())
+            // .status(request.getStatus())  ← 이 줄 삭제!
+            .build();
 
         Project savedProject = projectRepository.save(project);
 
@@ -71,9 +73,24 @@ public class ProjectService {
     }
 
     public ProjectResponseDto getProjectById(Long projectId) {
-        return projectRepository.findById(projectId)
-                .map(ProjectResponseDto::from)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
+    return projectRepository.findById(projectId)
+            .map(ProjectResponseDto::from)
+            .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
+    }
+
+    @Transactional
+    public ProjectResponseDto updateProject(Long projectId, ProjectRequestDto request) {
+        Project project = projectRepository.findById(projectId)
+            .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
+
+        project.updateTitle(request.getTitle());
+        project.updateContent(request.getContent());
+        project.updateRegion(request.getRegion());
+        project.updateTerm(String.valueOf(request.getTerm()));
+        project.updateMeetingType(request.getMeetingType());
+        project.updateIsLocalOnly(request.getIsLocalOnly());
+
+        return ProjectResponseDto.from(project);
     }
 
     public List<MemberResponseDto> getProjectMembers(Long projectId) {
@@ -96,4 +113,32 @@ public class ProjectService {
 
     return ProjectResponseDto.from(project);
     }
+
+    @Transactional
+    public void removeProjectMember(Long projectId, Long memberId) {
+    Application application = applicationRepository
+        .findByProjectIdAndApplicantIdAndStatus(projectId, memberId, "ACCEPTED")
+        .orElseThrow(() -> new IllegalArgumentException("해당 팀원을 찾을 수 없습니다."));
+    applicationRepository.delete(application);
+    }
+
+    @Transactional
+    public void addProjectMember(Long projectId, Long userId) {
+    Project project = projectRepository.findById(projectId)
+            .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
+
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+
+    Application application = Application.builder()
+            .project(project)
+            .applicant(user)
+            .supportRole("팀장")
+            .message("")
+            .status("ACCEPTED")
+            .build();
+
+    applicationRepository.save(application);
+    }
+
 }

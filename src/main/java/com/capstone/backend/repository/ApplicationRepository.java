@@ -2,21 +2,24 @@ package com.capstone.backend.repository;
 
 import com.capstone.backend.entity.Application;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
 
-    // 유저 ID로 지원 내역 조회 (마이페이지용)
-    List<Application> findByApplicantId(Long applicantId);
+    @Query("SELECT a FROM Application a JOIN FETCH a.applicant JOIN FETCH a.project WHERE a.applicant.id = :applicantId")
+    List<Application> findByApplicantId(@Param("applicantId") Long applicantId);
 
-    // 프로젝트 ID로 지원자 목록 조회 (프로젝트 리더용)
-    List<Application> findByProjectId(Long projectId);
+    @Query("SELECT a FROM Application a JOIN FETCH a.applicant JOIN FETCH a.project WHERE a.project.id = :projectId")
+    List<Application> findByProjectId(@Param("projectId") Long projectId);
 
     List<Application> findByProjectIdAndStatus(Long projectId, String status);
 
-    // 중복 지원 방지를 위한 확인 메서드
     boolean existsByApplicantIdAndProjectId(Long applicantId, Long projectId);
+
+    Optional<Application> findByProjectIdAndApplicantIdAndStatus(Long projectId, Long applicantId, String status);
 }

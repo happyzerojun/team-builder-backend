@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.capstone.backend.dto.ProjectStatusUpdateRequestDto;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -38,8 +40,10 @@ public class ProjectController {
 
     // 4. 프로젝트 수정 (PUT /api/projects/{projectId})
     @PutMapping("/{projectId}")
-    public ResponseEntity<String> updateProject(@PathVariable Long projectId) {
-        return ResponseEntity.ok("프로젝트 " + projectId + " 수정 성공 (임시)");
+    public ResponseEntity<ProjectResponseDto> updateProject(
+        @PathVariable Long projectId,
+        @RequestBody ProjectRequestDto request) {
+    return ResponseEntity.ok(projectService.updateProject(projectId, request));
     }
 
     // 5. 프로젝트 삭제 (DELETE /api/projects/{projectId})
@@ -62,4 +66,23 @@ public class ProjectController {
     ) {
         return ResponseEntity.ok(projectService.updateProjectStatus(projectId, request.getStatus()));
     }
+
+    // 8. 팀원 제외 (DELETE /api/projects/{projectId}/members/{memberId})
+    @DeleteMapping("/{projectId}/members/{memberId}")
+    public ResponseEntity<String> removeProjectMember(
+        @PathVariable Long projectId,
+        @PathVariable Long memberId) {
+            projectService.removeProjectMember(projectId, memberId);
+            return ResponseEntity.ok("팀원 제외 성공");
+    }
+
+    // 팀원 추가 (POST /api/projects/{projectId}/members)
+    @PostMapping("/{projectId}/members")
+    public ResponseEntity<String> addProjectMember(
+        @PathVariable Long projectId,
+        @RequestBody Map<String, Long> body) {
+            projectService.addProjectMember(projectId, body.get("user_id"));
+            return ResponseEntity.ok("팀원 추가 성공");
+    }
+
 }

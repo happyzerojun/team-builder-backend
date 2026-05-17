@@ -51,7 +51,8 @@ const MyPage = () => {
                 introduction: savedUser.introduction || "",
                 tags: savedUser.tags || [],
                 job_role: savedUser.job_role || "",
-                profileImg: savedUser.profileImg || null
+                profileImg: savedUser.profileImg || null,
+                region: savedUser.region || ""
             });
             setMyLead([]); setMyPart([]); setAppliedPosts([]);
             setIsLoading(false); // 로딩 끝!
@@ -71,6 +72,7 @@ const MyPage = () => {
                     name: profile.name || savedUser.name || "",
                     email: profile.email || savedUser.email || "",
                     organization: profile.organization || "",
+                    region: profile.region || savedUser.region || "",
                     introduction: profile.introduction || "",
                     tags: profile.tags || profile.techStacks || [],
                     jobRole: profile.jobRole || "",
@@ -199,6 +201,11 @@ const MyPage = () => {
                                     <span className="mp-label">소속</span>
                                     <span className="mp-value">{user.organization || "미입력"}</span>
                                 </div>
+                                <span className="mp-inline-divider">|</span>
+                                <span className="mp-detail-item">
+                                    <span className="mp-label">지역</span>
+                                    <span className="mp-value">{user.region || "미입력"}</span>
+                                </span>
                                 <span className="mp-inline-divider">|</span>
                                 <span className="mp-detail-item">
                                     <span className="mp-label">이메일</span>

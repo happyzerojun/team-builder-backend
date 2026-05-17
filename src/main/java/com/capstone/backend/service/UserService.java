@@ -39,6 +39,7 @@ public class UserService {
                 .organization(user.getOrganization())
                 .introduction(user.getIntroduction())
                 .profileImg(user.getProfileImg())
+                .region(user.getRegion())
                 .techStacks(techStackNames)
                 .build();
     }
@@ -74,6 +75,7 @@ public class UserService {
                 requestDto.getNickname(),
                 requestDto.getJobRole(),
                 requestDto.getOrganization(),
+                requestDto.getRegion(),
                 requestDto.getIntroduction(),
                 newStacks,
                 requestDto.getProfileImg()

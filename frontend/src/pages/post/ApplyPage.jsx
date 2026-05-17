@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { applicationService } from "../../services/applicationService";
 import { projectService } from "../../services/projectService";
 import "./ApplyPage.css";
+import { getUserProfile } from "../../services/userService";
 
 const ApplyPage = () => {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ const ApplyPage = () => {
   const [project, setProject] = useState(null);
 
   const [formData, setFormData] = useState({
-    supportRole: "",
+    supportRoles: [],
     message: "",
     experience: "",
     contactType: "email",
@@ -22,6 +23,23 @@ const ApplyPage = () => {
     const fetchProject = async () => {
       try {
         const data = await projectService.getProjectById(projectId);
+
+        const userProfile = await getUserProfile();
+
+        // 🚨 지역 제한 검사
+        if (
+          data?.meetingType === "대면" &&
+          data?.isLocalOnly === true &&
+          userProfile?.region !== data?.region
+        ) {
+          alert(
+            `이 프로젝트는 ${data.region} 지역 사용자만 지원 가능합니다.`
+          );
+
+          navigate(-1);
+          return;
+        }
+
         setProject(data);
       } catch (error) {
         console.error("프로젝트 정보 조회 실패:", error);
@@ -29,7 +47,7 @@ const ApplyPage = () => {
     };
 
     fetchProject();
-  }, [projectId]);
+  }, [projectId, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,12 +61,14 @@ const ApplyPage = () => {
   const handleTechSelect = (techName) => {
     setFormData((prev) => ({
       ...prev,
-      supportRole: techName
+      supportRoles: prev.supportRoles.includes(techName)
+        ? prev.supportRoles.filter((role) => role !== techName)
+        : [...prev.supportRoles, techName]
     }));
   };
 
   const handleSubmit = async () => {
-    if (!formData.supportRole) {
+    if (formData.supportRoles.length === 0) {
       alert("지원할 기술스택을 선택해주세요.");
       return;
     }
@@ -64,7 +84,10 @@ const ApplyPage = () => {
     }
 
     try {
-      await applicationService.apply(projectId, formData);
+      await applicationService.apply(projectId, {
+        ...formData,
+        supportRole: formData.supportRoles.join(", ")
+      });
 
       alert("지원 신청이 완료되었습니다.");
       navigate("/mypage");
@@ -88,6 +111,7 @@ const ApplyPage = () => {
         </button>
 
         <h2 className="apply-title">프로젝트 지원서</h2>
+
         <p className="apply-subtitle">
           프로젝트에 지원하기 위한 정보를 입력해주세요.
         </p>
@@ -103,7 +127,9 @@ const ApplyPage = () => {
                     key={tech.tech_stack_id}
                     type="button"
                     className={`apply-tech-tag ${
-                      formData.supportRole === tech.name ? "selected" : ""
+                      formData.supportRoles.includes(tech.name)
+                        ? "selected"
+                        : ""
                     }`}
                     onClick={() => handleTechSelect(tech.name)}
                   >
@@ -120,6 +146,7 @@ const ApplyPage = () => {
 
           <div className="apply-input-group">
             <label>지원 메시지</label>
+
             <textarea
               name="message"
               value={formData.message}
@@ -130,6 +157,7 @@ const ApplyPage = () => {
 
           <div className="apply-input-group">
             <label>경험 / 기술 스택</label>
+
             <textarea
               name="experience"
               value={formData.experience}
@@ -164,10 +192,17 @@ const ApplyPage = () => {
         </div>
 
         <div className="apply-button-group">
-          <button className="apply-cancel-btn" onClick={() => navigate(-1)}>
+          <button
+            className="apply-cancel-btn"
+            onClick={() => navigate(-1)}
+          >
             취소
           </button>
-          <button className="apply-submit-btn" onClick={handleSubmit}>
+
+          <button
+            className="apply-submit-btn"
+            onClick={handleSubmit}
+          >
             지원서 제출
           </button>
         </div>

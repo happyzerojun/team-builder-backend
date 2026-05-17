@@ -12,6 +12,9 @@ public class ApplicationRequestDto {
         private Long applicant_id;
         private String support_role;
         private String message;
+        private String experience;
+        private String contactType;
+        private String contactValue;
     }
 
     @Getter

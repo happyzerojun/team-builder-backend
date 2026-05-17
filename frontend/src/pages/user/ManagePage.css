@@ -329,3 +329,72 @@ textarea[readonly] {
     cursor: pointer;
 }
 
+.app-detail-box {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #cbd5e1;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.app-detail-box p {
+    margin: 4px 0;
+}
+
+.app-main-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.btn-view-application {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #475569;
+    background: #1e293b;
+    color: #e2e8f0;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.btn-view-application:hover {
+    border-color: #38bdf8;
+    color: #38bdf8;
+}
+
+.application-modal {
+    width: min(520px, 92vw);
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 24px;
+    color: #e2e8f0;
+}
+
+.application-modal p {
+    margin: 12px 0;
+    line-height: 1.6;
+}
+
+.app-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+.applicant-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.member-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}

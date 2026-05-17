@@ -17,4 +17,7 @@ public class ApplicationResponseDto {
     private String projectTitle;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String experience;
+    private String contactType;
+    private String contactValue;
 }

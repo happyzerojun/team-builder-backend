@@ -20,6 +20,8 @@ function DetailPage() {
                 setLoading(true);
 
                 const data = await projectService.getProjectById(id);
+                console.log(data);
+
                 setPost(data);
 
                 try {
@@ -189,7 +191,15 @@ function DetailPage() {
                         className="detail-footer"
                         style={{ marginTop: "40px", display: "flex", justifyContent: "center" }}
                     >
-                        {isApplied ? (
+                        {String(post.leader_id) ===
+                        String(JSON.parse(localStorage.getItem("user"))?.user_id) ? (
+                            <button
+                                className="btn-apply"
+                                onClick={() => navigate(`/write/${post.project_id || id}`)}
+                            >
+                                프로젝트 수정하기
+                            </button>
+                        ) : isApplied ? (
                             <button className="btn-cancle" onClick={handleCancel}>
                                 지원 취소하기
                             </button>

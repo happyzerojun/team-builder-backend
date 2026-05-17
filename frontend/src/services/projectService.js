@@ -1,4 +1,4 @@
-import api from "./api";
+ï»¿import api from "./api";
 const API_URL = "/api/projects";
 const APPLICATION_API = "/api/application";
 
@@ -27,7 +27,7 @@ export const projectService = {
             title: data.title,
             content: data.content,
             region: data.region,
-            status: "¸ğÁıÁß",
+            status: "ëª¨ì§‘ì¤‘",
             leader_id: user.user_id,
             term: data.term,
             techStackIds: data.techStackIds,
@@ -63,7 +63,7 @@ export const projectService = {
         await api.post(APPLICATION_API, {
             project_id: projectId,
             applicant_id: user.user_id,
-            support_role: "Áö¿øÀÚ",
+            support_role: "ì§€ì›ì",
             message: "",
             status: "PENDING"
         });

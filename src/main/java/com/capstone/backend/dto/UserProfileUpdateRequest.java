@@ -15,6 +15,7 @@ public class UserProfileUpdateRequest {
     private String jobRole;
     private String organization;
     private String introduction;
+    private String region;
 
     // 🚨 프론트에서 "tags": ["Java"] 로 보내면 백엔드의 "techStacks" 리스트에 쏙 들어갑니다!
     @JsonProperty("tags")

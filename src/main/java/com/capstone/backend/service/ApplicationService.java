@@ -43,11 +43,14 @@ public class ApplicationService {
 
         // DTO -> Entity 변환
         Application application = Application.builder()
-                .project(project)       // 🚨 ID가 아닌 객체를 넣음
-                .applicant(applicant)   // 🚨 ID가 아닌 객체를 넣음
+                .project(project)
+                .applicant(applicant)
                 .supportRole(requestDto.getSupport_role())
                 .message(requestDto.getMessage())
-                .status("pending")
+                .experience(requestDto.getExperience())
+                .contactType(requestDto.getContactType())
+                .contactValue(requestDto.getContactValue())
+                .status("PENDING")
                 .build();
 
         // DB에 저장

@@ -3,63 +3,59 @@ import './MyPageSetting.css';
 import { useNavigate } from 'react-router-dom';
 import { getUserProfile, updateUserProfile } from '../../services/userService';
 
+const REGIONS = [
+    "서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종",
+    "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"
+];
+
 const MyPageSetting = () => {
     const navigate = useNavigate();
 
-    // 추천 기술 스택 목록
     const recommendedTags = [
-        'React', 'Vue.js', 'Next.js', 'TypeScript', 'Node.js',
-        'Spring Boot', 'Java', 'Python', 'Django', 'Express',
-        'MySQL', 'MongoDB', 'PostgreSQL', 'Docker', 'AWS'
+        'React', 'Vue', 'Angular', 'Next.js', 'Svelte', 'TypeScript', 'JavaScript', 'HTML/CSS', 'Tailwind',
+        'Spring Boot', 'Node.js', 'Django', 'FastAPI', 'Flask', 'Express', 'NestJS', 'Java', 'Python', 'Go', 'Kotlin',
+        'MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'Oracle', 'SQLite', 'Firebase',
+        'AWS', 'Docker', 'Kubernetes', 'CI/CD', 'GCP', 'Azure', 'Nginx', 'Linux',
+        'Git', 'Figma', 'Unity', 'Flutter', 'React Native', 'Swift', 'Kotlin(Android)', 'Kotlin(iOS)'
     ];
 
     const [profileImg, setProfileImg] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // 폼 데이터 상태 (백엔드 DTO 규격과 일치)
     const [formData, setFormData] = useState({
         nickname: '',
         jobRole: '',
         organization: '',
+        region: '',
         introduction: '',
         tags: []
     });
 
     const [customTag, setCustomTag] = useState('');
 
-    // 1. 초기 데이터 로드 (마이페이지 정보 가져오기)
     useEffect(() => {
         const fetchProfile = async () => {
             try {
                 setLoading(true);
-                const profile = await getUserProfile(); // 서버에서 데이터 가져오기
+                const profile = await getUserProfile();
                 const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
 
-                // [디버깅 로그] 이 로그를 개발자 도구(F12) 콘솔에서 꼭 확인하세요!
-                console.log("서버 응답 데이터:", profile);
-                console.log("로컬 저장 데이터:", savedUser);
-
-                // 1. 데이터 병합 전략: 서버 데이터가 있으면 우선하되, 없으면 로컬 데이터로 보충
                 const baseUser = { ...savedUser, ...profile };
 
-                // 2. 폼 데이터 세팅 (이름표가 다를 경우를 대비해 모두 체크)
                 setFormData({
                     nickname: baseUser.nickname || baseUser.name || '',
-                    // jobRole(카멜케이스)과 job_role(스네이크케이스) 둘 다 확인
                     jobRole: baseUser.jobRole || baseUser.job_role || '',
                     organization: baseUser.organization || '',
+                    region: baseUser.region || '',
                     introduction: baseUser.introduction || '',
-                    // 백엔드 DTO에서 @JsonProperty("tags")를 썼으므로 tags로 올 겁니다.
                     tags: baseUser.tags || baseUser.techStacks || []
                 });
 
-                // 3. 프로필 이미지 세팅
                 if (baseUser.profileImg || baseUser.profile_img) {
                     setProfileImg(baseUser.profileImg || baseUser.profile_img);
                 }
             } catch (error) {
                 console.error("프로필 불러오기 실패:", error);
-                // profile이 없어도 로컬 데이터로라도 보여주기 위해 에러 처리를 유연하게 합니다.
             } finally {
                 setLoading(false);
             }
@@ -68,7 +64,6 @@ const MyPageSetting = () => {
         fetchProfile();
     }, []);
 
-    // 2. 이미지 변경 핸들러 (Base64 변환)
     const handleImgChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -80,16 +75,15 @@ const MyPageSetting = () => {
         reader.readAsDataURL(file);
     };
 
-    // 3. 입력 필드 변경 핸들러
     const handleChange = (e) => {
         const { name, value } = e.target;
+
         setFormData((prev) => ({
             ...prev,
             [name]: value
         }));
     };
 
-    // 4. 태그 클릭 핸들러 (추가/삭제 토글)
     const handleTagClick = (tag) => {
         setFormData((prev) => ({
             ...prev,
@@ -99,10 +93,10 @@ const MyPageSetting = () => {
         }));
     };
 
-    // 5. 커스텀 태그 추가 핸들러
     const handleAddCustomTag = (e) => {
         if (e.key === 'Enter' || e.type === 'click') {
             e.preventDefault();
+
             const trimmedTag = customTag.trim();
             if (!trimmedTag) return;
             if (formData.tags.includes(trimmedTag)) return;
@@ -115,10 +109,14 @@ const MyPageSetting = () => {
         }
     };
 
-    // 6. 저장 버튼 핸들러 (백엔드로 전송)
     const handleSave = async () => {
         if (!formData.nickname.trim()) {
             alert("닉네임을 입력해주세요!");
+            return;
+        }
+
+        if (!formData.region) {
+            alert("지역을 선택해주세요!");
             return;
         }
 
@@ -128,20 +126,19 @@ const MyPageSetting = () => {
                 nickname: formData.nickname,
                 jobRole: formData.jobRole,
                 organization: formData.organization,
+                region: formData.region,
                 introduction: formData.introduction,
                 tags: formData.tags,
-                profileImg: profileImg
+                profileImg
             };
 
             await updateUserProfile(payload);
 
-            // 로컬 스토리지 업데이트
             const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
-            const updatedUser = {
+            localStorage.setItem("user", JSON.stringify({
                 ...currentUser,
                 ...payload
-            };
-            localStorage.setItem("user", JSON.stringify(updatedUser));
+            }));
 
             alert("프로필이 성공적으로 저장되었습니다!");
             navigate('/mypage');
@@ -160,7 +157,6 @@ const MyPageSetting = () => {
             <div className="ms-card">
                 <h2 className="ms-title">프로필 수정</h2>
 
-                {/* 프로필 이미지 섹션 */}
                 <div className="ms-profile-img-wrap">
                     <label htmlFor="profile-upload" className="ms-img-label-wrapper">
                         <div className="ms-img-box">
@@ -182,7 +178,6 @@ const MyPageSetting = () => {
                     <span className="ms-img-instruction">이미지를 클릭하여 변경</span>
                 </div>
 
-                {/* 기본 정보 입력 섹션 */}
                 <div className="ms-input-group">
                     <label>닉네임</label>
                     <input
@@ -203,6 +198,23 @@ const MyPageSetting = () => {
                         value={formData.organization}
                         onChange={handleChange}
                     />
+                </div>
+
+                <div className="ms-input-group">
+                    <label>지역</label>
+                    <select
+                        className="ms-input"
+                        name="region"
+                        value={formData.region}
+                        onChange={handleChange}
+                    >
+                        <option value="">지역 선택</option>
+                        {REGIONS.map((region) => (
+                            <option key={region} value={region}>
+                                {region}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
                 <div className="ms-input-group">
@@ -227,7 +239,6 @@ const MyPageSetting = () => {
                     />
                 </div>
 
-                {/* 기술 스택 섹션 */}
                 <div className="ms-input-group">
                     <label>기술 스택</label>
                     <div className="ms-selected-tags">
@@ -249,6 +260,7 @@ const MyPageSetting = () => {
                                 {tag}
                             </button>
                         ))}
+
                         <div className="ms-custom-tag-wrap">
                             <input
                                 type="text"
@@ -258,15 +270,20 @@ const MyPageSetting = () => {
                                 onChange={(e) => setCustomTag(e.target.value)}
                                 onKeyDown={handleAddCustomTag}
                             />
-                            <button type="button" className="ms-tag-add-btn" onClick={handleAddCustomTag}>+</button>
+                            <button type="button" className="ms-tag-add-btn" onClick={handleAddCustomTag}>
+                                +
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                {/* 하단 버튼 */}
                 <div className="ms-button-group">
-                    <button className="ms-cancel-btn" onClick={() => navigate('/mypage')}>취소</button>
-                    <button className="ms-save-btn" onClick={handleSave}>저장하기</button>
+                    <button className="ms-cancel-btn" onClick={() => navigate('/mypage')}>
+                        취소
+                    </button>
+                    <button className="ms-save-btn" onClick={handleSave}>
+                        저장하기
+                    </button>
                 </div>
             </div>
         </div>

@@ -15,6 +15,7 @@ public class UserProfileResponseDto {
     private String organization;
     private String introduction;
     private String profileImg;
+    private String region;
 
     // 🚨 TechStack 객체가 아니라 문자열 리스트로 반환 (무한루프 방지)
     @JsonProperty("tags") // 🚨 프론트에서 넘어오는 JSON의 "tags" 키를 이 필드에 매핑

@@ -22,22 +22,20 @@ public class Application {
     @Column(name = "application_id")
     private Long id;
 
-    @Column(name = "support_role", length = 30)
-    private String supportRole; // 예: 프론트엔드, 백엔드
+    @Column(name = "support_role", length = 300)
+    private String supportRole;
 
     @Column(length = 500)
     private String message;
 
     @Column(length = 30)
     @Builder.Default
-    private String status = "PENDING"; // PENDING, ACCEPTED, REJECTED
+    private String status = "PENDING";
 
-    // 🚨 [핵심 1] 지원한 유저 (Applicant)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "applicant_id", nullable = false)
     private User applicant;
 
-    // 🚨 [핵심 2] 지원 대상 프로젝트
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
@@ -50,7 +48,15 @@ public class Application {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // 지원 상태 변경 메서드 (팀장이 승인/거절 시 사용)
+    @Column(length = 1000)
+    private String experience;
+
+    @Column(name = "contact_type", length = 30)
+    private String contactType;
+
+    @Column(name = "contact_value", length = 255)
+    private String contactValue;
+
     public void updateStatus(String newStatus) {
         this.status = newStatus;
     }

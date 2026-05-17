@@ -3,14 +3,17 @@
 const API_URL = "/api/application";
 
 export const applicationService = {
-    apply: async (projectId) => {
+    apply: async (projectId, formData) => {
         const user = JSON.parse(localStorage.getItem("user") || "{}");
 
         const res = await api.post(API_URL, {
             project_id: projectId,
             applicant_id: user.user_id,
-            support_role: "지원자",
-            message: "",
+            support_role: formData.supportRole,
+            message: formData.message,
+            experience: formData.experience,
+            contactType: formData.contactType,
+            contactValue: formData.contactValue,
             status: "PENDING"
         });
 

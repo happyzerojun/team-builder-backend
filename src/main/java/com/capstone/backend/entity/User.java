@@ -50,6 +50,9 @@ public class User {
     @Column(columnDefinition = "TEXT")
     private String introduction;
 
+    @Column(length = 30)
+    private String region;
+
     @Lob
     @Column(columnDefinition = "LONGTEXT")
     private String profileImg;
@@ -82,6 +85,7 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+
     // 🚨 [새로 추가] 소셜 로그인 시 정보를 업데이트하는 전용 메서드
     public void updateOAuthInfo(String name, AuthProvider provider, String providerId) {
         this.name = name;
@@ -91,12 +95,13 @@ public class User {
 
     // 🚨 [핵심] 프로필 업데이트 비즈니스 로직
     public void updateProfile(String name, String nickname, String jobRole,
-                              String organization, String introduction,
+                              String organization, String region, String introduction,
                               List<UserTechStack> newStacks, String profileImg) {
         this.name = name;
         this.nickname = nickname;
         this.jobRole = jobRole;
         this.organization = organization;
+        this.region = region;
         this.introduction = introduction;
         this.profileImg = profileImg;
 

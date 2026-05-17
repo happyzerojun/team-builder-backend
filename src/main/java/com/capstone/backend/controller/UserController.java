@@ -17,21 +17,14 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping({"/me", "/me/profile"})
-    public ResponseEntity<UserProfileResponseDto> getMyProfile(Authentication authentication) {
-
-        System.out.println("===== PROFILE 조회 =====");
-        System.out.println("authentication = " + authentication);
-
-        String email = authentication.getName();
-
-        System.out.println("email = " + email);
-
-        UserProfileResponseDto responseDto = userService.getUserProfile(email);
-
-        System.out.println("responseDto = " + responseDto);
-
-        return ResponseEntity.ok(responseDto);
+public ResponseEntity<UserProfileResponseDto> getMyProfile(Authentication authentication) {
+    if (authentication == null) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
+    String email = authentication.getName();
+    UserProfileResponseDto responseDto = userService.getUserProfile(email);
+    return ResponseEntity.ok(responseDto);
+}
 
     @PutMapping("/me/profile")
     public ResponseEntity<?> updateProfile(

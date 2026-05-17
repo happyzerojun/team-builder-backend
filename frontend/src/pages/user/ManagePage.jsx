@@ -12,7 +12,6 @@ const ManagePage = () => {
     const [project, setProject] = useState(null);
     const [isLeader, setIsLeader] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [currentMyName, setCurrentMyName] = useState("");
     const [currentUserId, setCurrentUserId] = useState(null);
 
     const [members, setMembers] = useState([]);
@@ -21,100 +20,84 @@ const ManagePage = () => {
     const [showReviewModal, setShowReviewModal] = useState(false);
     const [memberReviews, setMemberReviews] = useState({});
     const [memberRatings, setMemberRatings] = useState({});
+    const [selectedApplication, setSelectedApplication] = useState(null);
 
     useEffect(() => {
-            const loadData = async () => {
+        const loadData = async () => {
+            try {
+                setLoading(true);
+
+                const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+                const myUserId = savedUser?.user_id || savedUser?.userId;
+                setCurrentUserId(myUserId);
+
+                const currentProject = await projectService.getProjectById(id);
+
+                if (!currentProject) {
+                    alert("프로젝트를 찾을 수 없습니다.");
+                    navigate("/mypage");
+                    return;
+                }
+
+                setProject(currentProject);
+                setIsLeader(String(currentProject.leader_id) === String(myUserId));
+
+                const memberData = await projectService.getProjectMembers(id);
+                const normalizedMembers = Array.isArray(memberData) ? memberData : [];
+                setMembers(normalizedMembers);
+
+                const applicationData = await applicationService.getProjectApplications(id);
+                setApplicants(Array.isArray(applicationData) ? applicationData : []);
+
                 try {
-                    setLoading(true);
+                    const reviewData = await reviewService.getProjectMyReviews(id);
 
-                    const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
-                    const myName = savedUser?.nickname || savedUser?.name || "";
-                    const myUserId = savedUser?.user_id;
+                    if (reviewData.length > 0) {
+                        const reviewsObj = {};
+                        const ratingsObj = {};
 
-                    setCurrentMyName(myName);
-                    setCurrentUserId(myUserId);
-
-                    // 1. 필수 데이터 불러오기 (이게 실패하면 페이지 접근 불가)
-                    const currentProject = await projectService.getProjectById(id);
-
-                    if (!currentProject) {
-                        alert("프로젝트를 찾을 수 없습니다.");
-                        navigate("/mypage");
-                        return;
-                    }
-
-                    setProject(currentProject);
-
-                    const leaderCheck = String(currentProject.leader_id) === String(myUserId);
-                    setIsLeader(leaderCheck);
-
-                    const memberData = await projectService.getProjectMembers(id);
-                    const normalizedMembers = Array.isArray(memberData) ? memberData : [];
-                    setMembers(normalizedMembers);
-
-                    const applicationData = await applicationService.getProjectApplications(id);
-                    const pendingApplicants = applicationData.filter(
-                        (app) => app.status === "pending"
-                    );
-                    setApplicants(pendingApplicants);
-
-                    // 2. 리뷰 데이터 불러오기 (여기를 따로 분리! 에러가 나도 무시하고 진행)
-                    try {
-                        const reviewData = await reviewService.getProjectMyReviews(id);
-
-                        if (reviewData.length > 0) {
-                            const reviewsObj = {};
-                            const ratingsObj = {};
-
-                            reviewData.forEach((review) => {
-                                const key = review.reviewee_id;
-                                reviewsObj[key] = review.comment || "";
-                                ratingsObj[key] = review.rating || 5;
-                            });
-
-                            setMemberReviews(reviewsObj);
-                            setMemberRatings(ratingsObj);
-                            setIsReviewed(true);
-                        } else {
-                            throw new Error("리뷰 데이터 없음 처리"); // 강제로 catch로 넘겨서 초기화
-                        }
-                    } catch (reviewError) {
-                        console.warn("리뷰 데이터를 불러오지 못했지만 무시합니다 (백엔드 에러 또는 데이터 없음).");
-                        // 에러가 나거나 데이터가 없으면 초기 상태 세팅
-                        const initialReviews = {};
-                        const initialRatings = {};
-
-                        normalizedMembers.forEach((member) => {
-                            if (String(member.user_id) !== String(myUserId)) {
-                                initialReviews[member.user_id] = "";
-                                initialRatings[member.user_id] = 5;
-                            }
+                        reviewData.forEach((review) => {
+                            const key = review.reviewee_id || review.revieweeId;
+                            reviewsObj[key] = review.comment || "";
+                            ratingsObj[key] = review.rating || 5;
                         });
 
-                        setMemberReviews(initialReviews);
-                        setMemberRatings(initialRatings);
-                        setIsReviewed(false);
+                        setMemberReviews(reviewsObj);
+                        setMemberRatings(ratingsObj);
+                        setIsReviewed(true);
+                    } else {
+                        throw new Error("리뷰 데이터 없음 처리");
                     }
+                } catch {
+                    const initialReviews = {};
+                    const initialRatings = {};
 
-                } catch (error) {
-                    // 프로젝트 정보나 멤버 정보 등 '필수' 데이터가 터졌을 때만 이 팝업이 뜹니다.
-                    console.error("필수 데이터 로드 실패:", error);
-                    alert("관리 페이지 데이터를 불러오지 못했습니다.");
-                } finally {
-                    setLoading(false);
+                    normalizedMembers.forEach((member) => {
+                        if (String(member.user_id) !== String(myUserId)) {
+                            initialReviews[member.user_id] = "";
+                            initialRatings[member.user_id] = 5;
+                        }
+                    });
+
+                    setMemberReviews(initialReviews);
+                    setMemberRatings(initialRatings);
+                    setIsReviewed(false);
                 }
-            };
+            } catch (error) {
+                console.error("필수 데이터 로드 실패:", error);
+                alert("관리 페이지 데이터를 불러오지 못했습니다.");
+            } finally {
+                setLoading(false);
+            }
+        };
 
-            loadData();
-        }, [id, navigate]);
+        loadData();
+    }, [id, navigate]);
 
     const refreshApplicants = async () => {
         try {
             const applicationData = await applicationService.getProjectApplications(id);
-            const pendingApplicants = applicationData.filter(
-                (app) => app.status === "pending"
-            );
-            setApplicants(pendingApplicants);
+            setApplicants(Array.isArray(applicationData) ? applicationData : []);
         } catch (error) {
             console.error("신청자 목록 새로고침 실패:", error);
         }
@@ -141,6 +124,7 @@ const ManagePage = () => {
             await applicationService.acceptApplication(app.application_id || app.applicationId);
             await refreshApplicants();
             await refreshMembers();
+            setSelectedApplication(null);
             alert("신청자를 승인했습니다.");
         } catch (error) {
             console.error("승인 실패:", error);
@@ -159,10 +143,43 @@ const ManagePage = () => {
         try {
             await applicationService.rejectApplication(app.application_id || app.applicationId);
             await refreshApplicants();
+            await refreshMembers();
+            setSelectedApplication(null);
             alert("신청을 거절했습니다.");
         } catch (error) {
             console.error("거절 실패:", error);
             alert("거절 처리에 실패했습니다.");
+        }
+    };
+
+    const handleRemoveMember = async (memberId) => {
+        if (!window.confirm("해당 팀원을 프로젝트에서 제외하시겠습니까?")) {
+            return;
+        }
+
+        try {
+            const matchedApplication = applicants.find(
+                (app) =>
+                    String(app.applicantId || app.applicant_id) === String(memberId) &&
+                    (app.status === "ACCEPTED" || app.status === "accepted")
+            );
+
+            if (!matchedApplication) {
+                alert("해당 팀원의 지원서 정보를 찾을 수 없습니다.");
+                return;
+            }
+
+            await applicationService.rejectApplication(
+                matchedApplication.applicationId || matchedApplication.application_id
+            );
+
+            await refreshApplicants();
+            await refreshMembers();
+
+            alert("팀원이 제외되었습니다.");
+        } catch (error) {
+            console.error("팀원 제외 실패:", error);
+            alert("팀원 제외에 실패했습니다.");
         }
     };
 
@@ -227,23 +244,19 @@ const ManagePage = () => {
         }
     };
 
-    const handleRemoveMember = async (memberId) => {
-        if (!window.confirm("해당 팀원을 프로젝트에서 제외하시겠습니까?")) {
-            return;
-        }
-
-        try {
-            await projectService.removeProjectMember(id, memberId);
-            await refreshMembers();
-            alert("팀원이 제외되었습니다.");
-        } catch (error) {
-            console.error("팀원 제외 실패:", error);
-            alert("팀원 제외에 실패했습니다.");
-        }
+    const formatContactType = (type) => {
+        if (type === "email") return "이메일";
+        if (type === "kakao") return "카카오톡";
+        if (type === "phone") return "연락처";
+        return type || "미입력";
     };
 
     if (loading) return <div className="manage-container">로딩 중...</div>;
     if (!project) return null;
+
+    const pendingApplicants = applicants.filter(
+        (app) => app.status === "PENDING" || app.status === "pending"
+    );
 
     return (
         <div className="manage-container">
@@ -281,8 +294,9 @@ const ManagePage = () => {
 
             {project.status === '모집중' && isLeader && (
                 <div className="manage-section">
-                    <h4>📩 새로운 신청자 ({applicants.length})</h4>
-                    {applicants.length > 0 ? (
+                    <h4>📩 새로운 신청자 ({pendingApplicants.length})</h4>
+
+                    {pendingApplicants.length > 0 ? (
                         <div className="applicant-list">
                             {applicants.map((app) => (
                                 <div key={app.application_id} className="applicant-card">
@@ -302,8 +316,8 @@ const ManagePage = () => {
                                             거절
                                         </button>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : (
                         <p className="empty-msg">현재 대기 중인 신청자가 없습니다.</p>
@@ -313,31 +327,53 @@ const ManagePage = () => {
 
             <div className="manage-section">
                 <h4>👥 현재 팀원 ({members.length}명)</h4>
-                <div className="member-list">
-                    {members.map((m) => (
-                        <div key={m.user_id || m.member_id} className="member-item">
-                            <div className="member-info">
-                                <span className="m-name">
-                                    {m.name || m.member_name || "이름 없음"}{" "}
-                                    {String(m.user_id) === String(currentUserId) && "(나)"}
-                                </span>
-                                <span className="m-role">
-                                    {m.role || m.member_role || "팀원"}
-                                </span>
-                            </div>
 
-                            {isLeader &&
-                                String(m.user_id) !== String(currentUserId) &&
-                                project.status === '모집중' && (
-                                    <button
-                                        className="btn-remove"
-                                        onClick={() => handleRemoveMember(m.user_id || m.member_id)}
-                                    >
-                                        제외
-                                    </button>
-                                )}
-                        </div>
-                    ))}
+                <div className="member-list">
+                    {members.map((m) => {
+                        const memberId = m.user_id || m.member_id;
+                        const memberApplication = applicants.find(
+                            (app) =>
+                                String(app.applicantId || app.applicant_id) === String(memberId) &&
+                                (app.status === "ACCEPTED" || app.status === "accepted")
+                        );
+
+                        return (
+                            <div key={memberId} className="member-item">
+                                <div className="member-info">
+                                    <span className="m-name">
+                                        {m.name || m.member_name || "이름 없음"}{" "}
+                                        {String(memberId) === String(currentUserId) && "(나)"}
+                                    </span>
+
+                                    <span className="m-role">
+                                        {m.role || m.member_role || "팀원"}
+                                    </span>
+                                </div>
+
+                                <div className="member-actions">
+                                    {memberApplication && (
+                                        <button
+                                            className="btn-view-application"
+                                            onClick={() => setSelectedApplication(memberApplication)}
+                                        >
+                                            지원서 보기
+                                        </button>
+                                    )}
+
+                                    {isLeader &&
+                                        String(memberId) !== String(currentUserId) &&
+                                        project.status === "모집중" && (
+                                            <button
+                                                className="btn-remove"
+                                                onClick={() => handleRemoveMember(memberId)}
+                                            >
+                                                제외
+                                            </button>
+                                        )}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -359,6 +395,64 @@ const ManagePage = () => {
                     </button>
                 )}
             </div>
+
+            {selectedApplication && (
+                <div
+                    className="modal-overlay"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) setSelectedApplication(null);
+                    }}
+                >
+                    <div className="application-modal">
+                        <h3>📄 지원서 상세</h3>
+
+                        <p>
+                            <strong>지원자:</strong>{" "}
+                            {selectedApplication.applicantName || selectedApplication.applicant_name || "이름 없음"}
+                        </p>
+                        <p>
+                            <strong>지원 기술스택:</strong>{" "}
+                            {selectedApplication.supportRole || selectedApplication.support_role || "미입력"}
+                        </p>
+                        <p>
+                            <strong>지원 메시지:</strong>{" "}
+                            {selectedApplication.message || "작성된 지원 메시지가 없습니다."}
+                        </p>
+                        <p>
+                            <strong>경험 / 기술 설명:</strong>{" "}
+                            {selectedApplication.experience || "작성된 경험/기술 설명이 없습니다."}
+                        </p>
+                        <p>
+                            <strong>연락 방법:</strong>{" "}
+                            {formatContactType(selectedApplication.contactType || selectedApplication.contact_type)}{" "}
+                            {selectedApplication.contactValue || selectedApplication.contact_value || ""}
+                        </p>
+
+                        <div className="modal-actions">
+                            {(selectedApplication.status === "PENDING" ||
+                                selectedApplication.status === "pending") && (
+                                <>
+                                    <button
+                                        className="btn-accept"
+                                        onClick={() => handleAccept(selectedApplication)}
+                                    >
+                                        승인
+                                    </button>
+                                    <button
+                                        className="btn-reject"
+                                        onClick={() => handleReject(selectedApplication)}
+                                    >
+                                        거절
+                                    </button>
+                                </>
+                            )}
+                            <button className="close-btn" onClick={() => setSelectedApplication(null)}>
+                                닫기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {showReviewModal && (
                 <div

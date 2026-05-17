@@ -316,8 +316,8 @@ const ManagePage = () => {
                                             거절
                                         </button>
                                     </div>
-                                );
-                            })}
+                                 </div>  // ← 이렇게 변경
+                            ))}
                         </div>
                     ) : (
                         <p className="empty-msg">현재 대기 중인 신청자가 없습니다.</p>

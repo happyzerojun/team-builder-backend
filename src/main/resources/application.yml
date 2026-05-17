@@ -13,11 +13,12 @@ spring:
       max-request-size: 10MB   # 🚨 [추가] 전체 요청 크기 제한 늘리기
 
   datasource:
-    # 영준님의 한국시간/인코딩 설정과 준원님의 환경변수(보안) 설정을 병합했습니다!
     url: ${DB_URL:jdbc:mysql://db:3306/team_builder?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:1234}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-init-sql: "SET NAMES utf8mb4"
 
   sql:
     init:

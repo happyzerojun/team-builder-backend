@@ -1,0 +1,57 @@
+﻿/* 📁 src/components/common/StackSelector.css */
+
+.stack-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stack-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 기본 태그 버튼 */
+.stack-tag {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-family: var(--font-code, monospace);
+  font-weight: 500;
+  background: var(--color-surface-2, #1e2433);
+  color: var(--color-text-muted, #8892aa);
+  border: 1.5px solid var(--color-border, #2a3147);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.stack-tag:hover {
+  border-color: var(--color-primary, #4f8ef7);
+  color: var(--color-primary, #4f8ef7);
+}
+
+/* 선택된 태그 */
+.stack-tag.selected {
+  background: var(--color-primary-glow, rgba(79,142,247,0.15));
+  color: var(--color-primary, #4f8ef7);
+  border-color: var(--color-primary, #4f8ef7);
+}
+
+/* 선택 개수 + 초기화 */
+.stack-selected-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--color-text-muted, #8892aa);
+}
+
+.stack-clear-btn {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: #f87171;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}

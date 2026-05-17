@@ -98,8 +98,9 @@ const MyPage = () => {
                 const applied = myApplications
                     .filter((app) =>
                         app.status === "pending" || app.status === "PENDING" ||
-			app.status === "accepted" || app.status === "ACCEPTED" ||
-			app.status === "rejected" || app.status === "REJECTED"
+                        app.status === "accepted" || app.status === "ACCEPTED" ||
+                        app.status === "rejected" || app.status === "REJECTED"
+
                     )
                     .map((app) => {
                         // 백엔드에서 조인(Join)해서 프로젝트 정보를 같이 줬다면 그대로 씁니다.

@@ -74,17 +74,30 @@ public class ApplicationService {
      * 3. 유저별 지원 내역 조회
      */
     public List<ApplicationResponseDto> getApplicationsByUserId(Long userId) {
-        List<Application> applications = applicationRepository.findByApplicantId(userId);
-        return applications.stream().map(this::convertToDto).collect(Collectors.toList());
-    }
+    List<Application> applications = applicationRepository.findByApplicantId(userId);
+    return applications.stream()
+            .map(app -> {
+                app.getApplicant().getName();
+                app.getProject().getTitle();
+                return convertToDto(app);
+            })
+            .collect(Collectors.toList());
+}
 
     /**
      * 4. 프로젝트별 지원자 목록 조회
      */
     public List<ApplicationResponseDto> getApplicationsByProjectId(Long projectId) {
-        List<Application> applications = applicationRepository.findByProjectId(projectId);
-        return applications.stream().map(this::convertToDto).collect(Collectors.toList());
-    }
+    List<Application> applications = applicationRepository.findByProjectId(projectId);
+    return applications.stream()
+            .map(app -> {
+                // LAZY 로딩 강제 초기화
+                app.getApplicant().getName();
+                app.getProject().getTitle();
+                return convertToDto(app);
+            })
+            .collect(Collectors.toList());
+}
 
     /**
      * 5. 지원서 상태 변경 (수락/거절)
@@ -98,17 +111,11 @@ public class ApplicationService {
         return convertToDto(application);
     }
 
-    /**
-     * 🚨 Entity를 DTO로 변환하는 공통 내부 메서드 (빨간 줄 해결 핵심!)
-     */
     private ApplicationResponseDto convertToDto(Application application) {
     return ApplicationResponseDto.builder()
             .applicationId(application.getId())
             .supportRole(application.getSupportRole())
             .message(application.getMessage())
-            .experience(application.getExperience())
-            .contactType(application.getContactType())
-            .contactValue(application.getContactValue())
             .status(application.getStatus())
             .applicantId(application.getApplicant().getId())
             .applicantName(application.getApplicant().getName())

@@ -113,7 +113,8 @@ const ManagePage = () => {
     };
 
     const handleAccept = async (app) => {
-        const applicantName = app.applicantName || app.applicant_name || app.name || "지원자";
+        const applicantName =
+            app.applicantName || app.applicant_name || app.name || "지원자"
 
         if (!window.confirm(`${applicantName} 님을 팀원으로 승인하시겠습니까?`)) {
             return;
@@ -132,7 +133,8 @@ const ManagePage = () => {
     };
 
     const handleReject = async (app) => {
-        const applicantName = app.applicantName || app.applicant_name || app.name || "지원자";
+        const applicantName =
+            app.applicantName || app.applicant_name || app.name || "지원자"
 
         if (!window.confirm(`${applicantName} 님의 신청을 거절하시겠습니까?`)) {
             return;
@@ -296,34 +298,23 @@ const ManagePage = () => {
 
                     {pendingApplicants.length > 0 ? (
                         <div className="applicant-list">
-                            {pendingApplicants.map((app) => {
-                                const applicationId = app.application_id || app.applicationId;
-                                const applicantName = app.applicantName || app.applicant_name || app.name || "이름 없음";
-                                const supportRole = app.supportRole || app.support_role || app.role || "미입력";
-
-                                return (
-                                    <div key={applicationId} className="applicant-card">
-                                        <div className="app-info">
-                                            <div className="app-main-row">
-                                                <span className="app-name">{applicantName}</span>
-                                                <span className="app-role">{supportRole}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="app-actions">
-                                            <button
-                                                className="btn-view-application"
-                                                onClick={() => setSelectedApplication(app)}
-                                            >
-                                                지원서 보기
-                                            </button>
-                                            <button className="btn-accept" onClick={() => handleAccept(app)}>
-                                                승인
-                                            </button>
-                                            <button className="btn-reject" onClick={() => handleReject(app)}>
-                                                거절
-                                            </button>
-                                        </div>
+                            {applicants.map((app) => (
+                                <div key={app.application_id} className="applicant-card">
+                                    <div className="app-info">
+                                        <span className="app-name">
+                                            {app.applicantName || app.applicant_name || app.name || "이름 없음"}
+                                        </span>
+                                        <span className="app-role">
+                                            {app.support_role || app.role || "지원자"}
+                                        </span>
+                                    </div>
+                                    <div className="app-actions">
+                                        <button className="btn-accept" onClick={() => handleAccept(app)}>
+                                            승인
+                                        </button>
+                                        <button className="btn-reject" onClick={() => handleReject(app)}>
+                                            거절
+                                        </button>
                                     </div>
                                 );
                             })}

@@ -76,4 +76,29 @@ public class Project {
     public void updateStatus(String status) {
         this.status = status;
     }
+
+    // 수정관련 
+    public void updateTitle(String title) {
+        this.title = title;
+    }
+
+    public void updateContent(String content) {
+        this.content = content;
+    }
+
+    public void updateRegion(String region) {
+        this.region = region;
+    }
+
+    public void updateTerm(String term) {
+        this.term = term;
+    }
+
+    public void updateMeetingType(String meetingType) {
+        this.meetingType = meetingType;
+    }
+
+    public void updateIsLocalOnly(Boolean isLocalOnly) {
+        this.isLocalOnly = isLocalOnly;
+    }
 }

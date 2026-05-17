@@ -13,6 +13,7 @@ function DetailPage() {
     const [loading, setLoading] = useState(true);
     const [isApplied, setIsApplied] = useState(false);
     const [myApplicationId, setMyApplicationId] = useState(null);
+    const [isMyPost, setIsMyPost] = useState(false);
 
     useEffect(() => {
         const fetchPostDetail = async () => {
@@ -22,18 +23,27 @@ function DetailPage() {
                 const data = await projectService.getProjectById(id);
                 setPost(data);
 
+                // 내 글 여부 판별
+                const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+                const authorName = data.author_name?.name || data.author_name;
+                const myPost =
+                    !!authorName &&
+                    (authorName === savedUser.name || authorName === savedUser.email);
+
+                console.log("authorName:", authorName);
+                console.log("savedUser.name:", savedUser.name);
+                console.log("isMyPost 결과:", myPost);
+
+                setIsMyPost(myPost);
+
+                // 내 글이면 지원 여부 확인 불필요
+                if (myPost) return;
+
                 try {
                     const myApplications = await applicationService.getMyApplications();
-
                     const matchedApplication = myApplications.find((app) => {
-                        if (app.project && String(app.project.project_id) === String(id)) {
-                            return true;
-                        }
-
-                        if (String(app.project_id || app.projectId) === String(id)) {
-                            return true;
-                        }
-
+                        if (app.project && String(app.project.project_id) === String(id)) return true;
+                        if (String(app.project_id || app.projectId) === String(id)) return true;
                         return false;
                     });
 
@@ -64,16 +74,13 @@ function DetailPage() {
     const handleCancel = async () => {
         try {
             if (!window.confirm("정말 이 프로젝트 지원을 취소하시겠습니까?")) return;
-
             if (!myApplicationId) {
                 alert("지원 취소에 필요한 신청 정보가 없습니다.");
                 return;
             }
-
             await applicationService.cancel(myApplicationId);
             setIsApplied(false);
             setMyApplicationId(null);
-
             alert("지원이 취소되었습니다.");
             navigate("/MyPage");
         } catch (error) {
@@ -126,7 +133,7 @@ function DetailPage() {
                     <div className="detail-meta">
                         <span className="badge-category">{post.category || "프로젝트"}</span>
                         <span className="meta-divider">·</span>
-                        <span className="meta-text">📍 {post.region || "지역 미정"}</span>
+                        <span className="meta-text">{post.status === "OPEN" ? "모집중" : post.status}</span>
                         <span className="meta-divider">·</span>
                         <span className="meta-text">{post.status || "모집중"}</span>
                     </div>
@@ -135,9 +142,7 @@ function DetailPage() {
 
                     <div className="detail-author">
                         <div className="author-avatar">{(post.author_name || "익")[0]}</div>
-                        <span>
-                            {post.author_name?.name || post.author_name || "익명 사용자"}
-                        </span>
+                        <span>{post.author_name?.name || post.author_name || "익명 사용자"}</span>
                     </div>
 
                     <hr className="divider" />
@@ -160,7 +165,6 @@ function DetailPage() {
                             <span className="detail-meeting-tag">
                                 {meetingType === "대면" ? "🤝 대면" : "💻 비대면"}
                             </span>
-
                             {meetingType === "대면" && (
                                 <span className="detail-meeting-tag">
                                     {isLocalOnly ? "📍 해당 지역만" : "🌍 타지역 가능"}
@@ -171,7 +175,6 @@ function DetailPage() {
 
                     <section className="detail-section">
                         <h2 className="section-title">🛠 기술 스택</h2>
-
                         {post.techStacks && post.techStacks.length > 0 ? (
                             <div className="detail-tech-list">
                                 {post.techStacks.map((tech) => (
@@ -185,11 +188,19 @@ function DetailPage() {
                         )}
                     </section>
 
+                    {/* 버튼 영역: 내 글 / 지원취소 / 지원하기 분기 */}
                     <div
                         className="detail-footer"
                         style={{ marginTop: "40px", display: "flex", justifyContent: "center" }}
                     >
-                        {isApplied ? (
+                        {isMyPost ? (
+                            <button
+                                className="btn-edit"
+                                onClick={() => navigate(`/write/${id}`)}
+                            >
+                                ✏️ 수정하기
+                            </button>
+                        ) : isApplied ? (
                             <button className="btn-cancle" onClick={handleCancel}>
                                 지원 취소하기
                             </button>

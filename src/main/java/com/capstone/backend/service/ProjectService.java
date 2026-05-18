@@ -39,7 +39,7 @@ public class ProjectService {
             .title(request.getTitle())
             .content(request.getContent())
             .region(request.getRegion())
-            .status("OPEN")  // ← 이것만 남기고
+            .status("모집중")  // ← 이것만 남기고
             .term(String.valueOf(request.getTerm()))
             .leader(leader)
             .meetingType(request.getMeetingType())

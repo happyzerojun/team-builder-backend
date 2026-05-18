@@ -91,7 +91,7 @@ function MainPage({ isLoggedIn, onLogout }) {
     const filteredPosts = useMemo(() => {
         return posts
             .filter((post) => {
-                const matchesStatus = post.status === "OPEN";
+                const matchesStatus = post.status === "모집중";
 
                 const matchesSearch =
                     searchText === "" ||

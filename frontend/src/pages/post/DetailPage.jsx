@@ -133,7 +133,7 @@ function DetailPage() {
                     <div className="detail-meta">
                         <span className="badge-category">{post.category || "프로젝트"}</span>
                         <span className="meta-divider">·</span>
-                        <span className="meta-text">{post.status === "OPEN" ? "모집중" : post.status}</span>
+                        <span className="meta-text">{post.region || "지역 미정"}</span>
                         <span className="meta-divider">·</span>
                         <span className="meta-text">{post.status || "모집중"}</span>
                     </div>

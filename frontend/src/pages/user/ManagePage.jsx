@@ -255,7 +255,9 @@ const ManagePage = () => {
     if (!project) return null;
 
     const pendingApplicants = applicants.filter(
-        (app) => app.status === "PENDING" || app.status === "pending"
+    (app) =>
+        (app.status === "PENDING" || app.status === "pending") &&
+        String(app.applicantId || app.applicant_id) !== String(currentUserId) // ✅ 본인 제외
     );
 
     return (
@@ -298,7 +300,7 @@ const ManagePage = () => {
 
                     {pendingApplicants.length > 0 ? (
                         <div className="applicant-list">
-                            {applicants.map((app) => (
+                            {pendingApplicants.map((app) => ( 
                                 <div key={app.application_id} className="applicant-card">
                                     <div className="app-info">
                                         <span className="app-name">
@@ -316,8 +318,8 @@ const ManagePage = () => {
                                             거절
                                         </button>
                                     </div>
-                                );
-                            })}
+                                 </div>  // ← 이렇게 변경
+                            ))}
                         </div>
                     ) : (
                         <p className="empty-msg">현재 대기 중인 신청자가 없습니다.</p>

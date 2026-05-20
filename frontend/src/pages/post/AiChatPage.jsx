@@ -59,17 +59,17 @@ export default function AiChatPage() {
             ]);
 
             // 👉 카드 데이터
-            const mappedProject = {
-                id: Date.now(),
-                title: data.title,
-                description: data.description,
-                tags: data.techStack ? data.techStack.split(", ") : [],
-                level: data.experienceLevel,
+            const mappedProjects = data.recommendations.map((item) => ({
+                id: item.project_id,
+                title: item.title,
+                description: item.reason,
+                tags: [`매칭 ${item.matching_score}%`],
+                level: "AI 추천",
                 createdAt: formatDate(null),
                 author: "AI 추천"
-            };
+            }));
 
-            setRecommendPosts([mappedProject]);
+            setRecommendPosts(mappedProjects);
 
         } catch (error) {
             console.error("연동 실패:", error);

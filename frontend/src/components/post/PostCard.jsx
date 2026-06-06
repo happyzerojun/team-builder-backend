@@ -1,6 +1,6 @@
 import "./PostCard.css";
 
-function PostCard({ post, onClick }) {
+function PostCard({ post, onClick, isAiResult }) {
     const roles = Array.isArray(post.roles) ? post.roles : [];
     const tags = Array.isArray(post.tags) ? post.tags : [];
 
@@ -39,7 +39,7 @@ function PostCard({ post, onClick }) {
 
             <h2 className="card-title">{post.title}</h2>
 
-            <p className="card-description">
+            <p className={`card-description ${isAiResult ? "full-text" : ""}`}>
                 {post.content || post.description || "프로젝트 소개가 없습니다."}
             </p>
 

@@ -300,7 +300,7 @@ const ManagePage = () => {
 
                     {pendingApplicants.length > 0 ? (
                         <div className="applicant-list">
-                            {pendingApplicants.map((app) => ( 
+                            {applicants.map((app) => (
                                 <div key={app.application_id} className="applicant-card">
                                     <div className="app-info">
                                         <span className="app-name">
@@ -318,7 +318,7 @@ const ManagePage = () => {
                                             거절
                                         </button>
                                     </div>
-                                 </div>  // ← 이렇게 변경
+                                </div>
                             ))}
                         </div>
                     ) : (

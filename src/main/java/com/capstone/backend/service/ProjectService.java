@@ -13,12 +13,13 @@ import com.capstone.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import com.capstone.backend.dto.MemberResponseDto;
 import com.capstone.backend.entity.Application;
 import com.capstone.backend.repository.ApplicationRepository;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -65,11 +66,10 @@ public class ProjectService {
         return ProjectResponseDto.from(savedProject);
     }
 
-    public List<ProjectResponseDto> getAllProjects() {
-        return projectRepository.findAll()
-                .stream()
-                .map(ProjectResponseDto::from)
-                .toList();
+    // 1. 전체 프로젝트 조회 (페이징 버전으로 변경)
+    public Page<ProjectResponseDto> getAllProjects(Pageable pageable) {
+        return projectRepository.findAll(pageable)
+                .map(ProjectResponseDto::from);
     }
 
     public ProjectResponseDto getProjectById(Long projectId) {

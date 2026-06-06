@@ -54,10 +54,19 @@
   font-size: 0.85rem;
   color: var(--color-text-muted);
   line-height: 1.6;
+
   display: -webkit-box;
   -webkit-line-clamp: 2;     /* 최대 2줄 표시 */
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* 🔥 AI 결과창 전용: 텍스트를 강제로 다 보여줌 */
+.card-description.full-text {
+  display: block;            /* 2줄 제한 해제 */
+  -webkit-line-clamp: unset; /* 줄 제한 해제 */
+  overflow: visible;         /* 숨김 해제 */
+  white-space: normal;       /* 줄바꿈 허용 */
 }
 
 /* 모집 분야 뱃지 */

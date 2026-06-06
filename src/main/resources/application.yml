@@ -79,7 +79,8 @@ spring:
 gemini:
   api:
     key: ${GEMINI_API_KEY:dummy-gemini-api-key}
-    url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
+    # 💡 끝에 ?key= 를 떼고 순수 API 주소만 깔끔하게 남겨둡니다.
+    url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent}
 jwt:
   secret: ${JWT_SECRET:mysecretkeymysecretkeymysecretkey}
   expiration-ms: ${JWT_EXPIRATION_MS:3600000}

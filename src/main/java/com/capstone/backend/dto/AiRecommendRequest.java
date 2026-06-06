@@ -2,12 +2,15 @@ package com.capstone.backend.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
-@NoArgsConstructor
-@Schema(description = "AI 프로젝트 추천 요청 객체")
+@Setter
+@Schema(description = "AI 추천 요청 객체")
 public class AiRecommendRequest {
-    @Schema(description = "사용자의 질문 또는 희망하는 프로젝트 성격", example = "백엔드 공부하기 좋은 Spring Boot 프로젝트 추천해줘")
-    private String prompt;
+    @Schema(description = "현재 로그인한 유저의 ID", example = "2")
+    private Long userId; // 🔥 추가!
+
+    @Schema(description = "사용자가 선택/입력한 조건 문자열", example = "React, 1~2개월, 프론트 위주")
+    private String userPrompt;
 }

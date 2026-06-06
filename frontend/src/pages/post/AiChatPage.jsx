@@ -1,229 +1,140 @@
-﻿import { useState } from "react";
+﻿import React, { useState , useEffect} from "react";
 import { useNavigate } from "react-router-dom";
+import useAiRecommend from "../../hooks/useAiRecommend";
 import PostCard from "../../components/post/PostCard";
+import styles from "./AiChatPage.module.css";
 
-const formatDate = (dateString) => {
-    const date = dateString ? new Date(dateString) : new Date();
-    return new Intl.DateTimeFormat("ko-KR", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).format(date);
+const TECH_MAP = {
+  "프론트엔드": ["React", "Vue", "Angular", "Next.js", "Svelte", "TypeScript", "JavaScript", "HTML/CSS", "Tailwind"],
+  "백엔드": ["Spring Boot", "Node.js", "Django", "FastAPI", "Flask", "Express", "NestJS", "Java", "Python", "Go", "Kotlin", "MySQL", "PostgreSQL", "MongoDB", "Redis", "Oracle", "SQLite"],
+  "인프라/기타": ["Firebase", "AWS", "Docker", "Kubernetes", "CI/CD", "GCP", "Azure", "Nginx", "Linux", "Git", "Figma", "Unity", "Flutter", "React Native", "Swift", "Kotlin(Android)", "Kotlin(iOS)"]
 };
+
+const DURATION_OPTIONS = [
+  { label: "1개월 내", value: "1개월 이내" },
+  { label: "1~2개월", value: "1~2개월" },
+  { label: "2~3개월", value: "2~3개월" },
+  { label: "3~6개월", value: "3~6개월" },
+  { label: "6개월 이상", value: "6개월 이상" },
+];
 
 export default function AiChatPage() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  // 🔥 변경점: 1. 초기값을 sessionStorage에서 읽어오도록 세팅합니다.
+  const [selectedTechs, setSelectedTechs] = useState(() => JSON.parse(sessionStorage.getItem("aiTechs")) || []);
+  const [duration, setDuration] = useState(() => sessionStorage.getItem("aiDuration") || "");
+  const [freeText, setFreeText] = useState(() => sessionStorage.getItem("aiFreeText") || "");
+  const [activeTab, setActiveTab] = useState(() => sessionStorage.getItem("aiActiveTab") || "프론트엔드");
 
-    const [input, setInput] = useState("");
-    const [messages, setMessages] = useState([
-        { role: "ai", text: "안녕하세요! 어떤 프로젝트를 찾고 있나요?" }
-    ]);
-    const [loading, setLoading] = useState(false);
-    const [recommendPosts, setRecommendPosts] = useState([]);
+  const { result, isLoading, error, getRecommendation } = useAiRecommend();
 
-    // 👉 사용자 이름
-    const username = localStorage.getItem("username") || "사용자";
+  // 🔥 변경점: 2. 사용자가 값을 바꿀 때마다 자동으로 sessionStorage에 저장합니다.
+  useEffect(() => {
+    sessionStorage.setItem("aiTechs", JSON.stringify(selectedTechs));
+    sessionStorage.setItem("aiDuration", duration);
+    sessionStorage.setItem("aiFreeText", freeText);
+    sessionStorage.setItem("aiActiveTab", activeTab);
+  }, [selectedTechs, duration, freeText, activeTab]);
 
-    const handleSend = async () => {
-        if (!input.trim()) return;
-
-        const userMessage = { role: "user", text: input };
-        setMessages((prev) => [...prev, userMessage]);
-
-        const currentInput = input;
-        setInput("");
-
-        setRecommendPosts([]);
-        setLoading(true);
-
-        try {
-            const response = await fetch("http://localhost:8080/api/ai/recommend", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ prompt: currentInput })
-            });
-
-            if (!response.ok) throw new Error("서버 응답 에러");
-
-            const data = await response.json();
-
-            // 👉 채팅 메시지
-            setMessages((prev) => [
-                ...prev,
-                {
-                    role: "ai",
-                    text: `${username}님을 위한 맞춤 프로젝트를 찾았어요!`
-                }
-            ]);
-
-            // 👉 카드 데이터
-            const mappedProjects = data.recommendations.map((item) => ({
-                id: item.project_id,
-                title: item.title,
-                description: item.reason,
-                tags: [`매칭 ${item.matching_score}%`],
-                level: "AI 추천",
-                createdAt: formatDate(null),
-                author: "AI 추천"
-            }));
-
-            setRecommendPosts(mappedProjects);
-
-        } catch (error) {
-            console.error("연동 실패:", error);
-            setMessages((prev) => [
-                ...prev,
-                { role: "ai", text: "죄송해요, 서버와 통신 중 문제가 발생했습니다." }
-            ]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div style={styles.container}>
-            <h1 style={styles.title}>🤖 AI 프로젝트 추천</h1>
-
-            <div style={styles.wrapper}>
-
-                {/* 🔹 왼쪽: 채팅 */}
-                <div style={styles.chatSection}>
-                    <div style={styles.chatBox}>
-                        {messages.map((msg, i) => (
-                            <div
-                                key={i}
-                                style={{
-                                    ...styles.message,
-                                    alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-                                    background: msg.role === "user" ? "#5a52d6" : "#eee",
-                                    color: msg.role === "user" ? "white" : "black"
-                                }}
-                            >
-                                {msg.text}
-                            </div>
-                        ))}
-
-                        {loading && (
-                            <div style={styles.loadingText}>
-                                🤖 AI가 열심히 생각중입니다...
-                            </div>
-                        )}
-                    </div>
-
-                    <div style={styles.inputBox}>
-                        <input
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            placeholder="예: 백엔드 공부용 프로젝트 추천해줘"
-                            style={styles.input}
-                            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                        />
-                        <button onClick={handleSend} style={styles.button}>
-                            전송
-                        </button>
-                    </div>
-                </div>
-
-                {/* 🔹 오른쪽: 카드 */}
-                <div style={styles.cardSection}>
-                    <h3>📌 추천 프로젝트</h3>
-
-                    {recommendPosts.length === 0 ? (
-                        <div style={styles.emptyText}>
-                            아직 추천 결과가 없습니다
-                        </div>
-                    ) : (
-                        <div style={styles.cardGrid}>
-                            {recommendPosts.map((post) => (
-                                <PostCard
-                                    key={post.id}
-                                    post={post}
-                                    onClick={() => navigate(`/post/${post.id}`)}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-            </div>
-        </div>
+  const toggleTech = (tech) => {
+    setSelectedTechs((prev) =>
+      prev.includes(tech) ? prev.filter((t) => t !== tech) : [...prev, tech]
     );
-}
+  };
 
-const styles = {
-    container: {
-        maxWidth: "1000px",
-        margin: "0 auto",
-        padding: "20px"
-    },
-    title: {
-        textAlign: "center",
-        marginBottom: "20px"
-    },
-    wrapper: {
-        display: "flex",
-        gap: "20px",
-        height: "80vh"
-    },
-    chatSection: {
-        flex: 1,
-        display: "flex",
-        flexDirection: "column"
-    },
-    chatBox: {
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        gap: "10px",
-        padding: "10px",
-        border: "1px solid #ddd",
-        borderRadius: "10px",
-        overflowY: "auto",
-        marginBottom: "10px"
-    },
-    message: {
-        padding: "10px 14px",
-        borderRadius: "12px",
-        maxWidth: "70%"
-    },
-    loadingText: {
-        color: "#888",
-        fontSize: "14px",
-        padding: "4px 10px"
-    },
-    inputBox: {
-        display: "flex",
-        gap: "10px"
-    },
-    input: {
-        flex: 1,
-        padding: "10px",
-        borderRadius: "8px",
-        border: "1px solid #ccc"
-    },
-    button: {
-        padding: "10px 16px",
-        borderRadius: "8px",
-        background: "#5a52d6",
-        color: "white",
-        border: "none",
-        cursor: "pointer"
-    },
-    cardSection: {
-        width: "320px",
-        borderLeft: "1px solid #ddd",
-        paddingLeft: "15px",
-        overflowY: "auto"
-    },
-    cardGrid: {
-        display: "flex",
-        flexDirection: "column",
-        gap: "10px"
-    },
-    emptyText: {
-        color: "#888",
-        marginTop: "20px"
+  const handleSubmit = () => {
+    if (selectedTechs.length === 0 && !duration && !freeText.trim()) {
+      alert("기술스택, 기간 중 하나 이상 선택하거나 내용을 입력해주세요.");
+      return;
     }
-};
+
+    // AI가 문맥을 더 잘 파악하도록 문장 형태(자연어)로 조립합니다.
+    let serializedPrompt = "다음 조건과 상황에 맞는 프로젝트를 추천해줘. ";
+
+    if (selectedTechs.length > 0) {
+      serializedPrompt += `내가 사용할 기술 스택은 [${selectedTechs.join(", ")}] 이야. `;
+    }
+    if (duration) {
+      serializedPrompt += `프로젝트 기간은 [${duration}] 정도를 선호해. `;
+    }
+    if (freeText.trim()) {
+      serializedPrompt += `그리고 나의 특별한 목적이나 상황은 다음과 같아: "${freeText.trim()}"`;
+    }
+
+    // 백엔드로 정제된 프롬프트 전달
+    getRecommendation(serializedPrompt);
+  };
+
+  const recommendedPosts = result?.recommendations?.map((item) => ({
+    id: item.project_id,
+    title: item.title,
+    description: item.reason,
+    tags: [`매칭 ${item.matching_score}%`],
+    level: "AI 추천",
+    createdAt: new Date().toLocaleDateString(),
+    author: "AI 멘토"
+  })) || [];
+
+  return (
+    <div className={styles.page}>
+      <h1 className={styles.title}>🤖 맞춤형 프로젝트 AI 추천</h1>
+      <p className={styles.subtitle}>스택, 기간, 그리고 나의 목표(예: 대기업 취업, 쇼핑몰 개발)를 알려주세요.</p>
+
+      <section className={styles.section}>
+        <span className={styles.label}>관심 기술스택</span>
+        <div className={styles.tabs}>
+          {Object.keys(TECH_MAP).map((cat) => (
+            <button key={cat} className={`${styles.tab} ${activeTab === cat ? styles.tabOn : ""}`} onClick={() => setActiveTab(cat)}>
+              {cat}
+            </button>
+          ))}
+        </div>
+        <div className={styles.chips}>
+          {TECH_MAP[activeTab].map((tech) => (
+            <button key={tech} className={`${styles.chip} ${selectedTechs.includes(tech) ? styles.chipOn : ""}`} onClick={() => toggleTech(tech)}>
+              {tech}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <span className={styles.label}>선호 프로젝트 기간</span>
+        <div className={styles.chips}>
+          {DURATION_OPTIONS.map((opt) => (
+            <button key={opt.value} className={`${styles.chip} ${duration === opt.value ? styles.chipOn : ""}`} onClick={() => setDuration(duration === opt.value ? "" : opt.value)}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <span className={styles.label}>나의 상황 및 목적 (중요도 ⭐️⭐️⭐️)</span>
+        <textarea
+          className={styles.textarea}
+          value={freeText}
+          onChange={(e) => setFreeText(e.target.value)}
+          rows={3}
+          placeholder="예: 나는 쇼핑몰 쪽 개발을 하고 싶어. 혹은 대기업에 지원하기 위해 트래픽을 다루는 경험이 필요해."
+        />
+      </section>
+
+      <button className={styles.submitBtn} onClick={handleSubmit} disabled={isLoading}>
+        {isLoading ? "AI가 최적의 프로젝트를 탐색 중..." : "AI에게 추천받기"}
+      </button>
+
+      <div className={styles.resultArea}>
+        {error && <p className={styles.errorText}>{error}</p>}
+        {result?.recommendations?.length === 0 && !isLoading && !error && (
+            <p className={styles.errorText}>현재 조건에 맞는 프로젝트가 없습니다. 조건을 조금 완화해 보세요!</p>
+        )}
+        <div className={styles.cardGrid}>
+          {recommendedPosts.map((post) => (
+            <PostCard key={post.id} post={post} onClick={() => navigate(`/post/${post.id}`)}isAiResult={true} /* 🔥 이 카드는 AI 추천 결과라는 신호를 보냄 */ />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

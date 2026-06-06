@@ -28,6 +28,10 @@ function MainPage({ isLoggedIn, onLogout }) {
     const [searchText, setSearchText] = useState("");
     const [selectedTags, setSelectedTags] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
+
+    // 💡 [수정 포인트 1] 백엔드가 계산해 주는 전체 페이지 수를 저장하기 위해 state로 변경합니다.
+    const [totalPages, setTotalPages] = useState(1);
+
     const [activeTab, setActiveTab] = useState("인기");
 
     const [isTagOpen, setIsTagOpen] = useState(false);
@@ -37,26 +41,33 @@ function MainPage({ isLoggedIn, onLogout }) {
     const [customMax, setCustomMax] = useState("");
     const [useCustom, setUseCustom] = useState(false);
 
+    // 💡 [수정 포인트 2] currentPage가 바뀔 때마다 백엔드에 해당하는 페이지 데이터를 새로 요청합니다.
     useEffect(() => {
-    const fetchPosts = async () => {
-        try {
-            setLoading(true);
-            const data = await projectService.getAllProjects();
-            
-            // ✅ 여기에 추가
-            console.log("전체 글 목록:", data);
-            console.log("status 값들:", data?.map(p => p.status));
-            
-            setPosts(Array.isArray(data) ? data : []);
-        } catch (error) {
-            console.error("데이터 로딩 실패:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+        const fetchPosts = async () => {
+            try {
+                setLoading(true);
 
-    fetchPosts();
-}, []);
+                // 백엔드는 페이지 번호가 0부터 시작하므로 currentPage(1부터 시작)에서 1을 뺍니다.
+                const data = await projectService.getAllProjects(currentPage - 1, POSTS_PER_PAGE);
+
+                console.log("전체 글 목록(백엔드 응답):", data);
+
+                // 객체 내부의 실제 배열 데이터인 content가 있는지 안전하게 검증하고 넣어줍니다.
+                const projectList = data && Array.isArray(data.content) ? data.content : [];
+                setPosts(projectList);
+
+                // 백엔드가 제공한 totalPages 메타데이터를 세팅합니다.
+                setTotalPages(data?.totalPages || 1);
+
+            } catch (error) {
+                console.error("데이터 로딩 실패:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPosts();
+    }, [currentPage]); // 💡 currentPage를 의존성 배열에 추가하여 페이지 클릭 시마다 백엔드를 찌릅니다.
 
     function toggleTag(tag) {
         setSelectedTags((prev) =>
@@ -119,11 +130,9 @@ function MainPage({ isLoggedIn, onLogout }) {
             });
     }, [posts, searchText, selectedTags, activeDurationRange]);
 
-    const totalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
-    const pagedPosts = filteredPosts.slice(
-        (currentPage - 1) * POSTS_PER_PAGE,
-        currentPage * POSTS_PER_PAGE
-    );
+    // 💡 [수정 포인트 3] 백엔드에서 이미 해당 페이지 분량만큼 잘라서(Slice) 보내주므로,
+    // 프론트엔드에서 중복으로 수행하던 대량 데이터 slice 로직을 걷어내고 filteredPosts를 그대로 매핑합니다.
+    const pagedPosts = filteredPosts;
 
     function handlePageChange(page) {
         setCurrentPage(page);
@@ -229,7 +238,7 @@ function MainPage({ isLoggedIn, onLogout }) {
                 )}
 
                 <div className="result-count">
-                    총 <strong>{filteredPosts.length}</strong>개의 모집 글
+                    현재 페이지 모집 글 <strong>{filteredPosts.length}</strong>개
                 </div>
 
                 {loading ? (
@@ -259,7 +268,6 @@ function MainPage({ isLoggedIn, onLogout }) {
             </main>
         </div>
     );
-
 }
 
 export default MainPage;

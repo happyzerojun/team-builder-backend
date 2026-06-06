@@ -46,7 +46,7 @@ public class AiService {
     @Value("${gemini.api.key}")
     private String apiKey;
 
-    @PostConstruct
+    @org.springframework.context.event.EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
     public void initTechLookupMap() {
         List<TechStack> allStacks = techStackRepository.findAll();
         for (TechStack stack : allStacks) {

@@ -5,7 +5,6 @@ import { projectService } from "../../services/projectService"; // 백엔드의 
 import { applicationService } from "../../services/applicationService"; // 백엔드의 Application 컨트롤러와 통신
 import { getUserProfile } from "../../services/userService";
 
-
 const MyPage = () => {
     // 스프링의 'return "redirect:/경로"' 와 같은 역할을 합니다.
     const navigate = useNavigate();
@@ -65,7 +64,7 @@ const MyPage = () => {
 
             try {
                 // 1. 유저 정보 세팅
-                // 1. 서버에서 최신 프로필 가져오기
+                // 서버에서 최신 프로필 가져오기
                 const profile = await getUserProfile();
 
                 setUser({
@@ -87,8 +86,11 @@ const MyPage = () => {
                 // 3. [분류 작업 1: 내가 방장인 프로젝트]
                 // 전체 프로젝트 중, 방장 ID(leader_id)가 내 ID(user_id)와 같은 것만 필터링합니다.
                 const myCreatedProjects = projects.filter(
-                    (project) => String(project.leader_id) === String(savedUser.user_id)
-                );
+                    (project) => String(project.leader_id || project.leaderId) === String(savedUser.user_id)
+                ).map(proj => ({
+                    ...proj,
+                    project_id: proj.project_id || proj.projectId // 둘 중 하나라도 정상 바인딩 유지
+                }));
                 setMyLead(myCreatedProjects);
 
                 // 4. 내가 찔러본(지원한) 내역들을 백엔드에서 가져옵니다.
@@ -100,50 +102,83 @@ const MyPage = () => {
                         app.status === "pending" || app.status === "PENDING" ||
                         app.status === "accepted" || app.status === "ACCEPTED" ||
                         app.status === "rejected" || app.status === "REJECTED"
-
                     )
                     .map((app) => {
-                        // 백엔드에서 조인(Join)해서 프로젝트 정보를 같이 줬다면 그대로 씁니다.
+                        // 백엔드에서 조인(Join)해서 프로젝트 객체를 통째로 줬다면 그대로 사용
                         if (app.project) {
                             return {
                                 ...app.project,
+                                project_id: app.project.project_id || app.project.projectId,
                                 application_id: app.application_id,
                                 application_status: app.status
                             };
                         }
 
-                        // 조인해서 주지 않았다면, 아까 받아둔 전체 프로젝트 리스트에서 ID로 직접 찾아 끼워 맞춥니다.
+                        // 전체 프로젝트 리스트에서 ID로 매칭 시도 (_id와 카멜케이스 양쪽 대응)
                         const matchedProject = projects.find(
-    (project) => String(project.project_id) === String(app.projectId || app.project_id)
-);
-                        
-                        if (!matchedProject) return null;
+                            (project) => String(project.project_id || project.projectId) === String(app.project_id || app.projectId)
+                        );
+
+                        // 💡 [안전장치] 만약 전체 리스트에서 일치하는 글을 못 찾아도 백엔드가 준 단독 정보로 임시 카드를 만듦
+                        if (!matchedProject) {
+                            return {
+                                project_id: app.project_id || app.projectId,
+                                title: app.projectTitle || `알 수 없는 프로젝트(ID: ${app.project_id})`,
+                                region: "지역 미정",
+                                status: "모집중",
+                                application_id: app.application_id,
+                                application_status: app.status
+                            };
+                        }
 
                         return {
                             ...matchedProject,
+                            project_id: matchedProject.project_id || matchedProject.projectId,
                             application_id: app.application_id,
                             application_status: app.status
                         };
                     })
-                    .filter(Boolean); // null 값 찌꺼기들 제거
+                    .filter(Boolean); // null 값 찌꺼기 제거
 
-                setAppliedPosts(applied); // 지원 내역 저장소에 쏙!
+                setAppliedPosts(applied); // 지원 내역 저장소에 저장
 
                 // 6. [분류 작업 3: 참여 확정된 프로젝트 (팀원)]
                 const participating = myApplications
                     .filter((app) => app.status === "accepted" || app.status === "ACCEPTED") // 수락된 것만 고름
                     .map((app) => {
-                        if (app.project) return app.project;
-                        return projects.find((project) => String(project.project_id) === String(app.projectId || app.project_id));
+                        if (app.project) {
+                            return {
+                                ...app.project,
+                                project_id: app.project.project_id || app.project.projectId
+                            };
+                        }
+
+                        const matched = projects.find(
+                            (project) => String(project.project_id || project.projectId) === String(app.project_id || app.projectId)
+                        );
+
+                        // 💡 [안전장치] 마찬가지로 전체 리스트에 없더라도 백엔드 DTO 정보로 대체 생성하여 화면 누락 방지
+                        if (!matched) {
+                            return {
+                                project_id: app.project_id || app.projectId,
+                                title: app.projectTitle || "참여 중인 프로젝트",
+                                region: "지역 미정",
+                                status: "진행중"
+                            };
+                        }
+
+                        return {
+                            ...matched,
+                            project_id: matched.project_id || matched.projectId
+                        };
                     })
                     .filter(Boolean)
-                    // 🚨 중요: 수락된 것들 중에서도 '내가 방장인 프로젝트'는 제외합니다!
-                    // (그래야 '참여 중'과 '내가 만든' 리스트가 중복되지 않음)
+                    // 🚨 중요: 내가 방장(leader_id)인 프로젝트는 팀원 목록(참여중)에서 최종 제외합니다.
                     .filter(
-                        (project) => String(project.leader_id) !== String(savedUser.user_id)
+                        (project) => String(project.leader_id || project.leaderId) !== String(savedUser.user_id)
                     );
 
-                setMyPart(participating); // 참여 확정 저장소에 쏙!
+                setMyPart(participating); // 참여 확정 저장소에 저장
 
             } catch (error) {
                 console.error("로딩 실패:", error);
@@ -249,9 +284,8 @@ const MyPage = () => {
                                         <span className="title">{proj.title}</span>
                                         <span className="sub-info">{proj.region || "지역 미정"}</span>
                                     </div>
-                                    <span className={`mp-badge ${
-                                        proj.status === '모집중' ? 'status-recruiting' : proj.status === '종료됨' ? 'status-complete' : 'status-ongoing'
-                                    }`}>
+                                    <span className={`mp-badge ${proj.status === '모집중' ? 'status-recruiting' : proj.status === '종료됨' ? 'status-complete' : 'status-ongoing'
+                                        }`}>
                                         {proj.status || "상태 미정"}
                                     </span>
                                 </div>
@@ -302,9 +336,8 @@ const MyPage = () => {
                                         <span className="sub-info">{proj.region || "지역 미정"}</span>
                                     </div>
                                     {/* 상태값(accepted, rejected, pending)에 따라 배지 색상과 글씨를 다르게 보여줍니다. */}
-                                    <span className={`mp-badge ${
-                                        (proj.application_status === 'accepted' || proj.application_status === 'ACCEPTED') ? 'status-ongoing' : (proj.application_status === 'rejected' || proj.application_status === 'REJECTED') ? 'status-complete' : 'status-pending'
-                                    }`}>
+                                    <span className={`mp-badge ${(proj.application_status === 'accepted' || proj.application_status === 'ACCEPTED') ? 'status-ongoing' : (proj.application_status === 'rejected' || proj.application_status === 'REJECTED') ? 'status-complete' : 'status-pending'
+                                        }`}>
                                         {(proj.application_status === 'accepted' || proj.application_status === 'ACCEPTED') ? '승인됨' : (proj.application_status === 'rejected' || proj.application_status === 'REJECTED') ? '거절됨' : '지원완료'}
                                     </span>
                                 </div>

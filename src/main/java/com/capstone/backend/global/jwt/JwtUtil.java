@@ -12,6 +12,7 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
+    private static final String ISSUER = "team-builder-backend";
     private final Key key;
     private final long expirationTime;
 
@@ -27,6 +28,7 @@ public class JwtUtil {
     public String createToken(String email) {
         return Jwts.builder()
                 .setSubject(email)
+                .setIssuer(ISSUER)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(key)
@@ -46,9 +48,14 @@ public class JwtUtil {
     // 토큰 유효성 검사
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-            return true;
-        } catch (Exception e) {
+            Claims claims = Jwts.parserBuilder()
+                    .requireIssuer(ISSUER)
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.getSubject() != null && !claims.getSubject().isBlank();
+        } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
     }

@@ -27,7 +27,7 @@ class AuthServiceTest {
     @Mock
     private UserRepository userRepository;
 
-    private final JwtUtil jwtUtil = new JwtUtil("mysecretkeymysecretkeymysecretkey", 3600000);
+    private final JwtUtil jwtUtil = new JwtUtil("test-jwt-secret-key-with-at-least-32-bytes", 3600000);
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Test
@@ -44,7 +44,7 @@ class AuthServiceTest {
                 .provider(AuthProvider.LOCAL)
                 .build();
 
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
 
         String token = authService.login(request);
 
@@ -65,10 +65,10 @@ class AuthServiceTest {
                 .providerId("google-123")
                 .build();
 
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
 
         UnauthorizedException exception = assertThrows(UnauthorizedException.class, () -> authService.login(request));
-        assertEquals("OAuth 계정입니다. 소셜 로그인을 사용해주세요.", exception.getMessage());
+        assertEquals("이메일 또는 비밀번호가 올바르지 않습니다.", exception.getMessage());
     }
 
     @Test
@@ -79,12 +79,29 @@ class AuthServiceTest {
         ReflectionTestUtils.setField(request, "password", "pw1234");
         ReflectionTestUtils.setField(request, "name", "New User");
 
-        when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByEmailIgnoreCase("new@example.com")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User saved = authService.signup(request);
 
         assertEquals(AuthProvider.LOCAL, saved.getProvider());
         assertTrue(passwordEncoder.matches("pw1234", saved.getPassword()));
+    }
+
+    @Test
+    void signupNormalizesEmailAndName() {
+        AuthService authService = new AuthService(userRepository, jwtUtil, passwordEncoder);
+        SignupRequest request = new SignupRequest();
+        ReflectionTestUtils.setField(request, "email", " User@Example.COM ");
+        ReflectionTestUtils.setField(request, "password", "password123");
+        ReflectionTestUtils.setField(request, "name", "  User Name  ");
+
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        User saved = authService.signup(request);
+
+        assertEquals("user@example.com", saved.getEmail());
+        assertEquals("User Name", saved.getName());
     }
 }

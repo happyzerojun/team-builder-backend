@@ -12,35 +12,33 @@ export const authService = {
         const res = await api.post(`${API_URL}/login`, credentials);
 
         if (res.data && res.data.accessToken) {
-            const token = res.data.accessToken;
-
-            localStorage.setItem("token", token);
-            localStorage.setItem("isLoggedIn", "true");
-
-            try {
-                const userRes = await api.get(`${API_URL}/me`);
-
-                const user = {
-                    user_id: userRes.data.userId,
-                    email: userRes.data.email,
-                    name: userRes.data.name
-                };
-                localStorage.setItem("user", JSON.stringify(user));
-            } catch {
-                localStorage.setItem("user", JSON.stringify({
-                    user_id: null,
-                    email: credentials.email,
-                    name: credentials.email
-                }));
-            }
+            await authService.completeSocialLogin(res.data.accessToken);
         }
 
         return res.data;
     },
 
-    getSocialLoginUrl: async (provider) => {
+    startSocialLogin: async (provider) => {
         const res = await api.get(`${API_URL}/oauth2/url/${provider}`);
-        return res.data;
+        window.location.assign(new URL(res.data, api.defaults.baseURL).toString());
+    },
+
+    completeSocialLogin: async (token) => {
+        localStorage.setItem("token", token);
+        try {
+            const userRes = await api.get(`${API_URL}/me`);
+            localStorage.setItem("user", JSON.stringify({
+                user_id: userRes.data.userId,
+                email: userRes.data.email,
+                name: userRes.data.name
+            }));
+            localStorage.setItem("isLoggedIn", "true");
+        } catch (error) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            localStorage.removeItem("isLoggedIn");
+            throw error;
+        }
     },
 
     logout: () => {

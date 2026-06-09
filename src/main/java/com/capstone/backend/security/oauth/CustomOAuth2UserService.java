@@ -8,6 +8,7 @@ import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserServ
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
@@ -28,17 +29,29 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     OAuth2User upsertOAuth2User(String registrationId, OAuth2UserInfo userInfo, java.util.Map<String, Object> attributes) {
         AuthProvider provider = AuthProvider.valueOf(registrationId.toUpperCase());
+        validateUserInfo(userInfo);
         User user = userRepository.findByProviderAndProviderId(provider, userInfo.getProviderId())
-                .orElseGet(() -> userRepository.findByEmail(userInfo.getEmail())
-                        .map(existingUser -> updateExistingUser(existingUser, provider, userInfo))
+                .orElseGet(() -> userRepository.findByEmailIgnoreCase(userInfo.getEmail())
+                        .map(existingUser -> rejectUnsafeAccountLink())
                         .orElseGet(() -> createOAuthUser(provider, userInfo)));
         return new CustomOAuth2User(user.getEmail(), attributes);
     }
 
-    private User updateExistingUser(User user, AuthProvider provider, OAuth2UserInfo userInfo) {
-        // ✅ 객체지향적인 코드로 교체!
-        user.updateOAuthInfo(userInfo.getName(), provider, userInfo.getProviderId());
-        return userRepository.save(user);
+    private User rejectUnsafeAccountLink() {
+        throw new OAuth2AuthenticationException(
+                new OAuth2Error("account_link_required"),
+                "동일한 이메일의 기존 계정이 있습니다. 기존 방식으로 로그인하세요."
+        );
+    }
+
+    private void validateUserInfo(OAuth2UserInfo userInfo) {
+        if (userInfo.getProviderId() == null || userInfo.getProviderId().isBlank()
+                || userInfo.getEmail() == null || userInfo.getEmail().isBlank()) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error("invalid_user_info"),
+                    "OAuth 계정에서 필수 사용자 정보를 확인할 수 없습니다."
+            );
+        }
     }
 
     private User createOAuthUser(AuthProvider provider, OAuth2UserInfo userInfo) {

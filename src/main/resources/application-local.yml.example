@@ -17,5 +17,7 @@ jwt:
   secret: replace-with-a-long-random-secret
 
 app:
+  cors:
+    allowed-origins: http://localhost:5173
   oauth2:
-    redirect-uri: http://localhost:3000/oauth/callback
+    redirect-uri: http://localhost:5173/oauth/callback

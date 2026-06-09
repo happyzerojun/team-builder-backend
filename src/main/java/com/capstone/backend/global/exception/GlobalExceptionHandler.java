@@ -5,7 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -28,15 +30,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(e.getMessage()));
     }
 
-    // 🚨 [핵심 수정] RuntimeException을 Throwable로 올려서 서버가 기절시키는 모든 에러를 다 잡아냅니다!
-    @ExceptionHandler(Throwable.class)
-    public ResponseEntity<ErrorResponse> handleAllThrowables(Throwable e) {
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenException(ForbiddenException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(e.getMessage()));
+    }
 
-        System.out.println("====== [초비상] 서버 기절 직전 에러 포착! ======");
-        // 🚨 콘솔에 빨간 피를 흘리게 만듭니다 (진짜 원인 출력)
-        e.printStackTrace();
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+    }
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleUnexpectedException(Exception e) {
+        log.error("Unhandled server error", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("서버 내부 오류가 발생했습니다. 원인: " + e.getMessage()));
+                .body(new ErrorResponse("서버 내부 오류가 발생했습니다."));
     }
 }

@@ -6,6 +6,7 @@ import com.capstone.backend.service.ApplicationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,9 +22,9 @@ public class ApplicationController {
      * 1. 프로젝트 지원 (POST /api/application)
      */
     @PostMapping
-    public ResponseEntity<ApplicationResponseDto> apply(@RequestBody ApplicationRequestDto.Create requestDto) {
-        // 실제로는 세션이나 JWT 토큰에서 로그인한 유저 정보(applicant_id)를 가져오는 것이 보안상 안전합니다.
-        ApplicationResponseDto response = applicationService.createApplication(requestDto);
+    public ResponseEntity<ApplicationResponseDto> apply(@RequestBody ApplicationRequestDto.Create requestDto,
+                                                         Authentication authentication) {
+        ApplicationResponseDto response = applicationService.createApplication(requestDto, authentication.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -31,17 +32,17 @@ public class ApplicationController {
      * 2. 지원 취소 (DELETE /api/application/{applicationId})
      */
     @DeleteMapping("/{applicationId}")
-    public ResponseEntity<Void> cancelApplication(@PathVariable Long applicationId) {
-        applicationService.deleteApplication(applicationId);
+    public ResponseEntity<Void> cancelApplication(@PathVariable Long applicationId, Authentication authentication) {
+        applicationService.deleteApplication(applicationId, authentication.getName());
         return ResponseEntity.noContent().build();
     }
 
     /**
      * 3. 내 지원 내역 조회 (GET /api/application/user/{userId})
      */
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<ApplicationResponseDto>> getMyApplications(@PathVariable Long userId) {
-        List<ApplicationResponseDto> responses = applicationService.getApplicationsByUserId(userId);
+    @GetMapping("/me")
+    public ResponseEntity<List<ApplicationResponseDto>> getMyApplications(Authentication authentication) {
+        List<ApplicationResponseDto> responses = applicationService.getApplicationsByUserEmail(authentication.getName());
         return ResponseEntity.ok(responses);
     }
 
@@ -49,8 +50,9 @@ public class ApplicationController {
      * 4. 프로젝트별 지원자 목록 조회 (GET /api/application/project/{projectId})
      */
     @GetMapping("/project/{projectId}")
-    public ResponseEntity<List<ApplicationResponseDto>> getProjectApplications(@PathVariable Long projectId) {
-        List<ApplicationResponseDto> responses = applicationService.getApplicationsByProjectId(projectId);
+    public ResponseEntity<List<ApplicationResponseDto>> getProjectApplications(@PathVariable Long projectId,
+                                                                                Authentication authentication) {
+        List<ApplicationResponseDto> responses = applicationService.getApplicationsByProjectId(projectId, authentication.getName());
         return ResponseEntity.ok(responses);
     }
 
@@ -60,9 +62,10 @@ public class ApplicationController {
     @PatchMapping("/{applicationId}")
     public ResponseEntity<ApplicationResponseDto> updateApplicationStatus(
             @PathVariable Long applicationId,
-            @RequestBody ApplicationRequestDto.UpdateStatus requestDto) {
+            @RequestBody ApplicationRequestDto.UpdateStatus requestDto,
+            Authentication authentication) {
 
-        ApplicationResponseDto response = applicationService.updateStatus(applicationId, requestDto.getStatus());
+        ApplicationResponseDto response = applicationService.updateStatus(applicationId, requestDto.getStatus(), authentication.getName());
         return ResponseEntity.ok(response);
     }
 }

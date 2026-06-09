@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # 4. 무원님이 사용한 프론트엔드 라이브러리들을 설치합니다.
-RUN npm install
+RUN npm ci
 
 # 5. 나머지 모든 프론트엔드 소스 코드를 복사합니다.
 COPY . .

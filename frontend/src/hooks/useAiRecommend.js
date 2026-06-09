@@ -1,4 +1,5 @@
 import { useState } from "react";
+import api from "../services/api";
 
 const useAiRecommend = () => {
   // 🔥 변경점: 초기값을 null 대신 sessionStorage에서 가져옵니다.
@@ -13,24 +14,8 @@ const useAiRecommend = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const currentUserId = 2;
-
-      const response = await fetch("http://localhost:8080/api/ai/recommend", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            userId: currentUserId,
-            userPrompt: userPrompt
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("서버와의 통신에 실패했습니다.");
-      }
-
-      const data = await response.json();
+      const response = await api.post("/api/ai/recommend", { userPrompt });
+      const data = response.data;
       setResult(data);
 
       // 🔥 변경점: 데이터를 성공적으로 받아오면 sessionStorage에 저장합니다.

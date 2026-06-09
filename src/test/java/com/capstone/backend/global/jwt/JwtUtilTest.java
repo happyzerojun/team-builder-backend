@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class JwtUtilTest {
 
-    private final JwtUtil jwtUtil = new JwtUtil("mysecretkeymysecretkeymysecretkey", 3600000);
+    private final JwtUtil jwtUtil = new JwtUtil("test-jwt-secret-key-with-at-least-32-bytes", 3600000);
 
     @Test
     void createTokenProducesValidTokenWithEmailSubject() {

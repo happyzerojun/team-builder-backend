@@ -62,9 +62,9 @@ public class AiService {
     }
 
     @Transactional(readOnly = true)
-    public AiRecommendResponse getRecommendation(Long userId, String userPrompt) {
+    public AiRecommendResponse getRecommendation(String email, String userPrompt) {
         // 1. 유저 정보 조회
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
 
         // 2. 동적 기술 스택 매칭

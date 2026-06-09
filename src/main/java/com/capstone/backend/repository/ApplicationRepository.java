@@ -21,5 +21,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
     boolean existsByApplicantIdAndProjectId(Long applicantId, Long projectId);
 
+    boolean existsByApplicantIdAndProjectIdAndStatus(Long applicantId, Long projectId, String status);
+
     Optional<Application> findByProjectIdAndApplicantIdAndStatus(Long projectId, Long applicantId, String status);
 }

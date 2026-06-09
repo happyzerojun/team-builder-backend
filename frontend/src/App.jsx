@@ -50,6 +50,11 @@ function App() {
                             onLoginSuccess={() => setIsLoggedIn(true)}
                         />}
                     />
+                    <Route path="/oauth/callback" element={
+                        <LoginPage
+                            onLoginSuccess={() => setIsLoggedIn(true)}
+                        />}
+                    />
                     <Route path="/signup" element={<SignupPage />} />
 
                     {/* 마이페이지 */}

@@ -1,7 +1,7 @@
 ﻿import axios from "axios";
 
 const api = axios.create({
-    baseURL: "http://52.78.71.42:8080",
+    baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080",
     timeout: 10000,
 });
 
@@ -25,6 +25,9 @@ api.interceptors.response.use(
         const url = error?.config?.url || "";
 
         if (status === 401 && !url.includes("/api/auth/login")) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            localStorage.removeItem("isLoggedIn");
             alert("로그인이 만료되었거나 인증이 필요합니다.");
         }
 

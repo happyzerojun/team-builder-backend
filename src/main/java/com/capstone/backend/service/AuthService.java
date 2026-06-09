@@ -10,7 +10,10 @@ import com.capstone.backend.global.jwt.JwtUtil;
 import com.capstone.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -22,27 +25,33 @@ public class AuthService {
 
     // 회원가입
     public User signup(SignupRequest request) {
+        String email = normalizeEmail(request.getEmail());
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        if (userRepository.findByEmailIgnoreCase(email).isPresent()) {
             throw new ConflictException("이미 존재하는 이메일입니다.");
         }
 
         User user = User.builder()
-                .email(request.getEmail())
+                .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
-                .name(request.getName())
+                .name(request.getName().trim())
                 .build();
 
-        return userRepository.save(user);
+        try {
+            return userRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new ConflictException("이미 존재하는 이메일입니다.");
+        }
     }
 
     // 로그인
     public String login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        String email = normalizeEmail(request.getEmail());
+        User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않습니다."));
 
         if (user.getProvider() != AuthProvider.LOCAL || user.getPassword() == null) {
-            throw new UnauthorizedException("OAuth 계정입니다. 소셜 로그인을 사용해주세요.");
+            throw new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -50,5 +59,9 @@ public class AuthService {
         }
 
         return jwtUtil.createToken(user.getEmail()); // ⭐ 토큰 반환
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

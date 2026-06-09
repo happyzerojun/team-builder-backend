@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,22 +41,25 @@ public class ProjectController {
 
     // 3. 프로젝트 생성 (POST /api/projects)
     @PostMapping("")
-    public ResponseEntity<ProjectResponseDto> createProject(@RequestBody ProjectRequestDto request) {
-        return ResponseEntity.ok(projectService.createProject(request));
+    public ResponseEntity<ProjectResponseDto> createProject(@RequestBody ProjectRequestDto request,
+                                                            Authentication authentication) {
+        return ResponseEntity.ok(projectService.createProject(request, authentication.getName()));
     }
 
     // 4. 프로젝트 수정 (PUT /api/projects/{projectId})
     @PutMapping("/{projectId}")
     public ResponseEntity<ProjectResponseDto> updateProject(
             @PathVariable Long projectId,
-            @RequestBody ProjectRequestDto request) {
-        return ResponseEntity.ok(projectService.updateProject(projectId, request));
+            @RequestBody ProjectRequestDto request,
+            Authentication authentication) {
+        return ResponseEntity.ok(projectService.updateProject(projectId, request, authentication.getName()));
     }
 
     // 5. 프로젝트 삭제 (DELETE /api/projects/{projectId})
     @DeleteMapping("/{projectId}")
-    public ResponseEntity<String> deleteProject(@PathVariable Long projectId) {
-        return ResponseEntity.ok("프로젝트 " + projectId + " 삭제 성공 (임시)");
+    public ResponseEntity<Void> deleteProject(@PathVariable Long projectId, Authentication authentication) {
+        projectService.deleteProject(projectId, authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 
     // 6. 프로젝트 팀원 목록
@@ -68,17 +72,19 @@ public class ProjectController {
     @PatchMapping("/{projectId}/status")
     public ResponseEntity<ProjectResponseDto> updateProjectStatus(
             @PathVariable Long projectId,
-            @RequestBody ProjectStatusUpdateRequestDto request
+            @RequestBody ProjectStatusUpdateRequestDto request,
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(projectService.updateProjectStatus(projectId, request.getStatus()));
+        return ResponseEntity.ok(projectService.updateProjectStatus(projectId, request.getStatus(), authentication.getName()));
     }
 
     // 8. 팀원 제외 (DELETE /api/projects/{projectId}/members/{memberId})
     @DeleteMapping("/{projectId}/members/{memberId}")
     public ResponseEntity<String> removeProjectMember(
             @PathVariable Long projectId,
-            @PathVariable Long memberId) {
-        projectService.removeProjectMember(projectId, memberId);
+            @PathVariable Long memberId,
+            Authentication authentication) {
+        projectService.removeProjectMember(projectId, memberId, authentication.getName());
         return ResponseEntity.ok("팀원 제외 성공");
     }
 
@@ -86,8 +92,9 @@ public class ProjectController {
     @PostMapping("/{projectId}/members")
     public ResponseEntity<String> addProjectMember(
             @PathVariable Long projectId,
-            @RequestBody Map<String, Long> body) {
-        projectService.addProjectMember(projectId, body.get("user_id"));
+            @RequestBody Map<String, Long> body,
+            Authentication authentication) {
+        projectService.addProjectMember(projectId, body.get("user_id"), authentication.getName());
         return ResponseEntity.ok("팀원 추가 성공");
     }
 }

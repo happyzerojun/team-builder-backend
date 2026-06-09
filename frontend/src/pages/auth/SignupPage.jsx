@@ -39,7 +39,7 @@ const SignupPage = () => {
     const isFormValid =
         name.length > 0 &&
         email.length > 0 &&
-        password.length >= 4 &&
+        password.length >= 8 &&
         isMatch &&
         confirmPassword.length > 0 &&
         level !== '' &&
@@ -66,7 +66,7 @@ const SignupPage = () => {
                 />
                 <input
                     type="password"
-                    placeholder="비밀번호"
+                    placeholder="비밀번호 (8자 이상)"
                     className="signup-input"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}

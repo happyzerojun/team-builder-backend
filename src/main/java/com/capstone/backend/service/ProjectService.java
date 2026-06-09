@@ -17,13 +17,17 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Set;
 import com.capstone.backend.dto.MemberResponseDto;
 import com.capstone.backend.entity.Application;
 import com.capstone.backend.repository.ApplicationRepository;
+import com.capstone.backend.global.exception.ForbiddenException;
 
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
+
+    private static final Set<String> ALLOWED_STATUSES = Set.of("모집중", "진행중", "완료됨");
 
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
@@ -32,8 +36,8 @@ public class ProjectService {
     private final ApplicationRepository applicationRepository;
 
     @Transactional
-    public ProjectResponseDto createProject(ProjectRequestDto request) {
-        User leader = userRepository.findById(request.getLeader_id())
+    public ProjectResponseDto createProject(ProjectRequestDto request, String email) {
+        User leader = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
 
         Project project = Project.builder()
@@ -79,9 +83,10 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResponseDto updateProject(Long projectId, ProjectRequestDto request) {
+    public ProjectResponseDto updateProject(Long projectId, ProjectRequestDto request, String email) {
         Project project = projectRepository.findById(projectId)
             .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
+        requireLeader(project, email);
 
         project.updateTitle(request.getTitle());
         project.updateContent(request.getContent());
@@ -91,6 +96,14 @@ public class ProjectService {
         project.updateIsLocalOnly(request.getIsLocalOnly());
 
         return ProjectResponseDto.from(project);
+    }
+
+    @Transactional
+    public void deleteProject(Long projectId, String email) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
+        requireLeader(project, email);
+        projectRepository.delete(project);
     }
 
     public List<MemberResponseDto> getProjectMembers(Long projectId) {
@@ -105,9 +118,13 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResponseDto updateProjectStatus(Long projectId, String status) {
+    public ProjectResponseDto updateProjectStatus(Long projectId, String status, String email) {
         Project project = projectRepository.findById(projectId)
             .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
+        requireLeader(project, email);
+        if (!ALLOWED_STATUSES.contains(status)) {
+            throw new IllegalArgumentException("프로젝트 상태가 올바르지 않습니다.");
+        }
 
     project.updateStatus(status);
 
@@ -115,7 +132,10 @@ public class ProjectService {
     }
 
     @Transactional
-    public void removeProjectMember(Long projectId, Long memberId) {
+    public void removeProjectMember(Long projectId, Long memberId, String email) {
+    Project project = projectRepository.findById(projectId)
+            .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
+    requireLeader(project, email);
     Application application = applicationRepository
         .findByProjectIdAndApplicantIdAndStatus(projectId, memberId, "ACCEPTED")
         .orElseThrow(() -> new IllegalArgumentException("해당 팀원을 찾을 수 없습니다."));
@@ -123,9 +143,10 @@ public class ProjectService {
     }
 
     @Transactional
-    public void addProjectMember(Long projectId, Long userId) {
+    public void addProjectMember(Long projectId, Long userId, String email) {
     Project project = projectRepository.findById(projectId)
             .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
+    requireLeader(project, email);
 
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
@@ -139,6 +160,12 @@ public class ProjectService {
             .build();
 
     applicationRepository.save(application);
+    }
+
+    private void requireLeader(Project project, String email) {
+        if (!project.getLeader().getEmail().equalsIgnoreCase(email)) {
+            throw new ForbiddenException("프로젝트 팀장만 수행할 수 있습니다.");
+        }
     }
 
 }

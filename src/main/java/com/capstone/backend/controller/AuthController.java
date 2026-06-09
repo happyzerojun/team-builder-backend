@@ -13,11 +13,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
+
+    private static final Set<String> SUPPORTED_OAUTH_PROVIDERS = Set.of("google", "kakao", "naver");
 
     private final AuthService authService;
     private final UserService userService;
@@ -92,6 +95,10 @@ public class AuthController {
     // =========================
     @GetMapping("/oauth2/url/{provider}")
     public ResponseEntity<String> getOauth2AuthorizationUrl(@PathVariable String provider) {
-        return ResponseEntity.ok("/oauth2/authorization/" + provider);
+        String normalizedProvider = provider.toLowerCase();
+        if (!SUPPORTED_OAUTH_PROVIDERS.contains(normalizedProvider)) {
+            return ResponseEntity.badRequest().body("지원하지 않는 OAuth 제공자입니다.");
+        }
+        return ResponseEntity.ok("/oauth2/authorization/" + normalizedProvider);
     }
 }

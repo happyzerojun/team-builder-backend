@@ -9,11 +9,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 
 import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -32,7 +34,7 @@ class CustomOAuth2UserServiceTest {
                 Map.of("sub", "google-123", "email", "user@example.com", "name", "Google User"));
 
         when(userRepository.findByProviderAndProviderId(AuthProvider.GOOGLE, "google-123")).thenReturn(Optional.empty());
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         OAuth2User user = customOAuth2UserService.upsertOAuth2User("google", userInfo, Map.of("email", "user@example.com"));
@@ -50,7 +52,7 @@ class CustomOAuth2UserServiceTest {
                 ));
 
         when(userRepository.findByProviderAndProviderId(AuthProvider.KAKAO, "123456789")).thenReturn(Optional.empty());
-        when(userRepository.findByEmail("kakao@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByEmailIgnoreCase("kakao@example.com")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         OAuth2User user = customOAuth2UserService.upsertOAuth2User("kakao", userInfo, Map.of("id", 123456789L));
@@ -68,11 +70,24 @@ class CustomOAuth2UserServiceTest {
                 )));
 
         when(userRepository.findByProviderAndProviderId(AuthProvider.NAVER, "naver-123")).thenReturn(Optional.empty());
-        when(userRepository.findByEmail("naver@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByEmailIgnoreCase("naver@example.com")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         OAuth2User user = customOAuth2UserService.upsertOAuth2User("naver", userInfo, Map.of("response", Map.of("id", "naver-123")));
 
         assertEquals("naver@example.com", user.getName());
+    }
+
+    @Test
+    void rejectsAutomaticLinkingToExistingEmailAccount() {
+        OAuth2UserInfo userInfo = OAuth2UserInfoFactory.getOAuth2UserInfo("google",
+                Map.of("sub", "google-123", "email", "user@example.com", "name", "Google User"));
+
+        when(userRepository.findByProviderAndProviderId(AuthProvider.GOOGLE, "google-123")).thenReturn(Optional.empty());
+        when(userRepository.findByEmailIgnoreCase("user@example.com"))
+                .thenReturn(Optional.of(User.builder().email("user@example.com").password("hash").build()));
+
+        assertThrows(OAuth2AuthenticationException.class,
+                () -> customOAuth2UserService.upsertOAuth2User("google", userInfo, Map.of()));
     }
 }

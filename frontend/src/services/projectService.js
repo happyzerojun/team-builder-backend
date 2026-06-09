@@ -30,13 +30,11 @@ export const projectService = {
         }
     },
     createProject: async (data) => {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
         const res = await api.post(API_URL, {
             title: data.title,
             content: data.content,
             region: data.region,
             status: "모집중",
-            leader_id: user.user_id,
             term: data.term,
             techStackIds: data.techStackIds,
             meetingType: data.meetingType,
@@ -67,10 +65,8 @@ export const projectService = {
         }
     },
     applyToProject: async (projectId) => {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
         await api.post(APPLICATION_API, {
             project_id: projectId,
-            applicant_id: user.user_id,
             support_role: "지원자",
             message: "",
             status: "PENDING"

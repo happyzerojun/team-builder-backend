@@ -4,11 +4,8 @@ const API_URL = "/api/application";
 
 export const applicationService = {
     apply: async (projectId, formData) => {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-
         const res = await api.post(API_URL, {
             project_id: projectId,
-            applicant_id: user.user_id,
             support_role: formData.supportRole,
             message: formData.message,
             experience: formData.experience,
@@ -26,13 +23,7 @@ export const applicationService = {
     },
 
     getMyApplications: async () => {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-        if (!user.user_id) {
-            return [];
-        }
-
-        const res = await api.get(`${API_URL}/user/${user.user_id}`);
+        const res = await api.get(`${API_URL}/me`);
         return Array.isArray(res.data) ? res.data : [];
     },
 

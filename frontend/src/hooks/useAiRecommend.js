@@ -15,7 +15,7 @@ const useAiRecommend = () => {
     try {
       const currentUserId = 2;
 
-      const response = await fetch("http://localhost:8080/api/ai/recommend", {
+      const response = await fetch("http://52.78.71.42:8080/api/ai/recommend", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

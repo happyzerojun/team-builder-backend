@@ -18,23 +18,48 @@ const DURATION_OPTIONS = [
   { label: "6개월 이상", value: "6개월 이상" },
 ];
 
+// 🔥 변경점 1: 로딩 중 순차적으로 보여줄 메시지 배열 정의
+const LOADING_MESSAGES = [
+  "🔍 DB에서 프로젝트 목록 검색 중...",
+  "📝 맞춤형 AI 프롬프트 구성 중...",
+  "🧠 구글 제미나이 AI 추천 분석 중...",
+  "🎨 추천 카드 결과 생성 중..."
+];
+
 export default function AiChatPage() {
   const navigate = useNavigate();
-  // 🔥 변경점: 1. 초기값을 sessionStorage에서 읽어오도록 세팅합니다.
+  
   const [selectedTechs, setSelectedTechs] = useState(() => JSON.parse(sessionStorage.getItem("aiTechs")) || []);
   const [duration, setDuration] = useState(() => sessionStorage.getItem("aiDuration") || "");
   const [freeText, setFreeText] = useState(() => sessionStorage.getItem("aiFreeText") || "");
   const [activeTab, setActiveTab] = useState(() => sessionStorage.getItem("aiActiveTab") || "프론트엔드");
 
+  // 🔥 변경점 2: 현재 표시할 로딩 메시지의 인덱스 상태 추가
+  const [loadingStep, setLoadingStep] = useState(0);
+
   const { result, isLoading, error, getRecommendation } = useAiRecommend();
 
-  // 🔥 변경점: 2. 사용자가 값을 바꿀 때마다 자동으로 sessionStorage에 저장합니다.
   useEffect(() => {
     sessionStorage.setItem("aiTechs", JSON.stringify(selectedTechs));
     sessionStorage.setItem("aiDuration", duration);
     sessionStorage.setItem("aiFreeText", freeText);
     sessionStorage.setItem("aiActiveTab", activeTab);
   }, [selectedTechs, duration, freeText, activeTab]);
+
+  // 🔥 변경점 3: isLoading이 true가 되면 2.5초마다 메시지를 순차적으로 변경하는 타이머 가동
+  useEffect(() => {
+    let timer;
+    if (isLoading) {
+      setLoadingStep(0); // 로딩 시작 시 첫 번째 메시지로 초기화
+      timer = setInterval(() => {
+        setLoadingStep((prev) => (prev < LOADING_MESSAGES.length - 1 ? prev + 1 : prev));
+      }, 2500); // 2.5초마다 다음 단계 메시지로 전환
+    } else {
+      setLoadingStep(0);
+    }
+
+    return () => clearInterval(timer); // 언마운트 시 타이머 클리어
+  }, [isLoading]);
 
   const toggleTech = (tech) => {
     setSelectedTechs((prev) =>
@@ -48,7 +73,6 @@ export default function AiChatPage() {
       return;
     }
 
-    // AI가 문맥을 더 잘 파악하도록 문장 형태(자연어)로 조립합니다.
     let serializedPrompt = "다음 조건과 상황에 맞는 프로젝트를 추천해줘. ";
 
     if (selectedTechs.length > 0) {
@@ -61,7 +85,6 @@ export default function AiChatPage() {
       serializedPrompt += `그리고 나의 특별한 목적이나 상황은 다음과 같아: "${freeText.trim()}"`;
     }
 
-    // 백엔드로 정제된 프롬프트 전달
     getRecommendation(serializedPrompt);
   };
 
@@ -120,8 +143,9 @@ export default function AiChatPage() {
         />
       </section>
 
+      {/* 🔥 변경점 4: 로딩 상태에 따라 실시간으로 변하는 LOADING_MESSAGES[loadingStep] 반영 */}
       <button className={styles.submitBtn} onClick={handleSubmit} disabled={isLoading}>
-        {isLoading ? "AI가 최적의 프로젝트를 탐색 중..." : "AI에게 추천받기"}
+        {isLoading ? LOADING_MESSAGES[loadingStep] : "AI에게 추천받기"}
       </button>
 
       <div className={styles.resultArea}>
@@ -131,7 +155,7 @@ export default function AiChatPage() {
         )}
         <div className={styles.cardGrid}>
           {recommendedPosts.map((post) => (
-            <PostCard key={post.id} post={post} onClick={() => navigate(`/post/${post.id}`)}isAiResult={true} /* 🔥 이 카드는 AI 추천 결과라는 신호를 보냄 */ />
+            <PostCard key={post.id} post={post} onClick={() => navigate(`/post/${post.id}`)} isAiResult={true} />
           ))}
         </div>
       </div>

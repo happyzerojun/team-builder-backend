@@ -1,135 +1,44 @@
-# 🛠 Spring Boot JWT Authentication Server
+# 🚀 Team Builder (개발자 매칭 플랫폼) - Backend
 
-## 📌 프로젝트 소개
+## 📖 프로젝트 개요
+개발자와 디자이너의 효율적인 팀 빌딩을 지원하는 매칭 플랫폼 **'Team Builder'**의 백엔드 리포지토리입니다.
+안정적인 도메인 설계, 확장이 용이한 API 통신 규격 표준화, 그리고 예측 가능한 배포 환경 구축에 집중했습니다.
 
-Spring Boot 기반으로 구현한 **JWT 인증 서버**입니다.
-회원가입, 로그인, JWT 토큰 발급 및 인증 기능을 제공합니다.
+## 👨‍💻 역할 및 기여도
+**나영준 (프로젝트 팀장 / 백엔드 리드)**
+- **개발 인원:** 4인 팀
+- **담당 업무:** 백엔드 API 설계/구현, ERD 모델링, Docker 인프라 배포, CI/CD 및 형상관리 총괄
 
----
-
-## 🚀 기술 스택
-
-* **Backend**: Spring Boot 3
-* **Language**: Java
-* **Security**: Spring Security
-* **Authentication**: JWT (Json Web Token)
-* **Build Tool**: Gradle
-
----
-
-## ✨ 주요 기능
-
-### 1. 회원가입 (Signup)
-
-* 이메일, 비밀번호, 이름으로 회원가입
-* 비밀번호는 **BCrypt 암호화** 적용
-
-```
-POST /api/auth/signup
-```
+## 🛠 기술 스택 (Tech Stack)
+- **Backend:** Java, Spring Boot, Spring Data JPA
+- **Database:** MySQL
+- **Infra & DevOps:** Docker, AWS, NCP, GitHub (PR & 형상관리)
 
 ---
 
-### 2. 로그인 (Login)
+## 💡 핵심 문제 해결 및 기술적 성과
 
-* 이메일 + 비밀번호 인증
-* 성공 시 JWT 토큰 발급
+### 1. 형상관리 및 협업 프로세스 시스템화 (코드 품질 관리)
+- **도입 배경:** 다수의 팀원이 코드를 통합하는 과정에서 발생할 수 있는 충돌 및 코드 퀄리티 저하 방지
+- **해결 및 성과:** 
+  - 명확한 Git 브랜치 전략과 커밋 컨벤션 수립
+  - 모든 PR(Pull Request)에 대해 백엔드 리드로서 직접 코드 리뷰 및 테스트 검증 수행
+  - 엄격한 검증을 통과한 코드만 메인 브랜치에 병합(Merge)하여 코드 베이스의 안정성 확보
 
-```
-POST /api/auth/login
-```
+### 2. 커뮤니케이션 비용 절감을 위한 API 표준화
+- **도입 배경:** 프론트엔드와의 데이터 연동 시 응답 형식 불일치로 인한 협업 지연 해결
+- **해결 및 성과:**
+  - 일관된 REST API 요청/응답 포맷 및 공통 에러 코드(Error Code) 표준화 체계 구축
+  - 인터페이스 규격을 통일하여 기능 확장 및 유지보수 시 프론트엔드 단의 수정 범위 최소화
 
-**Response**
+### 3. 데이터 정합성 확보를 위한 도메인 주도 ERD 설계
+- **도입 배경:** 매칭 및 지원 프로세스에서 발생할 수 있는 복잡한 데이터 불일치 리스크 해결
+- **해결 및 성과:**
+  - '매칭'과 '지원'이라는 핵심 비즈니스 도메인을 기준으로 엔티티(Entity) 역할 재정의
+  - 정규화 및 무결성을 고려한 ERD 최적화로 시스템 확장성과 데이터 정합성 보장
 
-```json
-{
-  "accessToken": "JWT_TOKEN"
-}
-```
-
----
-
-### 3. JWT 인증
-
-* 요청 Header에 JWT 포함 시 인증 처리
-* Stateless 방식 (세션 미사용)
-
-```
-Authorization: Bearer {JWT_TOKEN}
-```
-
----
-
-### 4. 인증 테스트 API
-
-```
-GET /api/test
-```
-
-* JWT가 유효하면 접근 가능
-
----
-
-## 🔐 인증 흐름
-
-```
-회원가입 → 로그인 → JWT 발급 → API 요청 시 JWT 검증
-```
-
----
-
-## 🧱 프로젝트 구조
-
-```
-src/main/java/com/capstone/backend
- ┣ config
- ┃ ┗ SecurityConfig
- ┣ controller
- ┃ ┣ AuthController
- ┃ ┗ TestController
- ┣ security
- ┃ ┣ JwtProvider
- ┃ ┗ JwtAuthenticationFilter
- ┣ service
- ┃ ┗ AuthService
- ┣ repository
- ┗ entity
-```
-
----
-
-## ⚙️ Security 설정
-
-* CSRF 비활성화
-* 세션 사용 안함 (STATELESS)
-* JWT 필터 적용
-* `/api/auth/**` 경로는 인증 없이 접근 허용
-
----
-
-## 📮 API 테스트 방법 (Postman)
-
-1. 로그인 요청
-2. JWT 토큰 복사
-3. Authorization 설정
-
-```
-Type: Bearer Token
-Token: 발급받은 JWT
-```
-
----
-
-## 📌 향후 계획
-
-* [ ] 사용자 정보 조회 API (`/api/user/me`)
-* [ ] OAuth 로그인 (카카오 / 구글)
-* [ ] Refresh Token 구현
-* [ ] 게시글 CRUD 기능 추가
-
----
-
-## 💡 느낀 점
-
-Spring Security와 JWT를 활용한 인증 구조를 직접 구현하면서
-**Stateless 인증 방식과 필터 기반 인증 흐름**을 이해할 수 있었습니다.
+### 4. Docker 기반 배포 안정성 개선
+- **도입 배경:** 로컬 개발 환경과 실제 서버 환경의 OS/설정 불일치로 인한 런타임 에러 방지
+- **해결 및 성과:**
+  - Docker 컨테이너를 도입하여 실행 환경의 의존성 완전 제거
+  - 환경에 구애받지 않고 어디서든 동일하게 동작하는 '재현 가능한(Reproducible)' 배포 환경 구축

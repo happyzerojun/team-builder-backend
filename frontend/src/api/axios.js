@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://52.78.71.42:8080";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 
 export const createPost = async (data) => {
   const response = await axios.post(`${BASE_URL}/posts`, data);

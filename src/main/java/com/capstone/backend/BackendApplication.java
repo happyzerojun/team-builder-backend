@@ -2,10 +2,9 @@ package com.capstone.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
-@EnableJpaAuditing // @
-// CreatedDate와 @LastModifiedDate가 작동해서 시간이 자동으로 찍히게 하기 위함
+// JPA Auditing(@CreatedDate, @LastModifiedDate)은 config/JpaAuditingConfig 로 옮겼다.
+// 메인 클래스에 두면 @WebMvcTest 슬라이스 테스트까지 JPA 설정을 요구해 컨텍스트 로딩이 실패한다 (TS-07)
 @SpringBootApplication
 public class BackendApplication {
 

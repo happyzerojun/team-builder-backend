@@ -10,6 +10,7 @@
 | TS-04 | 2026-10-14 | 도메인 | 지원서 상태가 아무 문자열이나 저장되고, 중복 지원을 조회로만 막음 | 해결 |
 | TS-05 | 2026-10-14 | 보안 | `anyRequest().permitAll()` 상태로 배포, 요청 본문의 사용자 ID를 신뢰 | 남은 일 (프론트 연동과 함께) |
 | TS-06 | 2026-10-14 | 도메인 | 포지션 정원 메서드(`increaseCurrentCount`)가 어디서도 호출되지 않음 | 남은 일 |
+| TS-07 | 2026-10-14 | 테스트 | CI를 붙이자 `@WebMvcTest` 7건이 컨텍스트 로딩 실패 | 해결 |
 
 ---
 
@@ -47,3 +48,12 @@
 ### TS-06 포지션 정원 메서드가 호출되지 않음 (남은 일)
 - `ProjectPosition.increaseCurrentCount()`가 정원 초과를 막지만, 지원서의 `support_role`이 문자열이라 어느 포지션인지 연결되지 않아 수락 흐름에서 호출되지 않아요.
 - `application.position_id` FK 추가 후, 수락 시 `UPDATE ... SET current_count = current_count + 1 WHERE id = ? AND current_count < required_count` 조건부 UPDATE로 동시 수락까지 막을 예정이에요.
+
+### TS-07 CI를 붙이자 `@WebMvcTest` 7건이 컨텍스트 로딩 실패
+- **증상:** 첫 CI 실행에서 `21 tests completed, 7 failed`. `AuthControllerApiTest`, `HomeControllerApiTest` 전부 `IllegalStateException at DefaultCacheAwareContextLoaderDelegate` / `NoSuchBeanDefinitionException`.
+- **원인:** CI가 없어서 그동안 아무도 몰랐던 기존 실패예요.
+  1. `AuthController`가 `UserService`를 주입받도록 바뀌었는데 테스트에 `@MockBean UserService`가 없음.
+  2. 메인 클래스의 `@EnableJpaAuditing`이 웹 슬라이스 테스트(`@WebMvcTest`)에서도 JPA 메타모델을 요구함.
+- **해결:** `@EnableJpaAuditing`을 `config/JpaAuditingConfig`로 옮기고, 테스트에 `UserService` 목을 추가.
+- **재발 방지:** PR마다 CI가 테스트를 돌려요. 컨트롤러 생성자에 의존성을 추가하면 해당 `@WebMvcTest`도 같은 PR에서 고쳐요.
+

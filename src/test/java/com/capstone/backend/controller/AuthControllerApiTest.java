@@ -9,6 +9,7 @@ import com.capstone.backend.security.SecurityConfig;
 import com.capstone.backend.security.oauth.CustomOAuth2UserService;
 import com.capstone.backend.security.oauth.OAuth2AuthenticationSuccessHandler;
 import com.capstone.backend.service.AuthService;
+import com.capstone.backend.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -38,6 +39,10 @@ class AuthControllerApiTest {
 
     @MockBean
     private AuthService authService;
+
+    // AuthController가 UserService를 주입받도록 바뀐 뒤 테스트에 반영되지 않아 컨텍스트 로딩이 실패했다 (TS-07)
+    @MockBean
+    private UserService userService;
 
     @MockBean
     private CustomOAuth2UserService customOAuth2UserService;

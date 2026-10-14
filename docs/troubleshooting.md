@@ -54,6 +54,7 @@
 - **원인:** CI가 없어서 그동안 아무도 몰랐던 기존 실패예요.
   1. `AuthController`가 `UserService`를 주입받도록 바뀌었는데 테스트에 `@MockBean UserService`가 없음.
   2. 메인 클래스의 `@EnableJpaAuditing`이 웹 슬라이스 테스트(`@WebMvcTest`)에서도 JPA 메타모델을 요구함.
-- **해결:** `@EnableJpaAuditing`을 `config/JpaAuditingConfig`로 옮기고, 테스트에 `UserService` 목을 추가.
+  3. 컨텍스트가 뜨자 `/api/auth/me` 테스트 2건이 다시 실패. 응답이 문자열(email)에서 JSON(`userId`, `email`, `name`)으로 바뀌었는데 테스트는 옛 계약을 검증하고 있었음.
+- **해결:** `@EnableJpaAuditing`을 `config/JpaAuditingConfig`로 옮기고, 테스트에 `UserService` 목을 추가. `/me` 테스트는 현재 JSON 계약(비로그인 `userId=0`, 로그인 시 사용자 정보)으로 갱신. 7 failed → 2 failed → 0.
 - **재발 방지:** PR마다 CI가 테스트를 돌려요. 컨트롤러 생성자에 의존성을 추가하면 해당 `@WebMvcTest`도 같은 PR에서 고쳐요.
 

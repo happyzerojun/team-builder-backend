@@ -15,12 +15,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,7 +40,15 @@ public class AiService {
     private final TechStackRepository techStackRepository;
     private final ObjectMapper objectMapper;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    // 타임아웃 없는 new RestTemplate()은 Gemini가 응답하지 않으면 요청 스레드가 무기한 대기했다 (TS-03)
+    private final RestTemplate restTemplate = createRestTemplate();
+
+    private static RestTemplate createRestTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(3_000);   // ms
+        factory.setReadTimeout(15_000);     // LLM 응답 생성 시간을 고려
+        return new RestTemplate(factory);
+    }
     private final Map<String, Long> dynamicTechLookupMap = new ConcurrentHashMap<>();
 
     @Value("${gemini.api.url}")
@@ -68,10 +79,15 @@ public class AiService {
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
 
         // 2. 동적 기술 스택 매칭
+        // 가장 긴 키워드부터 매칭한다. 이전에는 HashMap 순회 순서의 첫 매칭이라
+        // "javascript" 요청에 "java"가 걸리는 등 결과가 비결정적이었다 (TS-03)
+        String normalizedPrompt = userPrompt.toLowerCase().replace(" ", "");
         Long targetTechStackId = dynamicTechLookupMap.entrySet().stream()
-                .filter(entry -> userPrompt.toLowerCase().contains(entry.getKey()))
+                .filter(entry -> normalizedPrompt.contains(entry.getKey()))
+                .max(Comparator.comparingInt((Map.Entry<String, Long> e) -> e.getKey().length())
+                        .thenComparing(Map.Entry::getKey))
                 .map(Map.Entry::getValue)
-                .findFirst().orElse(null);
+                .orElse(null);
 
         // 3. 데이터 로딩 (🔥 Fallback 로직 강화: 빈 깡통 방지)
         List<Project> projects = new ArrayList<>();
@@ -81,7 +97,8 @@ public class AiService {
 
         // 검색된 기술 스택 프로젝트가 없거나, 스택 지정을 안했다면 최신 프로젝트 50개를 불러와 AI에게 맡김
         if (projects.isEmpty()) {
-            projects = projectRepository.findAll(PageRequest.of(0, 50)).getContent();
+            // 정렬이 없으면 "최신 50건"이 보장되지 않는다 (TS-03)
+            projects = projectRepository.findAll(PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent();
         }
 
         if (projects.isEmpty()) {
@@ -161,12 +178,13 @@ public class AiService {
     }
 
     private String callGeminiApi(String prompt) {
-        String url = apiUrl + "?key=" + apiKey;
+        // API 키를 URL 쿼리스트링에 두면 접근 로그·프록시 로그에 남을 수 있어 헤더로 보낸다 (TS-03)
+        String url = apiUrl;
         Map<String, Object> requestBody = Map.of(
                 "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
                 "generationConfig", Map.of("responseMimeType", "application/json") // Gemini가 JSON을 내뱉도록 유도
         );
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, new HttpHeaders() {{ setContentType(MediaType.APPLICATION_JSON); }});
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, new HttpHeaders() {{ setContentType(MediaType.APPLICATION_JSON); set("x-goog-api-key", apiKey); }});
         ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
         try {
             return objectMapper.readTree(response.getBody()).path("candidates").path(0).path("content").path("parts").path(0).path("text").asText();

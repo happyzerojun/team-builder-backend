@@ -86,21 +86,26 @@ class AuthControllerApiTest {
                 .andExpect(jsonPath("$.accessToken").value(token));
     }
 
+    // /me 응답이 문자열(email)에서 JSON(userId, email, name)으로 바뀐 뒤 테스트가 갱신되지 않았다 (TS-07)
     @Test
-    void meReturnsOkWithoutTokenWhenSecurityIsOpenForFrontendDevelopment() throws Exception {
+    void meReturnsGuestJsonWithoutToken() throws Exception {
         mockMvc.perform(get("/api/auth/me"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(""));
+                .andExpect(jsonPath("$.userId").value(0))
+                .andExpect(jsonPath("$.email").doesNotExist());
     }
 
     @Test
-    void meReturnsAuthenticatedEmailWithValidToken() throws Exception {
+    void meReturnsUserJsonWithValidToken() throws Exception {
         String token = jwtUtil.createToken("user@example.com");
+        when(userService.findByEmail("user@example.com"))
+                .thenReturn(User.builder().email("user@example.com").name("Tester").build());
 
         mockMvc.perform(get("/api/auth/me")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(content().string("user@example.com"));
+                .andExpect(jsonPath("$.email").value("user@example.com"))
+                .andExpect(jsonPath("$.name").value("Tester"));
     }
 
     @Test

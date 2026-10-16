@@ -67,9 +67,20 @@ const ApplyPage = () => {
     }));
   };
 
+  // 포지션이 있는 글은 포지션 하나를 골라 지원한다. 지원 역할(support_role) = 포지션 이름이어야
+  // 수락할 때 그 포지션의 정원이 적용된다. 포지션이 없는 글은 기존처럼 기술 스택을 골라 지원한다 (TS-19)
+  const positions = Array.isArray(project?.positions) ? project.positions : [];
+  const hasPositions = positions.length > 0;
+  const isFull = (position) =>
+    position.requiredCount != null && (position.currentCount ?? 0) >= position.requiredCount;
+
+  const handlePositionSelect = (roleName) => {
+    setFormData((prev) => ({ ...prev, supportRoles: [roleName] }));
+  };
+
   const handleSubmit = async () => {
     if (formData.supportRoles.length === 0) {
-      alert("지원할 기술스택을 선택해주세요.");
+      alert(hasPositions ? "지원할 포지션을 선택해주세요." : "지원할 기술스택을 선택해주세요.");
       return;
     }
 
@@ -117,32 +128,55 @@ const ApplyPage = () => {
         </p>
 
         <div className="apply-form">
-          <div className="apply-input-group">
-            <label>지원 역할 / 기술스택</label>
-
-            {project?.techStacks?.length > 0 ? (
+          {hasPositions ? (
+            <div className="apply-input-group">
+              <label>지원 포지션</label>
               <div className="apply-tech-list">
-                {project.techStacks.map((tech) => (
+                {positions.map((position) => (
                   <button
-                    key={tech.tech_stack_id}
+                    key={position.position_id ?? position.roleName}
                     type="button"
                     className={`apply-tech-tag ${
-                      formData.supportRoles.includes(tech.name)
-                        ? "selected"
-                        : ""
+                      formData.supportRoles.includes(position.roleName) ? "selected" : ""
                     }`}
-                    onClick={() => handleTechSelect(tech.name)}
+                    onClick={() => handlePositionSelect(position.roleName)}
+                    disabled={isFull(position)}
+                    title={isFull(position) ? "정원이 찬 포지션입니다." : undefined}
                   >
-                    {tech.name}
+                    {position.roleName} {position.currentCount ?? 0}/{position.requiredCount}
+                    {isFull(position) ? " (마감)" : ""}
                   </button>
                 ))}
               </div>
-            ) : (
-              <p className="apply-empty-text">
-                등록된 기술스택이 없습니다.
-              </p>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="apply-input-group">
+              <label>지원 역할 / 기술스택</label>
+
+              {project?.techStacks?.length > 0 ? (
+                <div className="apply-tech-list">
+                  {project.techStacks.map((tech) => (
+                    <button
+                      key={tech.tech_stack_id}
+                      type="button"
+                      className={`apply-tech-tag ${
+                        formData.supportRoles.includes(tech.name)
+                          ? "selected"
+                          : ""
+                      }`}
+                      onClick={() => handleTechSelect(tech.name)}
+                    >
+                      {tech.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="apply-empty-text">
+                  등록된 기술스택이 없습니다.
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="apply-input-group">
             <label>지원 메시지</label>

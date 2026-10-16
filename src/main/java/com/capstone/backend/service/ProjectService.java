@@ -1,6 +1,7 @@
 package com.capstone.backend.service;
 
 import com.capstone.backend.dto.MemberResponseDto;
+import com.capstone.backend.dto.PositionRequestDto;
 import com.capstone.backend.dto.ProjectRequestDto;
 import com.capstone.backend.dto.ProjectResponseDto;
 import com.capstone.backend.entity.Application;
@@ -19,15 +20,21 @@ import com.capstone.backend.repository.ProjectRepository;
 import com.capstone.backend.repository.ReviewRepository;
 import com.capstone.backend.repository.TechStackRepository;
 import com.capstone.backend.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * 모집글 도메인. 변경 API는 모두 모집글 작성자(팀장)만 호출할 수 있다 (TS-05)
@@ -47,6 +54,7 @@ public class ProjectService {
     private final ReviewRepository reviewRepository;
     private final ProjectPositionRepository projectPositionRepository;
     private final PositionSeats positionSeats;
+    private final EntityManager entityManager;
 
     /**
      * 작성자는 토큰의 사용자(본문의 leader_id는 무시).
@@ -76,17 +84,14 @@ public class ProjectService {
         }
 
         if (request.getPositions() != null && !request.getPositions().isEmpty()) {
-            List<ProjectPosition> positions = request.getPositions().stream()
+            List<ProjectPosition> positions = normalizePositions(request.getPositions()).entrySet().stream()
                     .map(p -> ProjectPosition.builder()
                             .project(savedProject)
-                            .roleName(p.getRoleName().trim())
-                            .requiredCount(p.getRequiredCount())
+                            .roleName(p.getKey())
+                            .requiredCount(p.getValue())
                             .currentCount(0)
                             .build())
                     .toList();
-            if (positions.stream().map(ProjectPosition::getRoleName).distinct().count() != positions.size()) {
-                throw new IllegalArgumentException("같은 이름의 포지션을 두 번 등록할 수 없습니다.");
-            }
             savedProject.getProjectPositions().addAll(projectPositionRepository.saveAll(positions));
         }
 
@@ -120,6 +125,15 @@ public class ProjectService {
     @Transactional
     public ProjectResponseDto updateProject(String email, Long projectId, ProjectRequestDto request) {
         Project project = findProjectAsLeader(email, projectId);
+
+        if (request.getPositions() != null) {
+            syncPositions(project, normalizePositions(request.getPositions()));
+            // 포지션 변경은 조건부 UPDATE/DELETE(영속성 컨텍스트를 거치지 않음)라, 반영한 뒤 모집글을 다시 읽어
+            // 이후 변경과 응답이 오래된 포지션 값을 쓰지 않게 한다
+            entityManager.flush();
+            entityManager.clear();
+            project = findProject(projectId);
+        }
 
         project.updateTitle(request.getTitle());
         project.updateContent(request.getContent());
@@ -210,6 +224,52 @@ public class ProjectService {
                 .message("")
                 .status(ApplicationService.ACCEPTED)
                 .build());
+    }
+
+    /**
+     * 수정 요청의 포지션 목록에 맞춘다. 포지션은 이름(role_name)으로 지원서(support_role)와 연결되므로 이름이 식별자다.
+     * 이름을 바꾸면 "기존 삭제 + 새로 추가"로 처리된다(합류한 팀원이 있으면 삭제가 막혀 409) (TS-19)
+     */
+    private void syncPositions(Project project, Map<String, Integer> requested) {
+        LocalDateTime now = LocalDateTime.now();
+        Set<String> existingNames = new HashSet<>();
+        for (ProjectPosition existing : project.getProjectPositions()) {
+            existingNames.add(existing.getRoleName());
+            Integer requiredCount = requested.get(existing.getRoleName());
+            if (requiredCount == null) {
+                if (projectPositionRepository.deleteIfEmpty(existing.getId()) == 0) {
+                    throw new ConflictException("'" + existing.getRoleName() + "' 포지션에는 합류한 팀원이 있어 삭제할 수 없습니다.");
+                }
+            } else if (!requiredCount.equals(existing.getRequiredCount())
+                    && projectPositionRepository.updateRequiredCountIfFits(existing.getId(), requiredCount, now) == 0) {
+                throw new ConflictException("'" + existing.getRoleName() + "' 포지션의 모집 인원은 현재 합류 인원보다 적게 줄일 수 없습니다.");
+            }
+        }
+        List<ProjectPosition> added = requested.entrySet().stream()
+                .filter(entry -> !existingNames.contains(entry.getKey()))
+                .map(entry -> ProjectPosition.builder()
+                        .project(project)
+                        .roleName(entry.getKey())
+                        .requiredCount(entry.getValue())
+                        .currentCount(0)
+                        .build())
+                .toList();
+        projectPositionRepository.saveAll(added);
+    }
+
+    /** 이름 앞뒤 공백 제거, 같은 이름 두 번·예약어(팀장) 금지. 입력 순서를 유지한다 */
+    private static Map<String, Integer> normalizePositions(List<PositionRequestDto> positions) {
+        Map<String, Integer> normalized = new LinkedHashMap<>();
+        for (PositionRequestDto position : positions) {
+            String roleName = position.getRoleName().trim();
+            if (LEADER_ROLE.equals(roleName)) {
+                throw new IllegalArgumentException("'" + LEADER_ROLE + "'은(는) 포지션 이름으로 쓸 수 없습니다.");
+            }
+            if (normalized.putIfAbsent(roleName, position.getRequiredCount()) != null) {
+                throw new IllegalArgumentException("같은 이름의 포지션을 두 번 등록할 수 없습니다.");
+            }
+        }
+        return normalized;
     }
 
     /** 중복 ID는 한 번만, 없는 ID는 무시한다(생성 API의 기존 동작과 같음) */

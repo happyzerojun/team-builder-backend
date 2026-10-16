@@ -17,6 +17,24 @@ public interface ProjectPositionRepository extends JpaRepository<ProjectPosition
 
     List<ProjectPosition> findByProjectId(Long projectId);
 
+    boolean existsByProjectId(Long projectId);
+
+    /**
+     * 모집글 수정: 모집 인원 변경. 현재 합류 인원 이상으로만 바꿀 수 있다 (TS-19)
+     * 엔티티 필드를 바꿔 dirty checking으로 저장하면 UPDATE에 읽어 둔 current_count까지 함께 써서,
+     * 그 사이 커밋된 수락(+1)을 덮어쓸 수 있다(lost update). 그래서 required_count만 조건부로 바꾼다.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("update ProjectPosition p set p.requiredCount = :requiredCount, p.updatedAt = :now "
+            + "where p.id = :id and coalesce(p.currentCount, 0) <= :requiredCount")
+    int updateRequiredCountIfFits(@Param("id") Long id, @Param("requiredCount") int requiredCount,
+                                  @Param("now") LocalDateTime now);
+
+    /** 모집글 수정: 합류한 팀원이 없는 포지션만 삭제. 영향 행 0 = 그 사이 누군가 합류함 (TS-19) */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from ProjectPosition p where p.id = :id and coalesce(p.currentCount, 0) = 0")
+    int deleteIfEmpty(@Param("id") Long id);
+
     /**
      * 정원이 남아 있을 때만 +1. 영향 행 수 0 = 정원 초과.
      *

@@ -1,30 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './LoginPage.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 
 const LoginPage = ({ onLoginSuccess }) => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-
-    useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get("code");
-        const state = urlParams.get("state");
-
-        if (!code) return;
-
-        window.history.replaceState({}, document.title, "/login");
-
-        if (state === "google") {
-            getGoogleToken(code);
-        }
-
-        if (state === "kakao") {
-            getKakaoToken(code);
-        }
-    }, []);
 
     const handleLogin = async () => {
         try {
@@ -39,159 +23,15 @@ const LoginPage = ({ onLoginSuccess }) => {
         }
     };
 
-    const handleKakaoLogin = () => {
-        const REST_API_KEY = "55637b734996119177991d81b29f76a5";
-        const REDIRECT_URI = "http://localhost:5173/login";
-
-        window.location.href =
-            `https://kauth.kakao.com/oauth/authorize` +
-            `?client_id=${REST_API_KEY}` +
-            `&redirect_uri=${REDIRECT_URI}` +
-            `&response_type=code` +
-            `&state=kakao`;
+    // 소셜 로그인은 백엔드(Spring Security OAuth2)가 처리하고, 성공하면 /oauth/callback 으로 JWT를 넘겨준다.
+    // 클라이언트 시크릿을 프론트 코드에 두지 않는다 (TS-15)
+    const startSocialLogin = (provider) => {
+        window.location.href = `${API_BASE_URL}/oauth2/authorization/${provider}`;
     };
 
-    const handleGoogleLogin = () => {
-        const CLIENT_ID = "825299339140-qss5ti06pv76gc0bb2s8rkqbv8o00g4i.apps.googleusercontent.com";
-        const REDIRECT_URI = "http://localhost:5173/login";
+    const handleKakaoLogin = () => startSocialLogin("kakao");
 
-        const url =
-            `https://accounts.google.com/o/oauth2/v2/auth` +
-            `?client_id=${CLIENT_ID}` +
-            `&redirect_uri=${REDIRECT_URI}` +
-            `&response_type=code` +
-            `&scope=email profile` +
-            `&prompt=select_account` +
-            `&state=google`;
-
-        window.location.href = url;
-    };
-
-    const getGoogleToken = async (code) => {
-        try {
-            const CLIENT_ID = "825299339140-qss5ti06pv76gc0bb2s8rkqbv8o00g4i.apps.googleusercontent.com";
-            const CLIENT_SECRET = "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";
-            const REDIRECT_URI = "http://localhost:5173/login";
-
-            const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: new URLSearchParams({
-                    code: code,
-                    client_id: CLIENT_ID,
-                    client_secret: CLIENT_SECRET,
-                    redirect_uri: REDIRECT_URI,
-                    grant_type: "authorization_code"
-                })
-            });
-
-            const tokenData = await tokenRes.json();
-            const accessToken = tokenData.access_token;
-
-            if (!accessToken) {
-                throw new Error("구글 access token 없음");
-            }
-
-            await getGoogleUser(accessToken);
-        } catch (error) {
-            console.error("구글 토큰 요청 실패:", error);
-            alert("구글 로그인에 실패했습니다.");
-        }
-    };
-
-    const getGoogleUser = async (accessToken) => {
-        try {
-            const userRes = await fetch(
-                "https://www.googleapis.com/oauth2/v2/userinfo",
-                {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`
-                    }
-                }
-            );
-
-            const user = await userRes.json();
-
-            const socialUser = {
-                user_id: user.id || null,
-                email: user.email || "",
-                name: user.name || "",
-                picture: user.picture || "",
-                isSocial: true
-            };
-
-            localStorage.setItem("user", JSON.stringify(socialUser));
-            localStorage.setItem("isLoggedIn", "true");
-
-            if (onLoginSuccess) onLoginSuccess();
-            navigate("/", { replace: true });
-        } catch (error) {
-            console.error("구글 사용자 정보 조회 실패:", error);
-            alert("구글 로그인에 실패했습니다.");
-        }
-    };
-
-    const getKakaoToken = async (code) => {
-        try {
-            const REST_API_KEY = "20a0b697b5c6300c4a61d4a14313c77e";
-            const REDIRECT_URI = "http://localhost:5173/login";
-
-            const res = await fetch("https://kauth.kakao.com/oauth/token", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: new URLSearchParams({
-                    grant_type: "authorization_code",
-                    client_id: REST_API_KEY,
-                    redirect_uri: REDIRECT_URI,
-                    code: code
-                })
-            });
-
-            const data = await res.json();
-            const accessToken = data.access_token;
-
-            if (!accessToken) {
-                throw new Error("카카오 access token 없음");
-            }
-
-            await getKakaoUser(accessToken);
-        } catch (error) {
-            console.error("카카오 토큰 요청 실패:", error);
-            alert("카카오 로그인에 실패했습니다.");
-        }
-    };
-
-    const getKakaoUser = async (accessToken) => {
-        try {
-            const res = await fetch("https://kapi.kakao.com/v2/user/me", {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
-                }
-            });
-
-            const data = await res.json();
-
-            const user = {
-                user_id: data.id || null,
-                email: data.kakao_account?.email || "",
-                name: data.kakao_account?.profile?.nickname || "",
-                isSocial: true
-            };
-
-            localStorage.setItem("user", JSON.stringify(user));
-            localStorage.setItem("isLoggedIn", "true");
-
-            if (onLoginSuccess) onLoginSuccess();
-            navigate("/", { replace: true });
-        } catch (error) {
-            console.error("카카오 사용자 정보 조회 실패:", error);
-            alert("카카오 로그인에 실패했습니다.");
-        }
-    };
+    const handleGoogleLogin = () => startSocialLogin("google");
 
     return (
         <div className="login-container">

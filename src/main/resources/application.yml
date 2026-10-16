@@ -87,5 +87,5 @@ jwt:
 
 app:
   oauth2:
-    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth/callback}
+    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:5173/oauth/callback} # 프론트(Vite) /oauth/callback 화면
 

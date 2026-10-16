@@ -2,6 +2,7 @@ import React, { useState } from 'react';  // ✅ useState 추가
 
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
+import OAuthCallbackPage from './pages/auth/OAuthCallbackPage';
 
 import MyPage from './pages/user/MyPage';
 import MyPageSetting from './pages/user/MyPageSetting';
@@ -51,6 +52,12 @@ function App() {
                         />}
                     />
                     <Route path="/signup" element={<SignupPage />} />
+                    {/* 백엔드 OAuth2 로그인 성공 후 JWT를 받는 곳 */}
+                    <Route path="/oauth/callback" element={
+                        <OAuthCallbackPage
+                            onLoginSuccess={() => setIsLoggedIn(true)}
+                        />}
+                    />
 
                     {/* 마이페이지 */}
                     <Route path="/mypage" element={<MyPage />} />

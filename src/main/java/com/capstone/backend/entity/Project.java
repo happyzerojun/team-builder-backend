@@ -36,8 +36,9 @@ public class Project {
     @Column(nullable = false, length = 20)
     private String term;
 
+    // DB에는 ProjectStatus의 한글 라벨("모집중", "진행중", "종료됨")이 저장된다. 값의 정의는 ProjectStatus 한 곳 (TS-09)
     @Column(nullable = false, length = 30)
-    private String status; // RECRUITING, PROCEEDING, COMPLETED
+    private String status;
 
     // 🚨 [핵심 1] 팀장(User) 매핑
     @ManyToOne(fetch = FetchType.LAZY)
@@ -73,8 +74,28 @@ public class Project {
     @Column(name = "is_local_only")
     private Boolean isLocalOnly;
 
-    public void updateStatus(String status) {
-        this.status = status;
+    public ProjectStatus getProjectStatus() {
+        return ProjectStatus.from(this.status);
+    }
+
+    public boolean isRecruiting() {
+        return getProjectStatus() == ProjectStatus.RECRUITING;
+    }
+
+    /**
+     * 모집중 → 진행중 → 종료됨 순서로만 바꿀 수 있다. 같은 상태 재요청은 멱등.
+     * 이전에는 아무 문자열이나 저장돼 "종료됨" → "모집중" 역행이나 오타 저장이 가능했다 (TS-09)
+     */
+    public void changeStatus(ProjectStatus next) {
+        ProjectStatus current = getProjectStatus();
+        if (current == next) {
+            return;
+        }
+        if (!current.canMoveTo(next)) {
+            throw new IllegalStateException(
+                    "'" + current.label() + "' 상태에서 '" + next.label() + "'(으)로 바꿀 수 없습니다.");
+        }
+        this.status = next.label();
     }
 
     // 수정관련 

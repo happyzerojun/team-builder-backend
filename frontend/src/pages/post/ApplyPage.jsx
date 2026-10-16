@@ -93,7 +93,7 @@ const ApplyPage = () => {
       navigate("/mypage");
     } catch (error) {
       console.error("지원 신청 실패:", error);
-      alert("지원 신청에 실패했습니다.");
+      alert(error?.response?.data?.message || "지원 신청에 실패했습니다.");
     }
   };
 

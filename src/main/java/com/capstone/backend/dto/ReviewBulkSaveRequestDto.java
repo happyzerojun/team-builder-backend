@@ -10,6 +10,7 @@ public class ReviewBulkSaveRequestDto {
     @JsonProperty("project_id")
     private Long projectId;
 
+    // 하위 호환용으로 받기만 하고 쓰지 않는다. 작성자는 JWT의 사용자 (TS-05)
     @JsonProperty("reviewer_id")
     private Long reviewerId;
 

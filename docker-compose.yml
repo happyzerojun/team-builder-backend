@@ -33,6 +33,8 @@ services:
       - DB_USERNAME=root
       - DB_PASSWORD=${DB_PASSWORD}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      # 스키마 자동 변경 정책 (TS-14). 운영 DB 스키마를 맞춘 뒤 .env에서 validate로 바꾼다
+      - JPA_DDL_AUTO=${JPA_DDL_AUTO:-update}
     restart: on-failure
     networks:
       - app-network

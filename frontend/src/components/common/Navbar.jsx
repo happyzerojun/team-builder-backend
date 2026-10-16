@@ -19,7 +19,8 @@ const Navbar = () => {
   const handleLogout = () => {
     if (window.confirm("로그아웃 하시겠습니까?")) {
       localStorage.removeItem("user");
-      localStorage.removeItem("isLoggedIn"); 
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("token"); // 토큰을 남기면 로그아웃 후에도 요청에 인증 헤더가 붙었다
       setUser(null);
       navigate('/');
     }

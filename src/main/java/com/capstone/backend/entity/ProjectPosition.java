@@ -48,14 +48,11 @@ public class ProjectPosition {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // --- 비즈니스 로직 ---
+    // 정원 증감은 엔티티 메서드가 아니라 ProjectPositionRepository의 조건부 UPDATE로 한다.
+    // 이전 increaseCurrentCount()는 어디서도 호출되지 않았고, 호출했더라도 "읽고-비교-쓰기"라
+    // 동시 수락 시 정원을 넘길 수 있었다 (TS-06)
 
-    // 팀장이 지원자를 '승인(ACCEPTED)' 했을 때 호출할 메서드
-    public void increaseCurrentCount() {
-        if (this.currentCount < this.requiredCount) {
-            this.currentCount += 1;
-        } else {
-            throw new IllegalStateException("이미 해당 포지션의 모집 인원이 꽉 찼습니다.");
-        }
+    public boolean isFull() {
+        return requiredCount != null && currentCount != null && currentCount >= requiredCount;
     }
 }

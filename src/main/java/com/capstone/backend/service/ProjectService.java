@@ -3,6 +3,7 @@ package com.capstone.backend.service;
 import com.capstone.backend.dto.ProjectRequestDto;
 import com.capstone.backend.dto.ProjectResponseDto;
 import com.capstone.backend.entity.Project;
+import com.capstone.backend.entity.ProjectStatus;
 import com.capstone.backend.entity.ProjectTechStack;
 import com.capstone.backend.entity.TechStack;
 import com.capstone.backend.entity.User;
@@ -40,12 +41,11 @@ public class ProjectService {
             .title(request.getTitle())
             .content(request.getContent())
             .region(request.getRegion())
-            .status("모집중")  // ← 이것만 남기고
+            .status(ProjectStatus.RECRUITING.label()) // 새 글은 항상 모집중. 요청 본문의 status는 무시한다
             .term(String.valueOf(request.getTerm()))
             .leader(leader)
             .meetingType(request.getMeetingType())
             .isLocalOnly(request.getIsLocalOnly())
-            // .status(request.getStatus())  ← 이 줄 삭제!
             .build();
 
         Project savedProject = projectRepository.save(project);
@@ -109,7 +109,7 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
             .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다."));
 
-    project.updateStatus(status);
+    project.changeStatus(ProjectStatus.from(status));
 
     return ProjectResponseDto.from(project);
     }

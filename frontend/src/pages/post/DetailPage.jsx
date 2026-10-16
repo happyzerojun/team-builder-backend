@@ -4,6 +4,7 @@ import { projectService } from "../../services/projectService";
 import { applicationService } from "../../services/applicationService";
 import Navbar from "@/components/common/Navbar";
 import "./DetailPage.css";
+import { PROJECT_STATUS } from "../../constants/projectStatus";
 
 function DetailPage() {
     const { id } = useParams();
@@ -135,7 +136,7 @@ function DetailPage() {
                         <span className="meta-divider">·</span>
                         <span className="meta-text">{post.region || "지역 미정"}</span>
                         <span className="meta-divider">·</span>
-                        <span className="meta-text">{post.status || "모집중"}</span>
+                        <span className="meta-text">{post.status || PROJECT_STATUS.RECRUITING}</span>
                     </div>
 
                     <h1 className="detail-title">{post.title}</h1>

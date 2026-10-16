@@ -278,7 +278,6 @@ function WritePage() {
                 content: form.content.trim(),
                 region: form.region,
                 term: Number(form.term),
-                status: "모집중",
                 techStackIds: form.techStackIds,
                 meetingType: form.meetingType,
                 isLocalOnly: form.meetingType === "대면" ? form.isLocalOnly : false,

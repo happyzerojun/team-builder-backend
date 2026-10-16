@@ -4,6 +4,7 @@ import { projectService } from "../../services/projectService";
 import { applicationService } from "../../services/applicationService";
 import { reviewService } from "../../services/reviewService";
 import './ManagePage.css';
+import { PROJECT_STATUS } from "../../constants/projectStatus";
 
 const ManagePage = () => {
     const { id } = useParams();
@@ -189,11 +190,11 @@ const ManagePage = () => {
         let nextStatus = "";
         let msg = "";
 
-        if (project.status === "모집중") {
-            nextStatus = "진행중";
+        if (project.status === PROJECT_STATUS.RECRUITING) {
+            nextStatus = PROJECT_STATUS.PROCEEDING;
             msg = "모집을 마감하고 시작하시겠습니까?";
-        } else if (project.status === "진행중") {
-            nextStatus = "종료됨";
+        } else if (project.status === PROJECT_STATUS.PROCEEDING) {
+            nextStatus = PROJECT_STATUS.COMPLETED;
             msg = "프로젝트 종료 시 팀원 리뷰가 가능합니다. 종료하시겠습니까?";
         } else {
             return;
@@ -210,7 +211,7 @@ const ManagePage = () => {
                 status: updated?.status || nextStatus
             }));
 
-            alert(nextStatus === "진행중" ? "프로젝트가 시작되었습니다!" : "종료되었습니다. 리뷰를 남겨주세요.");
+            alert(nextStatus === PROJECT_STATUS.PROCEEDING ? "프로젝트가 시작되었습니다!" : "종료되었습니다. 리뷰를 남겨주세요.");
         } catch (error) {
             console.error("상태 변경 실패:", error);
             alert("상태 변경에 실패했습니다.");
@@ -271,15 +272,15 @@ const ManagePage = () => {
                     <div className="title-left">
                         <h2>{project.title}</h2>
                         <span className={`status-badge ${project.status}`}>
-                            {project.status === '진행중'
+                            {project.status === PROJECT_STATUS.PROCEEDING
                                 ? '진행 중'
-                                : project.status === '종료됨'
+                                : project.status === PROJECT_STATUS.COMPLETED
                                 ? '종료됨'
                                 : '모집 중'}
                         </span>
                     </div>
 
-                    {isLeader && project.status === '모집중' && (
+                    {isLeader && project.status === PROJECT_STATUS.RECRUITING && (
                         <button
                             className="edit-project-btn"
                             onClick={() => navigate(`/write/${project.project_id || id}`)}
@@ -294,7 +295,7 @@ const ManagePage = () => {
                 </p>
             </div>
 
-            {project.status === '모집중' && isLeader && (
+            {project.status === PROJECT_STATUS.RECRUITING && isLeader && (
                 <div className="manage-section">
                     <h4>📩 새로운 신청자 ({pendingApplicants.length})</h4>
 
@@ -364,7 +365,7 @@ const ManagePage = () => {
 
                                     {isLeader &&
                                         String(memberId) !== String(currentUserId) &&
-                                        project.status === "모집중" && (
+                                        project.status === PROJECT_STATUS.RECRUITING && (
                                             <button
                                                 className="btn-remove"
                                                 onClick={() => handleRemoveMember(memberId)}
@@ -380,15 +381,15 @@ const ManagePage = () => {
             </div>
 
             <div className="leader-footer">
-                {isLeader && project.status !== '종료됨' && (
+                {isLeader && project.status !== PROJECT_STATUS.COMPLETED && (
                     <button className="complete-project-btn" onClick={handleStatusChange}>
-                        {project.status === '모집중'
+                        {project.status === PROJECT_STATUS.RECRUITING
                             ? "모집 마감 및 시작하기"
                             : "프로젝트 종료하기"}
                     </button>
                 )}
 
-                {project.status === '종료됨' && (
+                {project.status === PROJECT_STATUS.COMPLETED && (
                     <button
                         className={isReviewed ? "review-view-btn" : "review-open-btn"}
                         onClick={() => setShowReviewModal(true)}

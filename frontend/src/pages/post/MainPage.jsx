@@ -8,6 +8,7 @@ import Pagination from "@/components/common/Pagination";
 import SearchBar from "@/components/common/SearchBar";
 import TagFilterDropdown from "@/components/filter/TagFilterDropdown";
 import DurationFilterDropdown from "@/components/filter/DurationFilterDropdown";
+import { PROJECT_STATUS } from "../../constants/projectStatus";
 
 const POSTS_PER_PAGE = 9;
 
@@ -102,7 +103,7 @@ function MainPage({ isLoggedIn, onLogout }) {
     const filteredPosts = useMemo(() => {
         return posts
             .filter((post) => {
-                const matchesStatus = post.status === "모집중";
+                const matchesStatus = post.status === PROJECT_STATUS.RECRUITING;
 
                 const matchesSearch =
                     searchText === "" ||

@@ -35,7 +35,6 @@ export const projectService = {
             title: data.title,
             content: data.content,
             region: data.region,
-            status: "모집중",
             leader_id: user.user_id,
             term: data.term,
             techStackIds: data.techStackIds,

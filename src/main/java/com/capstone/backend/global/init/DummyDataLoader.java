@@ -1,6 +1,7 @@
 package com.capstone.backend.global.init;
 
 import com.capstone.backend.entity.Project;
+import com.capstone.backend.entity.ProjectStatus;
 import com.capstone.backend.entity.User;
 import com.capstone.backend.repository.ProjectRepository;
 import com.capstone.backend.repository.UserRepository;
@@ -41,7 +42,7 @@ public class DummyDataLoader implements CommandLineRunner {
                 .title("초보 환영! Spring Boot 게시판 만들기")
                 .content("백엔드 기초를 다지기 위한 프로젝트입니다. CRUD 위주로 진행합니다.")
                 .region("온라인")
-                .status("모집중")
+                .status(ProjectStatus.RECRUITING.label())
                 .term("1개월")
                 .leader(dummyLeader)
                 .build();
@@ -50,7 +51,7 @@ public class DummyDataLoader implements CommandLineRunner {
                 .title("React와 Spring으로 쇼핑몰 클론코딩")
                 .content("중급자 이상 환영! 결제 모듈 연동 및 도커 배포까지 진행할 예정입니다.")
                 .region("광주광역시")
-                .status("모집중")
+                .status(ProjectStatus.RECRUITING.label())
                 .term("3개월")
                 .leader(dummyLeader)
                 .build();

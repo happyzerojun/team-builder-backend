@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'; // 페이지 강제 이동(리�
 import { projectService } from "../../services/projectService"; // 백엔드의 Project 컨트롤러와 통신
 import { applicationService } from "../../services/applicationService"; // 백엔드의 Application 컨트롤러와 통신
 import { getUserProfile } from "../../services/userService";
+import { PROJECT_STATUS } from "../../constants/projectStatus";
 
 
 const MyPage = () => {
@@ -250,7 +251,7 @@ const MyPage = () => {
                                         <span className="sub-info">{proj.region || "지역 미정"}</span>
                                     </div>
                                     <span className={`mp-badge ${
-                                        proj.status === '모집중' ? 'status-recruiting' : proj.status === '종료됨' ? 'status-complete' : 'status-ongoing'
+                                        proj.status === PROJECT_STATUS.RECRUITING ? 'status-recruiting' : proj.status === PROJECT_STATUS.COMPLETED ? 'status-complete' : 'status-ongoing'
                                     }`}>
                                         {proj.status || "상태 미정"}
                                     </span>
@@ -275,8 +276,8 @@ const MyPage = () => {
                                         <span className="title">{proj.title}</span>
                                         <span className="sub-info">{proj.region || "지역 미정"}</span>
                                     </div>
-                                    <span className={`mp-badge ${proj.status === '종료됨' ? 'status-complete' : 'status-ongoing'}`}>
-                                        {proj.status === '종료됨' ? '종료됨' : '진행중'}
+                                    <span className={`mp-badge ${proj.status === PROJECT_STATUS.COMPLETED ? 'status-complete' : 'status-ongoing'}`}>
+                                        {proj.status === PROJECT_STATUS.COMPLETED ? '종료됨' : '진행중'}
                                     </span>
                                 </div>
                             ))

@@ -120,6 +120,7 @@ class AuthControllerApiTest {
                                 }
                                 """))
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
                 .andExpect(jsonPath("$.message").isNotEmpty());
     }
 }

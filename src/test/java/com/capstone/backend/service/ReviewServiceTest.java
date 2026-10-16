@@ -12,6 +12,7 @@ import com.capstone.backend.repository.ProjectRepository;
 import com.capstone.backend.repository.ReviewRepository;
 import com.capstone.backend.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -20,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 import java.util.Optional;
 
@@ -98,6 +100,37 @@ class ReviewServiceTest {
                 .isInstanceOf(ConflictException.class);
 
         verify(reviewRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("동시 요청으로 유니크 제약(리뷰어·대상·프로젝트)에 걸리면 409 (TS-16)")
+    void duplicateKeyBecomesConflict() {
+        Project p = project("종료됨");
+        when(userRepository.findByEmail("member@example.com")).thenReturn(Optional.of(member));
+        when(projectRepository.findById(10L)).thenReturn(Optional.of(p));
+        when(applicationRepository.findByProjectIdAndStatus(10L, "ACCEPTED")).thenReturn(members(p));
+        // 조회는 통과(다른 트랜잭션이 아직 커밋 전), INSERT에서 MySQL이 중복 키로 거부한 상황
+        when(reviewRepository.save(any(Review.class))).thenThrow(new DataIntegrityViolationException("could not execute statement",
+                new SQLIntegrityConstraintViolationException(
+                        "Duplicate entry '2-1-10' for key 'review." + Review.UNIQUE_REVIEWER_REVIEWEE_PROJECT + "'")));
+
+        assertThatThrownBy(() -> reviewService.saveBulkReviews("member@example.com", List.of(review(1L, null))))
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("이미 리뷰를 남긴 팀원이 있습니다.");
+    }
+
+    @Test
+    @DisplayName("리뷰 유니크 제약이 아닌 무결성 위반은 그대로 올린다")
+    void otherIntegrityViolationIsRethrown() {
+        Project p = project("종료됨");
+        when(userRepository.findByEmail("member@example.com")).thenReturn(Optional.of(member));
+        when(projectRepository.findById(10L)).thenReturn(Optional.of(p));
+        when(applicationRepository.findByProjectIdAndStatus(10L, "ACCEPTED")).thenReturn(members(p));
+        when(reviewRepository.save(any(Review.class))).thenThrow(new DataIntegrityViolationException("x",
+                new SQLIntegrityConstraintViolationException("Column 'rating' cannot be null")));
+
+        assertThatThrownBy(() -> reviewService.saveBulkReviews("member@example.com", List.of(review(1L, null))))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test

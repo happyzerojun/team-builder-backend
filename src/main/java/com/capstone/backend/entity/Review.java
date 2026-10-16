@@ -13,9 +13,15 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-@Table(name = "review")
+// 같은 프로젝트에서 같은 팀원에게 리뷰는 한 번만. 최종 판정은 DB가 한다.
+// existsBy 조회 후 저장만으로는 동시 요청(버튼 연타·두 탭) 두 건이 모두 조회를 통과해 중복 리뷰가 생겼다 (TS-16)
+@Table(name = "review", uniqueConstraints =
+        @UniqueConstraint(name = Review.UNIQUE_REVIEWER_REVIEWEE_PROJECT,
+                columnNames = {"reviewer_id", "reviewee_id", "project_id"}))
 @EntityListeners(AuditingEntityListener.class)
 public class Review {
+
+    public static final String UNIQUE_REVIEWER_REVIEWEE_PROJECT = "uk_review_reviewer_reviewee_project";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

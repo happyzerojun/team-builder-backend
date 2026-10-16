@@ -26,7 +26,9 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      # 기본값은 로컬·현재 배포 호환을 위해 update. 운영은 스키마를 맞춘 뒤 JPA_DDL_AUTO=validate로 실행 권장 (TS-14)
+      # update는 컬럼·제약 추가만 하고 타입 변경·삭제·데이터 이전은 하지 않으며, 제약 추가 실패 시 경고만 남긴다.
+      ddl-auto: ${JPA_DDL_AUTO:update}
     # OSIV 끔: 영속성 컨텍스트(와 DB 커넥션)를 트랜잭션 범위로 한정한다 (TS-12)
     # 켜 두면 요청이 끝날 때까지 커넥션을 쥐고 있어, 트랜잭션 밖 Gemini 호출(최대 15초) 동안에도 커넥션이 반환되지 않는다.
     # 컨트롤러·DTO 변환에서의 지연 로딩은 모두 서비스 트랜잭션 안으로 옮겼다 (ProjectService 클래스 레벨 readOnly 등)

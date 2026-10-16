@@ -27,6 +27,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+    # OSIV 끔: 영속성 컨텍스트(와 DB 커넥션)를 트랜잭션 범위로 한정한다 (TS-12)
+    # 켜 두면 요청이 끝날 때까지 커넥션을 쥐고 있어, 트랜잭션 밖 Gemini 호출(최대 15초) 동안에도 커넥션이 반환되지 않는다.
+    # 컨트롤러·DTO 변환에서의 지연 로딩은 모두 서비스 트랜잭션 안으로 옮겼다 (ProjectService 클래스 레벨 readOnly 등)
+    open-in-view: false
     show-sql: true
     # Hibernate가 테이블을 다 만든 "후에" SQL이 실행되도록 순서를 조절합니다.
     defer-datasource-initialization: true

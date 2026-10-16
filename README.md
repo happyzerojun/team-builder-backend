@@ -50,7 +50,7 @@ flowchart LR
 | AI | Google Gemini API (gemini-2.5-flash) |
 | Frontend | React 19, Vite, React Router 7, Axios |
 | Infra | Docker, Docker Compose, AWS EC2 |
-| Test | JUnit 5, Mockito, `@WebMvcTest` |
+| Test | JUnit 5, Mockito, `@WebMvcTest`, `@SpringBootTest` + MySQL(GitHub Actions 서비스 컨테이너) |
 | Collaboration | GitHub Flow (기능 브랜치 → PR → 리뷰 → 머지) |
 
 ---
@@ -66,16 +66,17 @@ flowchart LR
     A[사용자 요청<br/>'Spring 쓰는 프로젝트 추천해줘'] --> B[기술 스택 키워드 매칭<br/>서버 기동 시 만든 메모리 맵]
     B --> C[해당 스택 모집글 조회<br/>최대 50건]
     C --> D[모집글 목록을 프롬프트에 삽입<br/>Gemini 호출 · JSON 응답 강제]
-    D --> E[응답 파싱 · DB 존재 여부 검증]
+    D --> E[응답 파싱 · 후보 ID 집합 검증 · DB 재조회]
     E --> F[매칭 점수 · 추천 이유와 함께 반환]
 ```
 
-- **키워드 → 기술 스택 매핑을 서버 기동 시 메모리에 적재** — 기술 스택 이름과 별칭 키워드를 소문자 · 공백 제거로 정규화해 `ConcurrentHashMap`에 올려 두고, 요청마다 DB를 조회하지 않고 스택을 찾습니다. ("springboot", "Spring Boot" 모두 매칭)
-- **후보 축소** — 찾은 기술 스택이 연결된 모집글만 JPQL 조인으로 최대 50건 조회하고, 매칭되는 스택이 없으면 최신 모집글로 대체합니다. 프롬프트 길이를 제한해 응답 속도와 토큰 비용을 통제했습니다.
+- **키워드 → 기술 스택 매핑을 메모리에 적재** — 기술 스택 이름과 별칭 키워드를 소문자 · 공백 제거로 정규화해 불변 맵으로 올려 두고, 요청마다 DB를 조회하지 않고 가장 긴 키워드부터 매칭합니다. ("springboot", "Spring Boot" 모두 매칭, "javascript"에 "java"가 걸리지 않음) 기술 스택 초기 데이터가 들어간 뒤(`ApplicationReadyEvent`) 적재하고, 비어 있으면 첫 요청에서 다시 적재합니다. ([TS-10](docs/troubleshooting.md#ts-10-키워드-맵이-비어-버리는-초기화-순서))
+- **후보 축소** — 찾은 기술 스택이 연결된 최신 모집글만 JPQL 조인으로 최대 50건 조회하고, 매칭되는 스택이 없으면 최신 모집글로 대체합니다. 본문은 300자로 잘라 프롬프트 길이를 제한해 응답 속도와 토큰 비용을 통제했습니다.
+- **DB 트랜잭션과 외부 호출 분리** — 후보 조회(트랜잭션 1) → Gemini 호출(트랜잭션 없음) → 결과 재조회(트랜잭션 2)로 나누고 OSIV를 꺼, Gemini 응답(최대 15초)을 기다리는 동안 DB 커넥션을 쥐고 있지 않습니다. ([TS-12](docs/troubleshooting.md#ts-12-gemini-응답을-기다리는-동안-db-커넥션-점유))
 - **구조화된 응답 강제** — Gemini의 `responseMimeType: application/json` 옵션과 응답 예시를 함께 넣어 `project_id`, `matching_score`, `reason` 형식의 JSON 배열만 받도록 했습니다.
 - **LLM 응답을 신뢰하지 않는 후처리**
   - 응답에 설명 문장이 섞여도 첫 `[`부터 마지막 `]`까지만 잘라 파싱
-  - AI가 돌려준 ID를 DB에서 다시 조회해 **실제로 존재하는 프로젝트만** 반환 (환각 방지)
+  - AI가 돌려준 ID 중 **이번 요청의 후보였던 ID만** 남기고 DB에서 다시 조회해 반환 (환각 방지, 제목은 AI가 아닌 DB 값) ([TS-11](docs/troubleshooting.md#ts-11-ai가-후보가-아니었던-id를-돌려줘도-통과))
   - API 오류 · 파싱 실패 시 500 대신 빈 추천 목록을 반환해 화면이 깨지지 않게 처리
 
 ### 2. 팀 빌딩 도메인 ERD · 엔티티 설계
@@ -96,8 +97,8 @@ erDiagram
 ```
 
 - 사용자-기술 스택, 프로젝트-기술 스택의 **N:M 관계를 연결 엔티티로 분리**해, 기술 스택 기준 검색과 AI 추천 후보 조회를 같은 구조로 처리했습니다.
-- **'지원'을 독립 엔티티로 두고 상태(PENDING → ACCEPTED)를 관리**해, 별도 팀원 테이블 없이 수락된 지원서로 팀원 목록을 구성합니다. 같은 사용자의 같은 프로젝트 중복 지원은 서비스 계층에서 차단합니다.
-- 포지션별 모집 인원(`requiredCount` / `currentCount`)은 **엔티티 메서드에서 정원 초과를 막도록** 해 규칙이 서비스 곳곳에 흩어지지 않게 했습니다.
+- **'지원'을 독립 엔티티로 두고 상태(PENDING → ACCEPTED / REJECTED)를 관리**해, 별도 팀원 테이블 없이 수락된 지원서로 팀원 목록을 구성합니다. 상태 전이는 엔티티 메서드가 검증하고, 같은 사용자의 같은 프로젝트 중복 지원은 `UNIQUE(applicant_id, project_id)` 제약으로 DB가 최종 차단합니다. 모집 상태는 `ProjectStatus` enum 한 곳에서 정의합니다(DB에는 기존 한글 라벨 저장).
+- 포지션별 모집 인원(`requiredCount` / `currentCount`)은 지원 수락 시 **조건부 UPDATE(`... WHERE current_count < required_count`)로 원자적으로 늘려** 동시에 수락해도 정원을 넘지 않게 했습니다. 영향 행이 0이면 409로 응답하고 상태 변경도 롤백합니다. ([TS-06](docs/troubleshooting.md#ts-06-포지션-정원-메서드가-호출되지-않음))
 - 모든 엔티티에 JPA Auditing으로 생성 · 수정 시각을 자동 기록하고, 무분별한 수정을 막기 위해 setter 대신 의도가 드러나는 변경 메서드(`updateStatus`, `updateProfile` 등)만 열어 두었습니다.
 
 ### 3. Docker Compose 기반 실행 환경 표준화
@@ -133,9 +134,10 @@ erDiagram
 - 이메일 로그인과 OAuth2 소셜 로그인 모두 **최종적으로 같은 JWT를 발급**해 이후 요청은 동일한 필터로 인증합니다.
 - 제공자마다 다른 사용자 정보 응답 구조(Kakao의 중첩 객체, Naver의 `response` 래핑)를 `OAuth2UserInfo` 인터페이스와 팩토리로 추상화했습니다.
 - 소셜 로그인 시 같은 이메일의 기존 계정이 있으면 새로 만들지 않고 연동하며, 소셜 계정으로 비밀번호 로그인을 시도하면 거절합니다.
-- `@RestControllerAdvice`로 예외를 한 곳에서 처리해 `{ "message": "..." }` 형태로 응답을 통일했습니다. (검증 실패 400, 중복 가입 409, 인증 실패 401)
-- 지원서 목록 조회는 `JOIN FETCH`로 지원자와 프로젝트를 함께 가져와 N+1 쿼리를 방지합니다.
-- 테스트: JWT 발급/검증, 필터의 인증 컨텍스트 설정, 3개 제공자별 사용자 생성, 로그인 · 회원가입 API(`@WebMvcTest`)
+- **인가는 기본 닫힘**입니다. 모집글 · 기술 스택 조회, 로그인 · 회원가입, OAuth2, Swagger만 공개하고 나머지는 로그인이 필요합니다. 요청자는 요청 본문 · URL의 ID가 아니라 JWT에서만 꺼내고, 글 수정 · 지원 수락은 작성자만, 지원 취소는 지원자 본인만 할 수 있도록 서비스 계층에서 소유권을 검사합니다. ([TS-05](docs/troubleshooting.md#ts-05-인가-없이-배포된-api))
+- `@RestControllerAdvice`로 예외를 한 곳에서 처리해 `{ "code": "NOT_FOUND", "message": "..." }` 형태로 응답을 통일했습니다. (검증 실패 400, 인증 실패 401, 권한 없음 403, 없음 404, 충돌 409, 그 외 500 고정 문구) Security 필터 단계의 401/403도 같은 형식입니다.
+- 지원서 목록은 `JOIN FETCH`, 모집글 목록은 `@EntityGraph`(작성자) + `default_batch_fetch_size`(기술 스택 · 포지션)로 N+1 쿼리를 방지합니다.
+- 테스트: JWT 발급/검증, 필터의 인증 컨텍스트 설정, 3개 제공자별 사용자 생성, 로그인 · 회원가입 API(`@WebMvcTest`), 인가 규칙 · 소유권 검사, 상태 전이, AI 응답 검증, 그리고 CI의 MySQL로 돌리는 통합 테스트(정원 동시 수락, 목록 쿼리 수, Gemini 대기 중 트랜잭션 미점유, 전체 팀 빌딩 흐름)
 
 ## 📂 프로젝트 구조
 
@@ -149,7 +151,7 @@ erDiagram
 │   ├── security/          # SecurityConfig, OAuth2 (Google/Kakao/Naver)
 │   ├── global/            # JWT, 공통 예외 처리, 더미 데이터 로더
 │   └── config/            # CORS, 기술 스택 초기 데이터
-├── src/test/              # 인증 · JWT · OAuth 단위/슬라이스 테스트
+├── src/test/              # 단위 · 슬라이스(@WebMvcTest) · MySQL 통합 테스트
 ├── frontend/              # React 클라이언트
 ├── Dockerfile             # 멀티 스테이지 빌드
 └── docker-compose.yml     # MySQL + Backend + Frontend
@@ -164,13 +166,13 @@ docker compose up --build
 
 - 프론트엔드: http://localhost:5173
 - API 문서(Swagger UI): http://localhost:8080/swagger-ui/index.html
-- 소셜 로그인을 쓰려면 `src/main/resources/application-local.yml.example`을 참고해 OAuth 클라이언트 정보를 설정합니다.
+- 소셜 로그인을 쓰려면 `src/main/resources/application-local.yml.example`을 참고해 OAuth 클라이언트 정보를 설정하고, 각 제공자 콘솔에 백엔드 리디렉션 URI(`http://localhost:8080/login/oauth2/code/{google|kakao|naver}`)를 등록합니다. 로그인 성공 후에는 `OAUTH2_REDIRECT_URI`(기본 `http://localhost:5173/oauth/callback`)로 JWT가 전달됩니다.
+- 스키마 자동 변경은 `JPA_DDL_AUTO`(기본 `update`)로 조정합니다. 운영은 스키마 확인 후 `validate`를 권장합니다. ([TS-14](docs/troubleshooting.md#ts-14-ddl-auto-update가-운영-스키마를-직접-변경-부분-해결))
 
 ## 🔭 회고와 다음 단계
 
 > 캡스톤 이후 셀프 코드 리뷰로 찾은 문제(예외 메시지 노출, Gemini 타임아웃, 지원 상태 전이, 인가 등)와 해결 과정은 [`docs/troubleshooting.md`](docs/troubleshooting.md)에 정리했습니다. PR마다 CI(`.github/workflows/ci.yml`)가 빌드·테스트를 실행합니다.
 
-- **엔드포인트 권한 강화** — 개발 기간 중 프론트엔드 연동을 위해 Security 설정을 전체 허용으로 열어 두었습니다. 다음 단계는 모집글 수정 · 지원 수락 같은 API를 인증 사용자로 제한하고, 요청 본문의 사용자 ID 대신 토큰의 사용자를 사용하는 것입니다.
-- **상태 값 Enum화** — 모집 상태 · 지원 상태를 문자열로 저장하고 있어 오타에 취약합니다. Enum과 상태 전이 메서드로 바꿀 계획입니다.
-- **모집 인원 동시성** — 여러 지원이 동시에 수락될 때 정원을 초과하지 않도록 포지션 단위 락 또는 낙관적 락 적용을 검토하고 있습니다.
+- **스키마 마이그레이션 도구 도입** — 지금은 `ddl-auto: update`가 기동 시 스키마를 바꿉니다. 운영 스키마를 기준선으로 Flyway를 도입하고 운영은 `validate`로 바꿀 계획입니다.
+- **포지션 입력 화면 · 지원서-포지션 FK** — 정원 로직은 API에 들어갔지만 글 작성 화면에 포지션 입력이 없습니다. 화면을 추가하고, 문자열 `support_role` 대신 `position_id` FK로 연결할 예정입니다.
 - **AI 추천 품질 측정** — 추천 결과에 대한 사용자 반응을 기록해 키워드 매핑과 프롬프트를 개선하는 근거로 삼을 예정입니다.

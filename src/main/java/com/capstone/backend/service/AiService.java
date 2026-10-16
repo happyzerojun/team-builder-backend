@@ -2,93 +2,80 @@ package com.capstone.backend.service;
 
 import com.capstone.backend.dto.AiRecommendResponse;
 import com.capstone.backend.dto.RecommendationDto;
-import com.capstone.backend.entity.Project;
-import com.capstone.backend.global.exception.UnauthorizedException;
-import com.capstone.backend.repository.ProjectRepository;
-import com.capstone.backend.repository.UserRepository;
-import com.capstone.backend.service.ai.TechKeywordMatcher;
+import com.capstone.backend.service.ai.AiCandidateReader;
+import com.capstone.backend.service.ai.AiResult;
+import com.capstone.backend.service.ai.GeminiClient;
+import com.capstone.backend.service.ai.ProjectCandidate;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * AI 프로젝트 추천 흐름 조립.
+ *
+ * 이 클래스에는 의도적으로 @Transactional이 없다. 이전에는 메서드 전체가 @Transactional(readOnly = true)라
+ * Gemini 응답(최대 15초)을 기다리는 동안 DB 커넥션을 쥐고 있었고, 동시 요청이 몰리면 커넥션 풀(기본 10개)이
+ * 고갈돼 AI와 무관한 API까지 대기했다. 이제 DB 구간은 AiCandidateReader의 짧은 트랜잭션 두 개뿐이다 (TS-12)
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AiService {
 
-    private final ProjectRepository projectRepository;
-    private final UserRepository userRepository;
-    // 키워드 맵은 DataInitializer 이후(ApplicationReadyEvent)에 적재된다 (TS-10)
-    private final TechKeywordMatcher techKeywordMatcher;
+    private final AiCandidateReader candidateReader;
+    private final GeminiClient geminiClient;
     private final ObjectMapper objectMapper;
 
-    // 타임아웃 없는 new RestTemplate()은 Gemini가 응답하지 않으면 요청 스레드가 무기한 대기했다 (TS-03)
-    private final RestTemplate restTemplate = createRestTemplate();
-
-    private static RestTemplate createRestTemplate() {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(3_000);   // ms
-        factory.setReadTimeout(15_000);     // LLM 응답 생성 시간을 고려
-        return new RestTemplate(factory);
-    }
-    @Value("${gemini.api.url}")
-    private String apiUrl;
-
-    @Value("${gemini.api.key}")
-    private String apiKey;
-
-    @Transactional(readOnly = true)
     public AiRecommendResponse getRecommendation(String email, String userPrompt) {
-        // 1. 요청자 확인 (JWT의 email). 탈퇴 등으로 없으면 401
-        userRepository.findByEmail(email)
-                .orElseThrow(() -> new UnauthorizedException("로그인 정보를 찾을 수 없습니다. 다시 로그인해주세요."));
-
-        // 2. 동적 기술 스택 매칭
-        // 가장 긴 키워드부터 매칭한다. 이전에는 HashMap 순회 순서의 첫 매칭이라
-        // "javascript" 요청에 "java"가 걸리는 등 결과가 비결정적이었다 (TS-03)
-        Long targetTechStackId = techKeywordMatcher.match(userPrompt).orElse(null);
-
-        // 3. 데이터 로딩 (🔥 Fallback 로직 강화: 빈 깡통 방지)
-        List<Project> projects = new ArrayList<>();
-        if (targetTechStackId != null) {
-            projects = projectRepository.findByTechStackId(targetTechStackId, PageRequest.of(0, 50)).getContent();
+        // 1. 후보 조회 (트랜잭션 1, 바로 커밋되고 커넥션 반환)
+        List<ProjectCandidate> candidates = candidateReader.loadCandidates(email, userPrompt);
+        if (candidates.isEmpty()) {
+            return empty();
         }
 
-        // 검색된 기술 스택 프로젝트가 없거나, 스택 지정을 안했다면 최신 프로젝트 50개를 불러와 AI에게 맡김
-        if (projects.isEmpty()) {
-            // 정렬이 없으면 "최신 50건"이 보장되지 않는다 (TS-03)
-            projects = projectRepository.findAll(PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent();
+        // 2. Gemini 호출 (트랜잭션 없음)
+        List<AiResult> aiResults = askGemini(buildPrompt(userPrompt, candidates));
+        if (aiResults.isEmpty()) {
+            return empty();
         }
 
-        if (projects.isEmpty()) {
-            return AiRecommendResponse.builder().recommendations(new ArrayList<>()).build();
+        // 3. DB 재조회 (트랜잭션 2)
+        List<RecommendationDto> recommendations = candidateReader.resolve(aiResults);
+        return AiRecommendResponse.builder().recommendations(recommendations).build();
+    }
+
+    private List<AiResult> askGemini(String prompt) {
+        try {
+            return parse(objectMapper, geminiClient.generate(prompt));
+        } catch (Exception e) {
+            // API 오류·타임아웃·파싱 실패는 500 대신 빈 추천으로 (화면이 깨지지 않게)
+            log.error("AI 추천 에러 또는 JSON 파싱 에러", e);
+            return List.of();
         }
+    }
 
-        // 4. 프로젝트 데이터 문자열 변환 (NullPointerException 방지)
-        String projectData = projects.stream().map(p -> {
-            String stacks = p.getProjectTechStacks().isEmpty() ? "지정안됨" :
-                    p.getProjectTechStacks().stream().map(pts -> pts.getTechStack().getName()).collect(Collectors.joining(", "));
-            return String.format("ID: %d | 제목: %s | 스택: %s | 기간: %s | 내용: %s",
-                    p.getId(), p.getTitle(), stacks, p.getTerm(), p.getContent());
-        }).collect(Collectors.joining("\n"));
+    /** 응답에 설명 문장이 섞여도 첫 '['부터 마지막 ']'까지만 파싱한다 */
+    static List<AiResult> parse(ObjectMapper objectMapper, String text) throws Exception {
+        if (text == null || text.isBlank()) {
+            return List.of();
+        }
+        int start = text.indexOf('[');
+        int end = text.lastIndexOf(']');
+        if (start == -1 || end <= start) {
+            return List.of();
+        }
+        List<AiResult> results = objectMapper.readValue(text.substring(start, end + 1), new TypeReference<List<AiResult>>() {});
+        return results == null ? List.of() : results;
+    }
 
-        // 5. 프롬프트 생성 (🔥 사용자의 목적/상황 분석 지시 강화)
-        String finalPrompt = String.format("""
+    static String buildPrompt(String userPrompt, List<ProjectCandidate> candidates) {
+        String projectData = candidates.stream().map(ProjectCandidate::toPromptLine).collect(Collectors.joining("\n"));
+        return String.format("""
             당신은 최고의 개발자 커리어 매칭 AI입니다. [사용자 요청]에 맞춰 [프로젝트 목록] 중 최적의 프로젝트를 최대 3개 추천하세요.
             
             [사용자 요청]
@@ -107,70 +94,9 @@ public class AiService {
             [응답 형식 예시]
             [{"project_id": 1, "matching_score": 95, "reason": "Node.js 기술을 사용하며, 대기업에서 선호하는 트래픽 처리 경험을 쌓을 수 있는 프로젝트입니다."}]
             """, userPrompt, projectData);
-
-        return processAiResponse(finalPrompt);
     }
 
-    private AiRecommendResponse processAiResponse(String finalPrompt) {
-        try {
-            String aiJsonResponse = callGeminiApi(finalPrompt);
-            if (aiJsonResponse == null || aiJsonResponse.isEmpty()) {
-                return AiRecommendResponse.builder().recommendations(new ArrayList<>()).build();
-            }
-
-            // 🔥 [핵심 수정] AI가 헛소리를 섞어 보내도 JSON 배열 [ ... ] 부분만 완벽하게 추출
-            int startIndex = aiJsonResponse.indexOf('[');
-            int endIndex = aiJsonResponse.lastIndexOf(']');
-            if (startIndex != -1 && endIndex != -1) {
-                aiJsonResponse = aiJsonResponse.substring(startIndex, endIndex + 1);
-            } else {
-                return AiRecommendResponse.builder().recommendations(new ArrayList<>()).build(); // JSON이 아예 없으면 빈 응답
-            }
-
-            List<AiResultDto> aiResults = objectMapper.readValue(aiJsonResponse, new TypeReference<List<AiResultDto>>() {});
-            List<Long> recommendedIds = aiResults.stream().map(AiResultDto::getProject_id).filter(Objects::nonNull).collect(Collectors.toList());
-            List<Project> fullProjects = projectRepository.findAllById(recommendedIds);
-            Map<Long, Project> projectMap = fullProjects.stream().collect(Collectors.toMap(Project::getId, p -> p));
-
-            List<RecommendationDto> recommendations = aiResults.stream()
-                    .map(ai -> {
-                        Project realProject = projectMap.get(ai.getProject_id());
-                        return (realProject == null) ? null : RecommendationDto.builder()
-                                .project_id(realProject.getId())
-                                .title(realProject.getTitle())
-                                .matching_score(ai.getMatching_score())
-                                .reason(ai.getReason())
-                                .build();
-                    })
-                    .filter(Objects::nonNull).collect(Collectors.toList());
-
-            return AiRecommendResponse.builder().recommendations(recommendations).build();
-        } catch (Exception e) {
-            log.error("AI 추천 에러 또는 JSON 파싱 에러: ", e);
-            return AiRecommendResponse.builder().recommendations(new ArrayList<>()).build();
-        }
-    }
-
-    private String callGeminiApi(String prompt) {
-        // API 키를 URL 쿼리스트링에 두면 접근 로그·프록시 로그에 남을 수 있어 헤더로 보낸다 (TS-03)
-        String url = apiUrl;
-        Map<String, Object> requestBody = Map.of(
-                "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
-                "generationConfig", Map.of("responseMimeType", "application/json") // Gemini가 JSON을 내뱉도록 유도
-        );
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, new HttpHeaders() {{ setContentType(MediaType.APPLICATION_JSON); set("x-goog-api-key", apiKey); }});
-        ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
-        try {
-            return objectMapper.readTree(response.getBody()).path("candidates").path(0).path("content").path("parts").path(0).path("text").asText();
-        } catch (Exception e) {
-            return "[]";
-        }
-    }
-
-    @lombok.Getter @lombok.Setter
-    public static class AiResultDto {
-        private Long project_id;
-        private int matching_score;
-        private String reason;
+    private static AiRecommendResponse empty() {
+        return AiRecommendResponse.builder().recommendations(List.of()).build();
     }
 }

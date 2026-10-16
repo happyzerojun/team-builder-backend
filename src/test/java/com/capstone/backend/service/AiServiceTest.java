@@ -15,10 +15,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.net.SocketTimeoutException;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -64,17 +66,17 @@ class AiServiceTest {
         AiRecommendResponse response = service().getRecommendation("me@example.com", "React");
 
         assertThat(response.getRecommendations()).isEmpty();
-        verify(candidateReader, never()).resolve(any());
+        verify(candidateReader, never()).resolve(any(), any());
     }
 
     @Test
-    @DisplayName("Gemini 응답은 재조회 단계로 넘겨 DB 값으로 확정한다")
+    @DisplayName("Gemini 응답은 이번 요청의 후보 ID 집합과 함께 재조회 단계로 넘긴다")
     void passesAiResultsToResolve() throws Exception {
         when(candidateReader.loadCandidates(anyString(), anyString())).thenReturn(List.of(candidate(1L)));
         when(geminiClient.generate(anyString()))
                 .thenReturn("[{\"project_id\": 1, \"matching_score\": 88, \"reason\": \"좋아요\"}]");
         List<RecommendationDto> resolved = List.of(RecommendationDto.builder().project_id(1L).title("글1").matching_score(88).build());
-        when(candidateReader.resolve(any())).thenReturn(resolved);
+        when(candidateReader.resolve(any(), eq(Set.of(1L)))).thenReturn(resolved);
 
         AiRecommendResponse response = service().getRecommendation("me@example.com", "Java");
 

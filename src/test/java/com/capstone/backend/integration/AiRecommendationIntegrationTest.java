@@ -30,7 +30,9 @@ class AiRecommendationIntegrationTest extends IntegrationTestSupport {
         AtomicBoolean transactionActiveDuringGemini = new AtomicBoolean(true);
         when(geminiClient.generate(anyString())).thenAnswer(invocation -> {
             transactionActiveDuringGemini.set(TransactionSynchronizationManager.isActualTransactionActive());
-            return "[{\"project_id\": " + project.getId() + ", \"matching_score\": 90, \"reason\": \"테스트\"}]";
+            // 두 번째 항목은 후보에 없는(존재하지 않는) ID: 응답에서 빠져야 한다 (TS-11)
+            return "[{\"project_id\": " + project.getId() + ", \"matching_score\": 90, \"reason\": \"테스트\"},"
+                    + " {\"project_id\": 987654321, \"matching_score\": 99, \"reason\": \"환각\"}]";
         });
 
         mockMvc.perform(post("/api/ai/recommend")
@@ -39,7 +41,8 @@ class AiRecommendationIntegrationTest extends IntegrationTestSupport {
                         .content("{\"userPrompt\": \"아무 조건 없이 추천해줘\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.recommendations[0].project_id").value(project.getId()))
-                .andExpect(jsonPath("$.recommendations[0].title").value("AI 트랜잭션 테스트 글"));
+                .andExpect(jsonPath("$.recommendations[0].title").value("AI 트랜잭션 테스트 글"))
+                .andExpect(jsonPath("$.recommendations.length()").value(1));
 
         assertThat(transactionActiveDuringGemini.get()).isFalse();
     }

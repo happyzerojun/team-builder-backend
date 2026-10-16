@@ -12,8 +12,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -51,12 +54,12 @@ public class AiCandidateReader {
         return projects.stream().map(ProjectCandidate::from).toList();
     }
 
-    /** Gemini가 돌려준 ID를 DB에서 다시 읽어 실제로 존재하는 글만 남기고, 제목은 DB 값으로 채운다 */
-    public List<RecommendationDto> resolve(List<AiResult> aiResults) {
-        List<AiResult> accepted = aiResults.stream()
-                .filter(r -> r != null && r.projectId() != null)
-                .limit(MAX_RECOMMENDATIONS)
-                .toList();
+    /**
+     * Gemini 응답 중 이번 요청의 후보였던 ID만 남기고, DB에서 다시 읽어 제목을 채운다.
+     * findAllById만으로는 "DB에는 있지만 후보가 아니었던" 프로젝트(다른 스택, 오래된 글)를 AI가 지어내도 통과했다 (TS-11)
+     */
+    public List<RecommendationDto> resolve(List<AiResult> aiResults, Set<Long> candidateIds) {
+        List<AiResult> accepted = sanitize(aiResults, candidateIds);
         if (accepted.isEmpty()) {
             return List.of();
         }
@@ -66,13 +69,38 @@ public class AiCandidateReader {
                 .collect(Collectors.toMap(Project::getId, Function.identity()));
 
         return accepted.stream()
-                .filter(r -> projects.containsKey(r.projectId()))
+                .filter(r -> projects.containsKey(r.projectId()))   // Gemini 대기 중 삭제된 글
                 .map(r -> RecommendationDto.builder()
                         .project_id(r.projectId())
-                        .title(projects.get(r.projectId()).getTitle())
-                        .matching_score(r.matchingScore() == null ? 0 : r.matchingScore())
+                        .title(projects.get(r.projectId()).getTitle())   // 제목은 AI가 아닌 DB 값
+                        .matching_score(r.matchingScore())
                         .reason(r.reason())
                         .build())
                 .toList();
+    }
+
+    /**
+     * 후보 ID 집합 밖의 ID 제거, 중복 제거(첫 항목 유지), 최대 3건, 점수 0~100 보정.
+     */
+    static List<AiResult> sanitize(List<AiResult> aiResults, Set<Long> candidateIds) {
+        if (aiResults == null || aiResults.isEmpty() || candidateIds == null || candidateIds.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, AiResult> unique = new LinkedHashMap<>();
+        for (AiResult r : aiResults) {
+            if (r == null || r.projectId() == null) {
+                continue;
+            }
+            if (!candidateIds.contains(r.projectId())) {
+                log.warn("[AI] 후보에 없던 project_id {} 응답을 버림", r.projectId());
+                continue;
+            }
+            int score = r.matchingScore() == null ? 0 : Math.max(0, Math.min(100, r.matchingScore()));
+            unique.putIfAbsent(r.projectId(), new AiResult(r.projectId(), score, r.reason()));
+            if (unique.size() == MAX_RECOMMENDATIONS) {
+                break;
+            }
+        }
+        return new ArrayList<>(unique.values());
     }
 }

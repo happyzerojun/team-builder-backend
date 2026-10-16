@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -37,6 +38,7 @@ public class AiService {
         if (candidates.isEmpty()) {
             return empty();
         }
+        Set<Long> candidateIds = candidates.stream().map(ProjectCandidate::id).collect(Collectors.toUnmodifiableSet());
 
         // 2. Gemini 호출 (트랜잭션 없음)
         List<AiResult> aiResults = askGemini(buildPrompt(userPrompt, candidates));
@@ -44,8 +46,8 @@ public class AiService {
             return empty();
         }
 
-        // 3. DB 재조회 (트랜잭션 2)
-        List<RecommendationDto> recommendations = candidateReader.resolve(aiResults);
+        // 3. 후보 집합으로 거르고 DB 재조회 (트랜잭션 2)
+        List<RecommendationDto> recommendations = candidateReader.resolve(aiResults, candidateIds);
         return AiRecommendResponse.builder().recommendations(recommendations).build();
     }
 
@@ -89,7 +91,8 @@ public class AiService {
             2. 완벽히 일치하는 스택이 없더라도, 사용자의 '목적(예: 대기업 취업)'이나 '상황'에 가장 도움이 될 만한 프로젝트를 찾아내세요.
             3. 매칭 점수(matching_score)는 일치도에 따라 0~100 사이로 평가하세요.
             4. reason(추천 이유)에는 "왜 이 프로젝트가 사용자의 목적(쇼핑몰, 대기업 등)에 도움이 되는지" 구체적으로 적어주세요.
-            5. 절대로 인사말이나 다른 텍스트를 출력하지 말고, 오직 아래 예시와 같은 JSON 배열(`[ ]`) 형식으로만 반환하세요.
+            5. project_id는 반드시 [프로젝트 목록]에 있는 ID 중에서만 고르세요.
+            6. 절대로 인사말이나 다른 텍스트를 출력하지 말고, 오직 아래 예시와 같은 JSON 배열(`[ ]`) 형식으로만 반환하세요.
             
             [응답 형식 예시]
             [{"project_id": 1, "matching_score": 95, "reason": "Node.js 기술을 사용하며, 대기업에서 선호하는 트래픽 처리 경험을 쌓을 수 있는 프로젝트입니다."}]

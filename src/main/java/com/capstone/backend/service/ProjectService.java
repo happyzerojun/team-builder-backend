@@ -117,6 +117,13 @@ public class ProjectService {
                 .map(ProjectResponseDto::from);
     }
 
+    /** 토큰 사용자가 작성한 글만 (TS-17) */
+    public Page<ProjectResponseDto> getMyProjects(String email, Pageable pageable) {
+        User me = currentUser(email);
+        return projectRepository.findByLeaderId(me.getId(), pageable)
+                .map(ProjectResponseDto::from);
+    }
+
     public ProjectResponseDto getProjectById(Long projectId) {
         return ProjectResponseDto.from(findProject(projectId));
     }

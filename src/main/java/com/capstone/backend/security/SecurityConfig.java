@@ -60,6 +60,8 @@ public class SecurityConfig {
                         // 회원가입·로그인, 로그인 상태 확인(비로그인은 userId=0 응답), 소셜 로그인 URL
                         .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/auth/test", "/api/auth/oauth2/url/**").permitAll()
+                        // 내가 쓴 모집글은 로그인 필요. 아래 /api/projects/** 공개 규칙보다 먼저 와야 한다 (TS-17)
+                        .requestMatchers(HttpMethod.GET, "/api/projects/me").authenticated()
                         // 모집글 목록·상세·팀원 목록, 기술 스택 목록은 비로그인도 조회
                         .requestMatchers(HttpMethod.GET, "/api/projects", "/api/projects/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/tech-stacks", "/api/tech-stacks/**").permitAll()

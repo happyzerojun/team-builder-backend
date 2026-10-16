@@ -6,6 +6,24 @@ import { applicationService } from "../../services/applicationService"; // 백�
 import { getUserProfile } from "../../services/userService";
 import { PROJECT_STATUS } from "../../constants/projectStatus";
 
+const MY_LEAD_PAGE_SIZE = 10;
+// 서버가 글 작성자를 팀원으로 자동 등록할 때 쓰는 역할 이름 (ProjectService.LEADER_ROLE)
+const LEADER_ROLE = "팀장";
+
+// 내가 만든 프로젝트 한 페이지 (Spring Page 응답을 화면용 값으로)
+const fetchMyLeadPage = async (page) => {
+    const data = await projectService.getMyProjects(page, MY_LEAD_PAGE_SIZE);
+    const content = Array.isArray(data?.content) ? data.content : [];
+    return {
+        content,
+        page: {
+            number: data?.number ?? page,
+            last: data?.last ?? true,
+            totalElements: data?.totalElements ?? content.length
+        }
+    };
+};
+
 
 const MyPage = () => {
     // 스프링의 'return "redirect:/경로"' 와 같은 역할을 합니다.
@@ -21,13 +39,28 @@ const MyPage = () => {
     });
 
     // 2. 프로젝트 리스트를 담아둘 List<ProjectDto> 역할
-    const [allProjects, setAllProjects] = useState([]); // 전체 프로젝트
-    const [myLead, setMyLead] = useState([]); // 내가 팀장인 프로젝트
+    const [myLead, setMyLead] = useState([]); // 내가 팀장인 프로젝트 (GET /api/projects/me, 페이지 단위로 이어 붙임)
+    const [myLeadPage, setMyLeadPage] = useState({ number: 0, last: true, totalElements: 0 });
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [myPart, setMyPart] = useState([]); // 내가 팀원(참여 확정)인 프로젝트
     const [appliedPosts, setAppliedPosts] = useState([]); // 내가 지원한(대기/거절 포함) 프로젝트
 
     // 3. 로딩 상태 스위치 (데이터가 백엔드에서 오기 전까지 빙글빙글 로딩을 보여주기 위함)
     const [isLoading, setIsLoading] = useState(true);
+
+    const handleLoadMoreLead = async () => {
+        setIsLoadingMore(true);
+        try {
+            const next = await fetchMyLeadPage(myLeadPage.number + 1);
+            setMyLead((prev) => [...prev, ...next.content]);
+            setMyLeadPage(next.page);
+        } catch (error) {
+            console.error("내 프로젝트 더 보기 실패:", error);
+            alert("프로젝트를 더 불러오지 못했습니다.");
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
 
     // --- [useEffect: 컴포넌트 초기화 영역] ---
     // 스프링의 @PostConstruct 처럼, 화면이 처음 열릴 때 딱 한 번 실행되는 세팅 함수입니다.
@@ -80,71 +113,37 @@ const MyPage = () => {
                     profileImg: profile.profileImg || null
                 });
 
-                // 2. 전체 프로젝트 목록을 백엔드에서 가져옵니다. (SELECT * FROM project)
-                const data = await projectService.getAllProjects();
-                const projects = Array.isArray(data) ? data : [];
-                setAllProjects(projects);
+                // 2. [내가 만든 프로젝트] 서버가 토큰 사용자 기준으로 걸러서 페이지로 준다 (GET /api/projects/me)
+                // 이전에는 전체 목록 첫 페이지만 받아 leader_id로 걸러, 다른 사람 글이 많으면 내 글이 빠졌다 (TS-17)
+                const lead = await fetchMyLeadPage(0);
+                setMyLead(lead.content);
+                setMyLeadPage(lead.page);
 
-                // 3. [분류 작업 1: 내가 방장인 프로젝트]
-                // 전체 프로젝트 중, 방장 ID(leader_id)가 내 ID(user_id)와 같은 것만 필터링합니다.
-                const myCreatedProjects = projects.filter(
-                    (project) => String(project.leader_id) === String(savedUser.user_id)
-                );
-                setMyLead(myCreatedProjects);
-
-                // 4. 내가 찔러본(지원한) 내역들을 백엔드에서 가져옵니다.
+                // 3. 내 지원 내역. 응답에 프로젝트 제목·상태·지역이 들어 있어 전체 목록과 맞춰 볼 필요가 없다
                 const myApplications = await applicationService.getMyApplications();
+                const toCard = (app) => ({
+                    project_id: app.projectId ?? app.project_id,
+                    title: app.projectTitle,
+                    region: app.projectRegion,
+                    status: app.projectStatus,
+                    application_id: app.applicationId ?? app.application_id,
+                    application_status: app.status,
+                    support_role: app.supportRole
+                });
+                const isAccepted = (app) => String(app.status).toUpperCase() === "ACCEPTED";
+                // 팀장 본인의 자동 등록 지원서(팀장)는 지원 현황·참여 중 목록에서 뺀다 ('내가 만든 프로젝트'와 중복 방지)
+                const isMyOwnLeaderSeat = (app) => app.supportRole === LEADER_ROLE;
 
-                // 5. [분류 작업 2: 지원 현황 (대기중/수락됨/거절됨)]
-                const applied = myApplications
-                    .filter((app) =>
-                        app.status === "pending" || app.status === "PENDING" ||
-                        app.status === "accepted" || app.status === "ACCEPTED" ||
-                        app.status === "rejected" || app.status === "REJECTED"
+                // 4. [지원 현황: 대기중/수락됨/거절됨]
+                setAppliedPosts(
+                    myApplications
+                        .filter((app) => !isMyOwnLeaderSeat(app))
+                        .filter((app) => ["PENDING", "ACCEPTED", "REJECTED"].includes(String(app.status).toUpperCase()))
+                        .map(toCard)
+                );
 
-                    )
-                    .map((app) => {
-                        // 백엔드에서 조인(Join)해서 프로젝트 정보를 같이 줬다면 그대로 씁니다.
-                        if (app.project) {
-                            return {
-                                ...app.project,
-                                application_id: app.application_id,
-                                application_status: app.status
-                            };
-                        }
-
-                        // 조인해서 주지 않았다면, 아까 받아둔 전체 프로젝트 리스트에서 ID로 직접 찾아 끼워 맞춥니다.
-                        const matchedProject = projects.find(
-    (project) => String(project.project_id) === String(app.projectId || app.project_id)
-);
-                        
-                        if (!matchedProject) return null;
-
-                        return {
-                            ...matchedProject,
-                            application_id: app.application_id,
-                            application_status: app.status
-                        };
-                    })
-                    .filter(Boolean); // null 값 찌꺼기들 제거
-
-                setAppliedPosts(applied); // 지원 내역 저장소에 쏙!
-
-                // 6. [분류 작업 3: 참여 확정된 프로젝트 (팀원)]
-                const participating = myApplications
-                    .filter((app) => app.status === "accepted" || app.status === "ACCEPTED") // 수락된 것만 고름
-                    .map((app) => {
-                        if (app.project) return app.project;
-                        return projects.find((project) => String(project.project_id) === String(app.projectId || app.project_id));
-                    })
-                    .filter(Boolean)
-                    // 🚨 중요: 수락된 것들 중에서도 '내가 방장인 프로젝트'는 제외합니다!
-                    // (그래야 '참여 중'과 '내가 만든' 리스트가 중복되지 않음)
-                    .filter(
-                        (project) => String(project.leader_id) !== String(savedUser.user_id)
-                    );
-
-                setMyPart(participating); // 참여 확정 저장소에 쏙!
+                // 5. [참여 확정된 프로젝트 (팀원)]
+                setMyPart(myApplications.filter((app) => isAccepted(app) && !isMyOwnLeaderSeat(app)).map(toCard));
 
             } catch (error) {
                 console.error("로딩 실패:", error);
@@ -237,7 +236,7 @@ const MyPage = () => {
 
                     {/* 1. 내가 만든 프로젝트 리스트 */}
                     <div className="mp-section">
-                        <h4>📂 내가 만든 프로젝트</h4>
+                        <h4>📂 내가 만든 프로젝트{myLeadPage.totalElements > 0 ? ` (${myLeadPage.totalElements})` : ""}</h4>
                         {/* myLead 배열에 데이터가 있으면 반복문(map)으로 그리고, 없으면 '없습니다' 출력 */}
                         {myLead.length > 0 ? (
                             myLead.map((proj) => (
@@ -259,6 +258,17 @@ const MyPage = () => {
                             ))
                         ) : (
                             <div className="no-data">생성한 프로젝트가 없습니다.</div>
+                        )}
+                        {!myLeadPage.last && (
+                            <button
+                                type="button"
+                                className="mp-review-btn"
+                                style={{ marginTop: "8px" }}
+                                onClick={handleLoadMoreLead}
+                                disabled={isLoadingMore}
+                            >
+                                {isLoadingMore ? "불러오는 중..." : "더 보기"}
+                            </button>
                         )}
                     </div>
 

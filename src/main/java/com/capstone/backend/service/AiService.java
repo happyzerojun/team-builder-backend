@@ -3,14 +3,12 @@ package com.capstone.backend.service;
 import com.capstone.backend.dto.AiRecommendResponse;
 import com.capstone.backend.dto.RecommendationDto;
 import com.capstone.backend.entity.Project;
-import com.capstone.backend.entity.TechStack;
 import com.capstone.backend.global.exception.UnauthorizedException;
 import com.capstone.backend.repository.ProjectRepository;
-import com.capstone.backend.repository.TechStackRepository;
 import com.capstone.backend.repository.UserRepository;
+import com.capstone.backend.service.ai.TechKeywordMatcher;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,11 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -37,7 +33,8 @@ public class AiService {
 
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
-    private final TechStackRepository techStackRepository;
+    // 키워드 맵은 DataInitializer 이후(ApplicationReadyEvent)에 적재된다 (TS-10)
+    private final TechKeywordMatcher techKeywordMatcher;
     private final ObjectMapper objectMapper;
 
     // 타임아웃 없는 new RestTemplate()은 Gemini가 응답하지 않으면 요청 스레드가 무기한 대기했다 (TS-03)
@@ -49,28 +46,11 @@ public class AiService {
         factory.setReadTimeout(15_000);     // LLM 응답 생성 시간을 고려
         return new RestTemplate(factory);
     }
-    private final Map<String, Long> dynamicTechLookupMap = new ConcurrentHashMap<>();
-
     @Value("${gemini.api.url}")
     private String apiUrl;
 
     @Value("${gemini.api.key}")
     private String apiKey;
-
-    @PostConstruct
-    public void initTechLookupMap() {
-        List<TechStack> allStacks = techStackRepository.findAll();
-        for (TechStack stack : allStacks) {
-            Long id = stack.getId();
-            if (stack.getName() != null) dynamicTechLookupMap.put(stack.getName().toLowerCase().replace(" ", ""), id);
-            if (stack.getKeywords() != null) {
-                for (String kw : stack.getKeywords().split(",")) {
-                    dynamicTechLookupMap.put(kw.trim().toLowerCase().replace(" ", ""), id);
-                }
-            }
-        }
-        log.info("🔥 [AiService] 키워드 맵 로드 완료. 총 {}개", dynamicTechLookupMap.size());
-    }
 
     @Transactional(readOnly = true)
     public AiRecommendResponse getRecommendation(String email, String userPrompt) {
@@ -81,13 +61,7 @@ public class AiService {
         // 2. 동적 기술 스택 매칭
         // 가장 긴 키워드부터 매칭한다. 이전에는 HashMap 순회 순서의 첫 매칭이라
         // "javascript" 요청에 "java"가 걸리는 등 결과가 비결정적이었다 (TS-03)
-        String normalizedPrompt = userPrompt.toLowerCase().replace(" ", "");
-        Long targetTechStackId = dynamicTechLookupMap.entrySet().stream()
-                .filter(entry -> normalizedPrompt.contains(entry.getKey()))
-                .max(Comparator.comparingInt((Map.Entry<String, Long> e) -> e.getKey().length())
-                        .thenComparing(Map.Entry::getKey))
-                .map(Map.Entry::getValue)
-                .orElse(null);
+        Long targetTechStackId = techKeywordMatcher.match(userPrompt).orElse(null);
 
         // 3. 데이터 로딩 (🔥 Fallback 로직 강화: 빈 깡통 방지)
         List<Project> projects = new ArrayList<>();

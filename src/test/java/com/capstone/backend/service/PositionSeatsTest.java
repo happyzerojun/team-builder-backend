@@ -52,6 +52,16 @@ class PositionSeatsTest {
     }
 
     @Test
+    @DisplayName("포지션이 있는 글에서 모집하지 않는(삭제된) 포지션 지원서는 수락할 수 없다 (TS-19)")
+    void takeRejectsUnknownRoleWhenProjectHasPositions() {
+        when(projectPositionRepository.findByProjectIdAndRoleName(10L, "프론트엔드")).thenReturn(Optional.empty());
+        when(projectPositionRepository.existsByProjectId(10L)).thenReturn(true);
+
+        assertThatThrownBy(() -> positionSeats.take(10L, "프론트엔드")).isInstanceOf(ConflictException.class);
+        verify(projectPositionRepository, never()).increaseIfAvailable(anyLong(), any());
+    }
+
+    @Test
     @DisplayName("포지션을 정하지 않은 글은 정원 제한 없음")
     void noPositionMeansNoLimit() {
         when(projectPositionRepository.findByProjectIdAndRoleName(10L, "백엔드")).thenReturn(Optional.empty());

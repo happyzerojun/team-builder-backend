@@ -21,6 +21,13 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     @EntityGraph(attributePaths = "leader")
     Page<Project> findAll(Pageable pageable);
 
+    /**
+     * 내가 작성한 모집글(마이페이지). leader_id는 FK라 인덱스가 있어 작성자 글만 읽는다.
+     * 이전에는 프론트가 전체 목록 첫 페이지만 받아 leader_id로 걸러, 10번째 이후 글이 보이지 않았다 (TS-17)
+     */
+    @EntityGraph(attributePaths = "leader")
+    Page<Project> findByLeaderId(Long leaderId, Pageable pageable);
+
     @Query("SELECT DISTINCT p FROM Project p " +
             "JOIN p.projectTechStacks pts " +
             "WHERE pts.techStack.id = :techStackId")

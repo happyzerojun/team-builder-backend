@@ -16,9 +16,11 @@ import com.capstone.backend.repository.ProjectRepository;
 import com.capstone.backend.repository.ReviewRepository;
 import com.capstone.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ReviewService {
+
+    static final String DUPLICATE_REVIEW_MESSAGE = "이미 리뷰를 남긴 팀원이 있습니다.";
 
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
@@ -96,6 +100,7 @@ public class ReviewService {
         }
 
         Set<Long> seen = new HashSet<>();
+        List<Review> reviews = new ArrayList<>();
         for (ReviewBulkSaveRequestDto dto : requestDtos) {
             Long revieweeId = dto.getRevieweeId();
             User reviewee = members.get(revieweeId);
@@ -108,12 +113,13 @@ public class ReviewService {
             if (dto.getRating() == null || dto.getRating() < 1 || dto.getRating() > 5) {
                 throw new IllegalArgumentException("별점은 1~5점이어야 합니다.");
             }
+            // 빠른 검사(친절한 메시지용). 동시 요청은 이 조회를 둘 다 통과할 수 있어 최종 판정은 아래 유니크 제약 (TS-16)
             if (!seen.add(revieweeId)
                     || reviewRepository.existsByProjectIdAndReviewerIdAndRevieweeId(projectId, reviewer.getId(), revieweeId)) {
-                throw new ConflictException("이미 리뷰를 남긴 팀원이 있습니다.");
+                throw new ConflictException(DUPLICATE_REVIEW_MESSAGE);
             }
 
-            reviewRepository.save(Review.builder()
+            reviews.add(Review.builder()
                     .project(project)
                     .reviewer(reviewer)
                     .reviewee(reviewee)
@@ -121,6 +127,22 @@ public class ReviewService {
                     .comment(dto.getComment())
                     .build());
         }
+
+        try {
+            reviews.forEach(reviewRepository::save);
+            reviewRepository.flush();   // 위반을 이 메서드 안에서 확인해 409로 바꾼다(커밋 시점까지 미루지 않음)
+        } catch (DataIntegrityViolationException e) {
+            if (isDuplicateReview(e)) {
+                // 한 건이라도 중복이면 묶음 전체를 롤백한다(일부만 저장된 상태를 남기지 않음)
+                throw new ConflictException(DUPLICATE_REVIEW_MESSAGE);
+            }
+            throw e;
+        }
+    }
+
+    private static boolean isDuplicateReview(DataIntegrityViolationException e) {
+        String message = e.getMostSpecificCause().getMessage();
+        return message != null && message.contains(Review.UNIQUE_REVIEWER_REVIEWEE_PROJECT);
     }
 
     private void requireSelf(String email, Long userId) {

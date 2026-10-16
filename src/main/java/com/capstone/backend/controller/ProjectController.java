@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * GET(목록·상세·팀원)은 비로그인 공개, 나머지는 로그인 + 모집글 작성자만 (SecurityConfig, ProjectService)
+ * GET(목록·상세·팀원)은 비로그인 공개, GET /me와 나머지는 로그인 필요, 변경은 모집글 작성자만 (SecurityConfig, ProjectService)
  */
 @RestController
 @RequestMapping("/api/projects")
@@ -34,6 +34,15 @@ public class ProjectController {
     public ResponseEntity<Page<ProjectResponseDto>> getAllProjects(
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(projectService.getAllProjects(pageable));
+    }
+
+    // 1-1. 내가 작성한 모집글 (GET /api/projects/me?page=0&size=10): 로그인 필요, 작성자 = 토큰의 사용자 (TS-17)
+    // "/me"는 "/{projectId}"보다 구체적인 경로라 먼저 매칭된다
+    @GetMapping("/me")
+    public ResponseEntity<Page<ProjectResponseDto>> getMyProjects(
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            Authentication authentication) {
+        return ResponseEntity.ok(projectService.getMyProjects(AuthenticatedUser.email(authentication), pageable));
     }
 
     // 2. 프로젝트 상세 조회

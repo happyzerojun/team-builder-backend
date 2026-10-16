@@ -328,3 +328,53 @@
     font-weight: 700;
     color: #cbd5e1;
 }
+/* 모집 포지션 (TS-19) */
+.position-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.position-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.position-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.position-row .position-name-input {
+    flex: 1 1 160px;
+    min-width: 0;
+}
+
+.position-row .position-count-input {
+    width: 72px;
+}
+
+.position-count-unit,
+.position-joined {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.position-remove-btn {
+    border: none;
+    background: transparent;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 4px 8px;
+}
+
+.position-remove-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+}

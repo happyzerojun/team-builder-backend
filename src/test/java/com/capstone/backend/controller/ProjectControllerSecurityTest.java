@@ -101,6 +101,23 @@ class ProjectControllerSecurityTest {
     }
 
     @Test
+    @DisplayName("내가 쓴 글(GET /me)은 비로그인 401, 로그인하면 토큰의 사용자로 조회 (TS-17)")
+    void myProjectsRequireLoginAndUseTokenUser() throws Exception {
+        mockMvc.perform(get("/api/projects/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+        verify(projectService, never()).getMyProjects(anyString(), any(Pageable.class));
+
+        when(projectService.getMyProjects(eq("me@example.com"), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(dto())));
+        mockMvc.perform(get("/api/projects/me").header("Authorization", bearer("me@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].project_id").value(1));
+        verify(projectService).getMyProjects(eq("me@example.com"), any(Pageable.class));
+        // "/me"가 "/{projectId}"로 잘못 매칭되면 숫자 변환 실패(400)나 상세 조회가 호출된다
+        verify(projectService, never()).getProjectById(anyLong());
+    }
+
+    @Test
     @DisplayName("작성자는 본문의 leader_id가 아니라 토큰의 사용자")
     void createUsesTokenUser() throws Exception {
         when(projectService.createProject(eq("me@example.com"), any(ProjectRequestDto.class))).thenReturn(dto());

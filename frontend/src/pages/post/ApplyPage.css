@@ -160,6 +160,14 @@
   color: #0f172a;
 }
 
+/* 정원이 찬 포지션 (TS-19) */
+.apply-tech-tag:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
 .apply-empty-text {
   color: #94a3b8;
   font-size: 14px;

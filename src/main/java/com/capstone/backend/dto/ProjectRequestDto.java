@@ -37,7 +37,13 @@ public class ProjectRequestDto {
     private Boolean isLocalOnly;
     private List<Long> techStackIds;
 
-    /** 선택: 포지션별 모집 인원. 생성 시에만 반영되고, 수정 요청에서는 무시한다 */
+    /**
+     * 선택: 포지션별 모집 인원 (TS-19)
+     * - 생성: 비우면 정원 제한 없는 글
+     * - 수정: null이면 유지, 목록이면 그 목록으로 맞춘다(이름이 같은 포지션은 인원만 변경, 빠진 포지션 삭제, 새 포지션 추가).
+     *   합류 인원보다 적게 줄이거나 합류한 팀원이 있는 포지션을 지우면 409
+     */
     @Valid
+    @Size(max = 10, message = "포지션은 10개까지 등록할 수 있습니다.")
     private List<PositionRequestDto> positions;
 }

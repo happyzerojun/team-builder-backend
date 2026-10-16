@@ -77,7 +77,9 @@ class TeamFlowIntegrationTest extends IntegrationTestSupport {
 
         mockMvc.perform(get("/api/application/me").header(HttpHeaders.AUTHORIZATION, bearer(applicant)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].projectTitle").value("흐름 테스트"));
+                .andExpect(jsonPath("$[0].projectTitle").value("흐름 테스트"))
+                .andExpect(jsonPath("$[0].projectStatus").value("모집중"))
+                .andExpect(jsonPath("$[0].projectRegion").value("온라인"));
 
         // 4. 지원서 목록·수락은 작성자만
         mockMvc.perform(get("/api/application/project/" + projectId).header(HttpHeaders.AUTHORIZATION, bearer(outsider)))

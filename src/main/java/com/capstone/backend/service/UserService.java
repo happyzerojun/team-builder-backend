@@ -7,7 +7,9 @@ import com.capstone.backend.entity.User;
 import com.capstone.backend.entity.UserTechStack;
 import com.capstone.backend.repository.TechStackRepository;
 import com.capstone.backend.repository.UserRepository;
+import com.capstone.backend.service.event.TechStackCreatedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final TechStackRepository techStackRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public UserProfileResponseDto getUserProfile(String email) {
@@ -55,13 +58,7 @@ public class UserService {
             newStacks = requestDto.getTechStacks().stream()
                     .map(tagName -> {
                         TechStack techStack = techStackRepository.findByName(tagName)
-                                .orElseGet(() -> techStackRepository.save(
-                                        TechStack.builder()
-                                                .name(tagName)
-                                                .createdAt(LocalDateTime.now())
-                                                .updatedAt(LocalDateTime.now())
-                                                .build()
-                                ));
+                                .orElseGet(() -> createTechStack(tagName));
 
                         return UserTechStack.builder()
                                 .techStack(techStack)
@@ -82,6 +79,17 @@ public class UserService {
         );
 
         return user;
+    }
+
+    /** 처음 보는 태그는 기술 스택으로 저장하고, AI 키워드 맵이 커밋 후 다시 적재하도록 알린다 (TS-20) */
+    private TechStack createTechStack(String name) {
+        TechStack saved = techStackRepository.save(TechStack.builder()
+                .name(name)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build());
+        eventPublisher.publishEvent(new TechStackCreatedEvent(saved.getId(), saved.getName()));
+        return saved;
     }
 
     public User findByEmail(String email) {

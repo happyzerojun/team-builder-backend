@@ -20,6 +20,11 @@ export const projectService = {
             return { content: [], totalPages: 1 };
         }
     },
+    // 내가 작성한 모집글 (작성자 = 토큰의 사용자). 전체 목록 첫 페이지를 걸러 쓰면 10번째 이후 글이 빠진다 (TS-17)
+    getMyProjects: async (page = 0, size = 10) => {
+        const res = await api.get(`${API_URL}/me`, { params: { page, size } });
+        return res.data;
+    },
     getProjectById: async (projectId) => {
         try {
             const res = await api.get(`${API_URL}/${projectId}`);
@@ -38,7 +43,8 @@ export const projectService = {
             term: data.term,
             techStackIds: data.techStackIds,
             meetingType: data.meetingType,
-            isLocalOnly: data.isLocalOnly
+            isLocalOnly: data.isLocalOnly,
+            positions: data.positions
         });
         return res.data;
     },
@@ -47,11 +53,12 @@ export const projectService = {
             title: data.title,
             content: data.content,
             region: data.region,
-            status: data.status,
             term: data.term,
             techStackIds: data.techStackIds,
             meetingType: data.meetingType,
-            isLocalOnly: data.isLocalOnly
+            isLocalOnly: data.isLocalOnly,
+            // 수정: 목록이면 그 목록으로 맞춤(이름이 같으면 인원만 변경). 상태는 PATCH /status로만 바꾼다
+            positions: data.positions
         });
         return res.data;
     },

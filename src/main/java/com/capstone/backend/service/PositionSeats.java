@@ -15,7 +15,7 @@ import java.util.Optional;
 /**
  * 포지션 정원(current_count) 증감을 한 곳에서 처리한다 (TS-06).
  * 호출하는 서비스의 트랜잭션 안에서 실행된다. 지원서는 support_role 문자열로 포지션(role_name)과 연결된다.
- * 포지션을 정하지 않은 모집글(기존 데이터·현재 화면)은 정원 제한이 없다.
+ * 포지션을 정하지 않은 모집글(기존 데이터)은 정원 제한이 없다.
  */
 @Component
 @RequiredArgsConstructor
@@ -41,8 +41,16 @@ public class PositionSeats {
     /** 정원 +1. 영향 행 0 = 정원 초과 → 409, 호출한 트랜잭션(지원서 상태 변경)도 롤백 */
     public void take(Long projectId, String roleName) {
         Optional<ProjectPosition> position = find(projectId, roleName);
-        if (position.isPresent()
-                && projectPositionRepository.increaseIfAvailable(position.get().getId(), LocalDateTime.now()) == 0) {
+        if (position.isEmpty()) {
+            // 포지션이 있는 글인데 지원서의 역할과 맞는 포지션이 없음(수정으로 삭제된 포지션, 포지션 추가 전 지원서).
+            // 그대로 수락하면 정원 검사를 건너뛰므로 막는다 (TS-19)
+            if (projectPositionRepository.existsByProjectId(projectId)) {
+                throw new ConflictException("'" + roleName + "'은(는) 모집 중인 포지션이 아닙니다. "
+                        + "지원자에게 모집 포지션으로 다시 지원해 달라고 안내해주세요.");
+            }
+            return;
+        }
+        if (projectPositionRepository.increaseIfAvailable(position.get().getId(), LocalDateTime.now()) == 0) {
             throw new ConflictException("'" + position.get().getRoleName() + "' 포지션은 정원이 찼습니다.");
         }
     }

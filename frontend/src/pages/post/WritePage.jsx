@@ -67,6 +67,12 @@ const TECH_STACK_TABS = {
     ],
 };
 
+// 모집 포지션 (TS-19): 지원서의 지원 역할(support_role)이 포지션 이름과 같아야 그 포지션의 정원을 쓴다
+const MAX_POSITIONS = 10;
+const MAX_POSITION_COUNT = 100;
+const POSITION_PRESETS = ["프론트엔드", "백엔드", "디자이너", "기획/PM", "모바일", "AI/데이터"];
+const LEADER_ROLE = "팀장"; // 서버가 작성자 자리로 쓰는 이름이라 포지션 이름으로 쓸 수 없다
+
 const MAX_DETAIL_IMAGES = 5;
 const MAX_FILE_SIZE_MB = 5;
 
@@ -92,6 +98,8 @@ function WritePage() {
         techStackIds: [],
         meetingType: "비대면",
         isLocalOnly: false,
+        // { roleName, requiredCount, currentCount } — currentCount는 수정 화면에서만 의미가 있다(합류 인원)
+        positions: [],
     });
 
     const allTechStacks = Object.values(TECH_STACK_TABS).flat();
@@ -128,6 +136,13 @@ function WritePage() {
                             : [],
                         meetingType: data.meetingType || "비대면",
                         isLocalOnly: data.isLocalOnly ?? false,
+                        positions: Array.isArray(data.positions)
+                            ? data.positions.map((position) => ({
+                                roleName: position.roleName || "",
+                                requiredCount: position.requiredCount ?? 1,
+                                currentCount: position.currentCount ?? 0,
+                            }))
+                            : [],
                     });
 
                     if (data.thumbnailUrl) {
@@ -247,6 +262,59 @@ function WritePage() {
         });
     };
 
+    const addPosition = (roleName = "") => {
+        setForm((prev) => {
+            if (prev.positions.length >= MAX_POSITIONS) {
+                alert(`포지션은 최대 ${MAX_POSITIONS}개까지 등록할 수 있습니다.`);
+                return prev;
+            }
+            if (roleName && prev.positions.some((position) => position.roleName.trim() === roleName)) {
+                return prev;
+            }
+            return {
+                ...prev,
+                positions: [...prev.positions, { roleName, requiredCount: 1, currentCount: 0 }],
+            };
+        });
+    };
+
+    const updatePosition = (index, field, value) => {
+        setForm((prev) => ({
+            ...prev,
+            positions: prev.positions.map((position, i) =>
+                i === index ? { ...position, [field]: value } : position
+            ),
+        }));
+    };
+
+    const removePosition = (index) => {
+        setForm((prev) => ({
+            ...prev,
+            positions: prev.positions.filter((_, i) => i !== index),
+        }));
+    };
+
+    // 서버 규칙과 같은 검사를 먼저 해서 알림으로 안내한다 (서버도 같은 규칙으로 400/409를 돌려준다)
+    const validatePositions = () => {
+        const names = new Set();
+        for (const position of form.positions) {
+            const name = position.roleName.trim();
+            const count = Number(position.requiredCount);
+            if (!name) return "포지션 이름을 입력해주세요.";
+            if (name.length > 30) return "포지션 이름은 30자 이하로 입력해주세요.";
+            if (name === LEADER_ROLE) return `'${LEADER_ROLE}'은(는) 포지션 이름으로 쓸 수 없습니다.`;
+            if (names.has(name)) return "같은 이름의 포지션을 두 번 등록할 수 없습니다.";
+            names.add(name);
+            if (!Number.isInteger(count) || count < 1 || count > MAX_POSITION_COUNT) {
+                return `모집 인원은 1~${MAX_POSITION_COUNT}명으로 입력해주세요.`;
+            }
+            if (count < (position.currentCount || 0)) {
+                return `'${name}' 포지션은 이미 ${position.currentCount}명이 합류해 그보다 적게 줄일 수 없습니다.`;
+            }
+        }
+        return null;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -270,6 +338,12 @@ function WritePage() {
             return;
         }
 
+        const positionError = validatePositions();
+        if (positionError) {
+            alert(positionError);
+            return;
+        }
+
         try {
             setLoading(true);
 
@@ -281,6 +355,11 @@ function WritePage() {
                 techStackIds: form.techStackIds,
                 meetingType: form.meetingType,
                 isLocalOnly: form.meetingType === "대면" ? form.isLocalOnly : false,
+                // 수정 화면은 항상 목록을 보낸다(빈 목록 = 포지션 모두 삭제, 서버가 합류 인원이 있으면 409)
+                positions: form.positions.map((position) => ({
+                    roleName: position.roleName.trim(),
+                    requiredCount: Number(position.requiredCount),
+                })),
             };
 
             let savedProject;
@@ -467,6 +546,82 @@ function WritePage() {
                                 >
                                     🌍 타지역도 가능
                                 </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">
+                            모집 포지션
+                            <span className="tag-count-hint">
+                                {" "}(선택 · 최대 {MAX_POSITIONS}개 / 현재 {form.positions.length}개)
+                            </span>
+                        </label>
+                        <p className="form-hint">
+                            포지션을 정하면 지원자는 포지션을 골라 지원하고, 정원이 차면 더 수락할 수 없어요.
+                            비워 두면 인원 제한 없이 받습니다.
+                        </p>
+
+                        <div className="position-presets">
+                            {POSITION_PRESETS.map((preset) => (
+                                <button
+                                    key={preset}
+                                    type="button"
+                                    className={`tech-option-btn ${
+                                        form.positions.some((position) => position.roleName.trim() === preset) ? "selected" : ""
+                                    }`}
+                                    onClick={() => addPosition(preset)}
+                                >
+                                    + {preset}
+                                </button>
+                            ))}
+                            <button type="button" className="tech-option-btn" onClick={() => addPosition("")}>
+                                + 직접 입력
+                            </button>
+                        </div>
+
+                        {form.positions.length > 0 && (
+                            <div className="position-rows">
+                                {form.positions.map((position, index) => {
+                                    const joined = position.currentCount || 0;
+                                    return (
+                                        <div key={index} className="position-row">
+                                            <input
+                                                type="text"
+                                                className="position-name-input"
+                                                value={position.roleName}
+                                                onChange={(e) => updatePosition(index, "roleName", e.target.value)}
+                                                placeholder="역할 이름 (예: 백엔드)"
+                                                maxLength={30}
+                                                aria-label={`포지션 ${index + 1} 이름`}
+                                                disabled={joined > 0}
+                                                title={joined > 0 ? "합류한 팀원이 있어 이름을 바꿀 수 없습니다." : undefined}
+                                            />
+                                            <input
+                                                type="number"
+                                                className="position-count-input"
+                                                value={position.requiredCount}
+                                                min={Math.max(1, joined)}
+                                                max={MAX_POSITION_COUNT}
+                                                onChange={(e) => updatePosition(index, "requiredCount", e.target.value)}
+                                                aria-label={`포지션 ${index + 1} 모집 인원`}
+                                            />
+                                            <span className="position-count-unit">명</span>
+                                            {isEditMode && joined > 0 && (
+                                                <span className="position-joined">{joined}명 합류</span>
+                                            )}
+                                            <button
+                                                type="button"
+                                                className="position-remove-btn"
+                                                onClick={() => removePosition(index)}
+                                                disabled={joined > 0}
+                                                title={joined > 0 ? "합류한 팀원이 있어 삭제할 수 없습니다." : "포지션 삭제"}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

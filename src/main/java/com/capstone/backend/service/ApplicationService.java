@@ -186,6 +186,8 @@ public class ApplicationService {
                 .applicantName(application.getApplicant().getName())
                 .projectId(application.getProject().getId())
                 .projectTitle(application.getProject().getTitle())
+                .projectStatus(application.getProject().getStatus())
+                .projectRegion(application.getProject().getRegion())
                 .createdAt(application.getCreatedAt())
                 .updatedAt(application.getUpdatedAt())
                 .build();

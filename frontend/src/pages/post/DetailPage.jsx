@@ -184,6 +184,23 @@ function DetailPage() {
                         )}
                     </section>
 
+                    {Array.isArray(post.positions) && post.positions.length > 0 && (
+                        <section className="detail-section">
+                            <h2 className="section-title">👥 모집 포지션</h2>
+                            <div className="detail-tech-list">
+                                {post.positions.map((position) => {
+                                    const joined = position.currentCount ?? 0;
+                                    const full = position.requiredCount != null && joined >= position.requiredCount;
+                                    return (
+                                        <span key={position.position_id ?? position.roleName} className="detail-tech-tag">
+                                            {position.roleName} {joined}/{position.requiredCount}명{full ? " · 마감" : ""}
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                        </section>
+                    )}
+
                     {/* 버튼 영역: 내 글 / 지원취소 / 지원하기 분기 */}
                     <div
                         className="detail-footer"

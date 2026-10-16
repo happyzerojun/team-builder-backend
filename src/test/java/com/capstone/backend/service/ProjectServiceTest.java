@@ -9,7 +9,6 @@ import com.capstone.backend.global.exception.ForbiddenException;
 import com.capstone.backend.repository.ApplicationRepository;
 import com.capstone.backend.repository.ProjectPositionRepository;
 import com.capstone.backend.repository.ProjectRepository;
-import com.capstone.backend.repository.ProjectTechStackRepository;
 import com.capstone.backend.repository.ReviewRepository;
 import com.capstone.backend.repository.TechStackRepository;
 import com.capstone.backend.repository.UserRepository;
@@ -40,7 +39,6 @@ class ProjectServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private ProjectRepository projectRepository;
     @Mock private TechStackRepository techStackRepository;
-    @Mock private ProjectTechStackRepository projectTechStackRepository;
     @Mock private ApplicationRepository applicationRepository;
     @Mock private ReviewRepository reviewRepository;
     @Mock private ProjectPositionRepository projectPositionRepository;

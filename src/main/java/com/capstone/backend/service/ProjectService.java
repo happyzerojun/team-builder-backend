@@ -7,7 +7,6 @@ import com.capstone.backend.entity.Application;
 import com.capstone.backend.entity.Project;
 import com.capstone.backend.entity.ProjectPosition;
 import com.capstone.backend.entity.ProjectStatus;
-import com.capstone.backend.entity.ProjectTechStack;
 import com.capstone.backend.entity.TechStack;
 import com.capstone.backend.entity.User;
 import com.capstone.backend.global.exception.ConflictException;
@@ -17,7 +16,6 @@ import com.capstone.backend.global.exception.UnauthorizedException;
 import com.capstone.backend.repository.ApplicationRepository;
 import com.capstone.backend.repository.ProjectPositionRepository;
 import com.capstone.backend.repository.ProjectRepository;
-import com.capstone.backend.repository.ProjectTechStackRepository;
 import com.capstone.backend.repository.ReviewRepository;
 import com.capstone.backend.repository.TechStackRepository;
 import com.capstone.backend.repository.UserRepository;
@@ -45,7 +43,6 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final TechStackRepository techStackRepository;
-    private final ProjectTechStackRepository projectTechStackRepository;
     private final ApplicationRepository applicationRepository;
     private final ReviewRepository reviewRepository;
     private final ProjectPositionRepository projectPositionRepository;
@@ -73,17 +70,9 @@ public class ProjectService {
 
         Project savedProject = projectRepository.save(project);
 
-        if (request.getTechStackIds() != null && !request.getTechStackIds().isEmpty()) {
-            List<TechStack> techStacks = techStackRepository.findAllById(request.getTechStackIds());
-
-            List<ProjectTechStack> projectTechStacks = techStacks.stream()
-                    .map(techStack -> ProjectTechStack.builder()
-                            .project(savedProject)
-                            .techStack(techStack)
-                            .build())
-                    .toList();
-
-            projectTechStackRepository.saveAll(projectTechStacks);
+        // 연결 행은 cascade(ALL)로 함께 저장된다. 이전에는 연결 행만 따로 저장해 생성 응답의 techStacks가 비어 있었다
+        if (request.getTechStackIds() != null) {
+            savedProject.replaceTechStacks(findTechStacks(request.getTechStackIds()));
         }
 
         if (request.getPositions() != null && !request.getPositions().isEmpty()) {
@@ -138,6 +127,10 @@ public class ProjectService {
         project.updateTerm(String.valueOf(request.getTerm()));
         project.updateMeetingType(request.getMeetingType());
         project.updateIsLocalOnly(request.getIsLocalOnly());
+        // null이면 기존 스택 유지, 빈 목록이면 모두 해제 (TS-18)
+        if (request.getTechStackIds() != null) {
+            project.replaceTechStacks(findTechStacks(request.getTechStackIds()));
+        }
 
         return ProjectResponseDto.from(project);
     }
@@ -217,6 +210,12 @@ public class ProjectService {
                 .message("")
                 .status(ApplicationService.ACCEPTED)
                 .build());
+    }
+
+    /** 중복 ID는 한 번만, 없는 ID는 무시한다(생성 API의 기존 동작과 같음) */
+    private List<TechStack> findTechStacks(List<Long> techStackIds) {
+        List<Long> ids = techStackIds.stream().filter(Objects::nonNull).distinct().toList();
+        return ids.isEmpty() ? List.of() : techStackRepository.findAllById(ids);
     }
 
     private Project findProject(Long projectId) {

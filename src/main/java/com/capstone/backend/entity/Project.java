@@ -8,7 +8,11 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -96,6 +100,25 @@ public class Project {
                     "'" + current.label() + "' 상태에서 '" + next.label() + "'(으)로 바꿀 수 없습니다.");
         }
         this.status = next.label();
+    }
+
+    /**
+     * 기술 스택 목록을 주어진 목록으로 교체한다. 유지되는 스택의 연결 행은 그대로 두고,
+     * 빠진 것만 지우고(orphanRemoval) 새로 생긴 것만 추가한다(전부 지우고 다시 넣으면 수정마다 행이 바뀜).
+     * 이전에는 수정 API가 techStackIds를 받기만 하고 반영하지 않아, 화면에서 바꾼 스택이 저장되지 않았다 (TS-18)
+     */
+    public void replaceTechStacks(Collection<TechStack> techStacks) {
+        Set<Long> nextIds = techStacks.stream().map(TechStack::getId).collect(Collectors.toSet());
+        // getTechStack().getId()는 프록시를 초기화하지 않는다(식별자는 프록시가 들고 있음)
+        projectTechStacks.removeIf(link -> !nextIds.contains(link.getTechStack().getId()));
+        Set<Long> keptIds = projectTechStacks.stream()
+                .map(link -> link.getTechStack().getId())
+                .collect(Collectors.toCollection(HashSet::new));
+        for (TechStack techStack : techStacks) {
+            if (keptIds.add(techStack.getId())) {
+                projectTechStacks.add(ProjectTechStack.builder().project(this).techStack(techStack).build());
+            }
+        }
     }
 
     // 수정관련 

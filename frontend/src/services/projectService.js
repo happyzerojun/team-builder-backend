@@ -29,13 +29,12 @@ export const projectService = {
             return null;
         }
     },
+    // 작성자는 서버가 JWT로 식별하고, 작성자를 팀원으로 등록하는 것도 서버가 같은 트랜잭션에서 한다 (TS-05)
     createProject: async (data) => {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
         const res = await api.post(API_URL, {
             title: data.title,
             content: data.content,
             region: data.region,
-            leader_id: user.user_id,
             term: data.term,
             techStackIds: data.techStackIds,
             meetingType: data.meetingType,
@@ -66,13 +65,10 @@ export const projectService = {
         }
     },
     applyToProject: async (projectId) => {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
         await api.post(APPLICATION_API, {
             project_id: projectId,
-            applicant_id: user.user_id,
             support_role: "지원자",
-            message: "",
-            status: "PENDING"
+            message: ""
         });
         return true;
     },

@@ -47,8 +47,14 @@ const ManagePage = () => {
                 const normalizedMembers = Array.isArray(memberData) ? memberData : [];
                 setMembers(normalizedMembers);
 
-                const applicationData = await applicationService.getProjectApplications(id);
-                setApplicants(Array.isArray(applicationData) ? applicationData : []);
+                // 지원서 목록은 팀장(전체)·팀원(수락된 지원서)만 볼 수 있다. 권한이 없으면 빈 목록으로 둔다
+                try {
+                    const applicationData = await applicationService.getProjectApplications(id);
+                    setApplicants(Array.isArray(applicationData) ? applicationData : []);
+                } catch (applicationError) {
+                    console.error("지원서 목록 조회 실패:", applicationError);
+                    setApplicants([]);
+                }
 
                 try {
                     const reviewData = await reviewService.getProjectMyReviews(id);
@@ -129,7 +135,7 @@ const ManagePage = () => {
             alert("신청자를 승인했습니다.");
         } catch (error) {
             console.error("승인 실패:", error);
-            alert("승인 처리에 실패했습니다.");
+            alert(error?.response?.data?.message || "승인 처리에 실패했습니다.");
         }
     };
 
@@ -149,7 +155,7 @@ const ManagePage = () => {
             alert("신청을 거절했습니다.");
         } catch (error) {
             console.error("거절 실패:", error);
-            alert("거절 처리에 실패했습니다.");
+            alert(error?.response?.data?.message || "거절 처리에 실패했습니다.");
         }
     };
 
@@ -159,20 +165,9 @@ const ManagePage = () => {
         }
 
         try {
-            const matchedApplication = applicants.find(
-                (app) =>
-                    String(app.applicantId || app.applicant_id) === String(memberId) &&
-                    (app.status === "ACCEPTED" || app.status === "accepted")
-            );
-
-            if (!matchedApplication) {
-                alert("해당 팀원의 지원서 정보를 찾을 수 없습니다.");
-                return;
-            }
-
-            await applicationService.rejectApplication(
-                matchedApplication.applicationId || matchedApplication.application_id
-            );
+            // 수락된 지원서를 '거절'로 바꾸는 방식은 상태 전이 규칙(PENDING에서만 수락/거절, TS-04)에 막혀 409가 났다.
+            // 팀원 제외 전용 API를 쓴다.
+            await projectService.removeProjectMember(id, memberId);
 
             await refreshApplicants();
             await refreshMembers();
@@ -180,7 +175,7 @@ const ManagePage = () => {
             alert("팀원이 제외되었습니다.");
         } catch (error) {
             console.error("팀원 제외 실패:", error);
-            alert("팀원 제외에 실패했습니다.");
+            alert(error?.response?.data?.message || "팀원 제외에 실패했습니다.");
         }
     };
 
@@ -214,7 +209,7 @@ const ManagePage = () => {
             alert(nextStatus === PROJECT_STATUS.PROCEEDING ? "프로젝트가 시작되었습니다!" : "종료되었습니다. 리뷰를 남겨주세요.");
         } catch (error) {
             console.error("상태 변경 실패:", error);
-            alert("상태 변경에 실패했습니다.");
+            alert(error?.response?.data?.message || "상태 변경에 실패했습니다.");
         }
     };
 
@@ -241,7 +236,7 @@ const ManagePage = () => {
             alert("소중한 피드백이 저장되었습니다!");
         } catch (error) {
             console.error("리뷰 저장 실패:", error);
-            alert("리뷰 저장에 실패했습니다.");
+            alert(error?.response?.data?.message || "리뷰 저장에 실패했습니다.");
         }
     };
 
@@ -301,14 +296,14 @@ const ManagePage = () => {
 
                     {pendingApplicants.length > 0 ? (
                         <div className="applicant-list">
-                            {applicants.map((app) => (
-                                <div key={app.application_id} className="applicant-card">
+                            {pendingApplicants.map((app) => (
+                                <div key={app.applicationId || app.application_id} className="applicant-card">
                                     <div className="app-info">
                                         <span className="app-name">
                                             {app.applicantName || app.applicant_name || app.name || "이름 없음"}
                                         </span>
                                         <span className="app-role">
-                                            {app.support_role || app.role || "지원자"}
+                                            {app.supportRole || app.support_role || app.role || "지원자"}
                                         </span>
                                     </div>
                                     <div className="app-actions">

@@ -47,10 +47,24 @@ public class SecurityConfig {
                         .accessDeniedHandler(SecurityErrorResponder.forbiddenHandler())
                 )
 
+                // 기본 닫힘(deny by default): 아래에 명시한 공개 경로 외에는 모두 로그인 필요.
+                // 이전에는 anyRequest().permitAll()이라 토큰 없이도 글 수정·지원 수락이 가능했다 (TS-05)
+                // 소유권(작성자/본인) 검사는 URL만으로 판단할 수 없어 서비스 계층에서 한다.
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/", "/error", "/favicon.ico").permitAll()
-                        .anyRequest().permitAll()
+                        // Swagger UI / OpenAPI 문서
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                        // OAuth2 로그인 시작·콜백 (Spring Security가 처리)
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                        // 회원가입·로그인, 로그인 상태 확인(비로그인은 userId=0 응답), 소셜 로그인 URL
+                        .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/auth/test", "/api/auth/oauth2/url/**").permitAll()
+                        // 모집글 목록·상세·팀원 목록, 기술 스택 목록은 비로그인도 조회
+                        .requestMatchers(HttpMethod.GET, "/api/projects", "/api/projects/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/tech-stacks", "/api/tech-stacks/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/test").permitAll()
+                        .anyRequest().authenticated()
                 )
 
                 .oauth2Login(oauth2 -> oauth2

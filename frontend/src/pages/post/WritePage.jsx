@@ -291,28 +291,15 @@ function WritePage() {
                 navigate("/");
             } else {
                     console.log("전송 payload:", projectPayload);
+                    // 작성자를 팀원(팀장)으로 등록하는 것은 서버가 글 생성과 같은 트랜잭션에서 처리한다
                     savedProject = await projectService.createProject(projectPayload);
-
-                    const newProjectId = savedProject?.project_id || savedProject?.id;
-                    const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-             // ✅ 작성자를 자동으로 팀원에 추가
-             if (newProjectId && user.user_id) {
-             try {
-                await projectService.addProjectMember(newProjectId, user.user_id);
-                console.log("작성자 팀원 자동 등록 완료");
-             } catch (memberError) {
-                console.error("팀원 자동 등록 실패:", memberError);
-             // 글 등록은 성공했으므로 사용자에게 별도 알림 없음
-              }
-    }
 
     alert("모집 글이 성공적으로 등록되었습니다.");
     navigate("/");
 }
         } catch (error) {
             console.error("저장 실패:", error);
-            alert("저장 중 오류가 발생했습니다.");
+            alert(error?.response?.data?.message || "저장 중 오류가 발생했습니다.");
         } finally {
             setLoading(false);
         }

@@ -26,14 +26,9 @@ function DetailPage() {
 
                 // 내 글 여부 판별
                 const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
-                const authorName = data.author_name?.name || data.author_name;
+                // 이름 비교는 동명이인에 틀린다. 작성자 ID(leader_id)로 판별한다
                 const myPost =
-                    !!authorName &&
-                    (authorName === savedUser.name || authorName === savedUser.email);
-
-                console.log("authorName:", authorName);
-                console.log("savedUser.name:", savedUser.name);
-                console.log("isMyPost 결과:", myPost);
+                    !!savedUser.user_id && String(data.leader_id) === String(savedUser.user_id);
 
                 setIsMyPost(myPost);
 
@@ -86,7 +81,7 @@ function DetailPage() {
             navigate("/MyPage");
         } catch (error) {
             console.error("지원 취소 실패:", error);
-            alert("지원 취소에 실패했습니다.");
+            alert(error?.response?.data?.message || "지원 취소에 실패했습니다.");
         }
     };
 

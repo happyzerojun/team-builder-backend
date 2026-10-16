@@ -1,20 +1,19 @@
-﻿import api from "./api";
+import api from "./api";
 
 const API_URL = "/api/application";
 
-export const applicationService = {
-    apply: async (projectId, formData) => {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
+const hasToken = () => Boolean(localStorage.getItem("token"));
 
+export const applicationService = {
+    // 지원자는 서버가 JWT로 식별한다. applicant_id를 보내지 않는다 (TS-05)
+    apply: async (projectId, formData) => {
         const res = await api.post(API_URL, {
             project_id: projectId,
-            applicant_id: user.user_id,
             support_role: formData.supportRole,
             message: formData.message,
             experience: formData.experience,
             contactType: formData.contactType,
-            contactValue: formData.contactValue,
-            status: "PENDING"
+            contactValue: formData.contactValue
         });
 
         return res.data;
@@ -25,14 +24,13 @@ export const applicationService = {
         return res.data;
     },
 
+    // 비로그인 방문자는 호출하지 않는다(401 알림 방지)
     getMyApplications: async () => {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-        if (!user.user_id) {
+        if (!hasToken()) {
             return [];
         }
 
-        const res = await api.get(`${API_URL}/user/${user.user_id}`);
+        const res = await api.get(`${API_URL}/me`);
         return Array.isArray(res.data) ? res.data : [];
     },
 

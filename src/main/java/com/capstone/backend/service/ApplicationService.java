@@ -5,6 +5,10 @@ import com.capstone.backend.dto.ApplicationResponseDto;
 import com.capstone.backend.entity.Application;
 import com.capstone.backend.entity.Project;
 import com.capstone.backend.entity.User;
+import com.capstone.backend.global.exception.ConflictException;
+import com.capstone.backend.global.exception.ForbiddenException;
+import com.capstone.backend.global.exception.NotFoundException;
+import com.capstone.backend.global.exception.UnauthorizedException;
 import com.capstone.backend.repository.ApplicationRepository;
 import com.capstone.backend.repository.ProjectRepository;
 import com.capstone.backend.repository.UserRepository;
@@ -13,35 +17,47 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
+/**
+ * 지원서 도메인. 모든 메서드는 JWT의 email로 요청자를 식별한다.
+ * 이전에는 본문의 applicant_id·URL의 userId를 그대로 믿어 다른 사람 이름으로 지원하거나
+ * 남의 지원서를 수락/삭제할 수 있었다(IDOR) (TS-05)
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ApplicationService {
 
+    static final String ACCEPTED = "ACCEPTED";
+
     private final ApplicationRepository applicationRepository;
-    // 🚨 User와 Project 엔티티를 찾기 위해 두 레포지토리가 추가로 필요합니다!
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
 
     /**
-     * 1. 프로젝트 지원하기 (DB에 저장)
+     * 1. 프로젝트 지원하기. 지원자는 토큰의 사용자 (본문의 applicant_id는 무시)
      */
     @Transactional
-    public ApplicationResponseDto createApplication(ApplicationRequestDto.Create requestDto) {
-        // 이미 지원한 내역인지 검증 (선택)
-        if (applicationRepository.existsByApplicantIdAndProjectId(requestDto.getApplicant_id(), requestDto.getProject_id())) {
-            throw new IllegalArgumentException("이미 지원한 프로젝트입니다.");
+    public ApplicationResponseDto createApplication(String email, ApplicationRequestDto.Create requestDto) {
+        User applicant = currentUser(email);
+        if (requestDto.getProject_id() == null) {
+            throw new IllegalArgumentException("지원할 프로젝트가 필요합니다.");
+        }
+        Project project = projectRepository.findById(requestDto.getProject_id())
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 프로젝트입니다."));
+
+        if (isLeader(project, applicant.getId())) {
+            throw new ConflictException("본인이 작성한 모집글에는 지원할 수 없습니다.");
+        }
+        if (!project.isRecruiting()) {
+            throw new ConflictException("모집이 마감된 프로젝트입니다.");
+        }
+        // 빠른 실패용 조회. 동시 요청은 UNIQUE(applicant_id, project_id)가 최종 차단한다 (TS-04)
+        if (applicationRepository.existsByApplicantIdAndProjectId(applicant.getId(), project.getId())) {
+            throw new ConflictException("이미 지원한 프로젝트입니다.");
         }
 
-        // 🚨 객체 찾기: 전달받은 ID로 DB에서 실제 User와 Project 엔티티를 꺼내옵니다.
-        User applicant = userRepository.findById(requestDto.getApplicant_id())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
-        Project project = projectRepository.findById(requestDto.getProject_id())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프로젝트입니다."));
-
-        // DTO -> Entity 변환
         Application application = Application.builder()
                 .project(project)
                 .applicant(applicant)
@@ -53,76 +69,114 @@ public class ApplicationService {
                 .status("PENDING")
                 .build();
 
-        // DB에 저장
-        Application savedApplication = applicationRepository.save(application);
-
-        return convertToDto(savedApplication);
+        return convertToDto(applicationRepository.save(application));
     }
 
     /**
-     * 2. 지원 취소하기
+     * 2. 지원 취소: 지원자 본인만
      */
     @Transactional
-    public void deleteApplication(Long applicationId) {
+    public void deleteApplication(String email, Long applicationId) {
+        User me = currentUser(email);
         Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지원서입니다. ID: " + applicationId));
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 지원서입니다."));
 
+        if (!Objects.equals(application.getApplicant().getId(), me.getId())) {
+            throw new ForbiddenException("본인의 지원서만 취소할 수 있습니다.");
+        }
+        if (isLeader(application.getProject(), me.getId())) {
+            throw new ConflictException("팀장은 자신의 모집글에서 빠질 수 없습니다.");
+        }
         applicationRepository.delete(application);
     }
 
     /**
-     * 3. 유저별 지원 내역 조회
+     * 3. 내 지원 내역 (토큰의 사용자)
      */
-    public List<ApplicationResponseDto> getApplicationsByUserId(Long userId) {
-    List<Application> applications = applicationRepository.findByApplicantId(userId);
-    return applications.stream()
-            .map(app -> {
-                app.getApplicant().getName();
-                app.getProject().getTitle();
-                return convertToDto(app);
-            })
-            .collect(Collectors.toList());
-}
+    public List<ApplicationResponseDto> getMyApplications(String email) {
+        User me = currentUser(email);
+        return applicationRepository.findByApplicantId(me.getId()).stream()
+                .map(this::convertToDto)
+                .toList();
+    }
 
     /**
-     * 4. 프로젝트별 지원자 목록 조회
+     * 3-1. 기존 경로(/user/{userId}) 호환: 본인 것만 조회 가능
      */
-    public List<ApplicationResponseDto> getApplicationsByProjectId(Long projectId) {
-    List<Application> applications = applicationRepository.findByProjectId(projectId);
-    return applications.stream()
-            .map(app -> {
-                // LAZY 로딩 강제 초기화
-                app.getApplicant().getName();
-                app.getProject().getTitle();
-                return convertToDto(app);
-            })
-            .collect(Collectors.toList());
-}
+    public List<ApplicationResponseDto> getApplicationsByUserId(String email, Long userId) {
+        User me = currentUser(email);
+        if (!Objects.equals(me.getId(), userId)) {
+            throw new ForbiddenException("다른 사용자의 지원 내역은 조회할 수 없습니다.");
+        }
+        return getMyApplications(email);
+    }
 
     /**
-     * 5. 지원서 상태 변경 (수락/거절)
+     * 4. 프로젝트별 지원서 목록
+     * - 팀장: 전체(대기·수락·거절)
+     * - 수락된 팀원: 팀원(ACCEPTED) 지원서만 (대기 중인 지원자의 메시지는 노출하지 않음)
+     * - 그 외: 403
+     */
+    public List<ApplicationResponseDto> getApplicationsByProjectId(String email, Long projectId) {
+        User me = currentUser(email);
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 프로젝트입니다."));
+
+        List<Application> applications = applicationRepository.findByProjectId(projectId);
+        if (isLeader(project, me.getId())) {
+            return applications.stream().map(this::convertToDto).toList();
+        }
+        boolean member = applications.stream()
+                .anyMatch(a -> Objects.equals(a.getApplicant().getId(), me.getId()) && isAccepted(a));
+        if (!member) {
+            throw new ForbiddenException("프로젝트 팀장 또는 팀원만 볼 수 있습니다.");
+        }
+        return applications.stream().filter(ApplicationService::isAccepted).map(this::convertToDto).toList();
+    }
+
+    /**
+     * 5. 지원서 수락/거절: 모집글 작성자(팀장)만
      */
     @Transactional
-    public ApplicationResponseDto updateStatus(Long applicationId, String status) {
+    public ApplicationResponseDto updateStatus(String email, Long applicationId, String status) {
+        User me = currentUser(email);
         Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지원서입니다. ID: " + applicationId));
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 지원서입니다."));
+
+        Project project = application.getProject();
+        if (!isLeader(project, me.getId())) {
+            throw new ForbiddenException("모집글 작성자만 지원서를 처리할 수 있습니다.");
+        }
 
         application.updateStatus(status);
         return convertToDto(application);
     }
 
+    private User currentUser(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException("로그인 정보를 찾을 수 없습니다. 다시 로그인해주세요."));
+    }
+
+    static boolean isLeader(Project project, Long userId) {
+        return project.getLeader() != null && Objects.equals(project.getLeader().getId(), userId);
+    }
+
+    static boolean isAccepted(Application application) {
+        return application.getStatus() != null && ACCEPTED.equalsIgnoreCase(application.getStatus().trim());
+    }
+
     private ApplicationResponseDto convertToDto(Application application) {
-    return ApplicationResponseDto.builder()
-            .applicationId(application.getId())
-            .supportRole(application.getSupportRole())
-            .message(application.getMessage())
-            .status(application.getStatus())
-            .applicantId(application.getApplicant().getId())
-            .applicantName(application.getApplicant().getName())
-            .projectId(application.getProject().getId())
-            .projectTitle(application.getProject().getTitle())
-            .createdAt(application.getCreatedAt())
-            .updatedAt(application.getUpdatedAt())
-            .build();
-}
+        return ApplicationResponseDto.builder()
+                .applicationId(application.getId())
+                .supportRole(application.getSupportRole())
+                .message(application.getMessage())
+                .status(application.getStatus())
+                .applicantId(application.getApplicant().getId())
+                .applicantName(application.getApplicant().getName())
+                .projectId(application.getProject().getId())
+                .projectTitle(application.getProject().getTitle())
+                .createdAt(application.getCreatedAt())
+                .updatedAt(application.getUpdatedAt())
+                .build();
+    }
 }

@@ -2,6 +2,7 @@ package com.capstone.backend.service.ai;
 
 import com.capstone.backend.entity.TechStack;
 import com.capstone.backend.repository.TechStackRepository;
+import com.capstone.backend.service.event.TechStackCreatedEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +42,36 @@ class TechKeywordMatcherTest {
         assertThat(matcher.match("스프링 프로젝트 찾아줘")).contains(10L);
         assertThat(matcher.match("springboot 쓰는 곳")).contains(10L);
         verify(techStackRepository, times(2)).findAll();
+    }
+
+    @Test
+    @DisplayName("실행 중 새 기술 스택이 생기면(이벤트) 다시 적재해 바로 매칭된다 (TS-20)")
+    void reloadsOnTechStackCreated() {
+        when(techStackRepository.findAll())
+                .thenReturn(List.of(stack(1L, "Java", null)))
+                .thenReturn(List.of(stack(1L, "Java", null), stack(99L, "Zig", "지그")));
+        TechKeywordMatcher matcher = new TechKeywordMatcher(techStackRepository);
+        matcher.onApplicationReady();
+        assertThat(matcher.match("zig 프로젝트")).isEmpty();
+
+        matcher.onTechStackCreated(new TechStackCreatedEvent(99L, "Zig"));
+
+        assertThat(matcher.match("zig 프로젝트")).contains(99L);
+        assertThat(matcher.match("지그 쓰는 팀")).contains(99L);
+    }
+
+    @Test
+    @DisplayName("주기 재적재가 실패하면 기존 맵을 그대로 쓴다")
+    void periodicReloadFailureKeepsPreviousMap() {
+        when(techStackRepository.findAll())
+                .thenReturn(List.of(stack(1L, "Java", null)))
+                .thenThrow(new IllegalStateException("DB down"));
+        TechKeywordMatcher matcher = new TechKeywordMatcher(techStackRepository);
+        matcher.onApplicationReady();
+
+        matcher.reloadPeriodically();
+
+        assertThat(matcher.match("java")).contains(1L);
     }
 
     @Test

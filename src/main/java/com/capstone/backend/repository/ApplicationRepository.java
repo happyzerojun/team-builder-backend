@@ -2,6 +2,7 @@ package com.capstone.backend.repository;
 
 import com.capstone.backend.entity.Application;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +20,8 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     @Query("SELECT a FROM Application a JOIN FETCH a.applicant JOIN FETCH a.project WHERE a.project.id = :projectId")
     List<Application> findByProjectId(@Param("projectId") Long projectId);
 
+    // 팀원 목록·리뷰 대상: 지원자 이름을 쓰므로 applicant를 함께 가져온다 (TS-13)
+    @EntityGraph(attributePaths = "applicant")
     List<Application> findByProjectIdAndStatus(Long projectId, String status);
 
     boolean existsByApplicantIdAndProjectId(Long applicantId, Long projectId);

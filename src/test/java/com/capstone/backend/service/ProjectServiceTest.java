@@ -7,6 +7,7 @@ import com.capstone.backend.entity.User;
 import com.capstone.backend.global.exception.ConflictException;
 import com.capstone.backend.global.exception.ForbiddenException;
 import com.capstone.backend.repository.ApplicationRepository;
+import com.capstone.backend.repository.ProjectPositionRepository;
 import com.capstone.backend.repository.ProjectRepository;
 import com.capstone.backend.repository.ProjectTechStackRepository;
 import com.capstone.backend.repository.ReviewRepository;
@@ -42,6 +43,8 @@ class ProjectServiceTest {
     @Mock private ProjectTechStackRepository projectTechStackRepository;
     @Mock private ApplicationRepository applicationRepository;
     @Mock private ReviewRepository reviewRepository;
+    @Mock private ProjectPositionRepository projectPositionRepository;
+    @Mock private PositionSeats positionSeats;
 
     @InjectMocks
     private ProjectService projectService;

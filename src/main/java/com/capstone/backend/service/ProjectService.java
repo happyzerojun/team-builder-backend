@@ -5,6 +5,7 @@ import com.capstone.backend.dto.ProjectRequestDto;
 import com.capstone.backend.dto.ProjectResponseDto;
 import com.capstone.backend.entity.Application;
 import com.capstone.backend.entity.Project;
+import com.capstone.backend.entity.ProjectPosition;
 import com.capstone.backend.entity.ProjectStatus;
 import com.capstone.backend.entity.ProjectTechStack;
 import com.capstone.backend.entity.TechStack;
@@ -14,6 +15,7 @@ import com.capstone.backend.global.exception.ForbiddenException;
 import com.capstone.backend.global.exception.NotFoundException;
 import com.capstone.backend.global.exception.UnauthorizedException;
 import com.capstone.backend.repository.ApplicationRepository;
+import com.capstone.backend.repository.ProjectPositionRepository;
 import com.capstone.backend.repository.ProjectRepository;
 import com.capstone.backend.repository.ProjectTechStackRepository;
 import com.capstone.backend.repository.ReviewRepository;
@@ -46,6 +48,8 @@ public class ProjectService {
     private final ProjectTechStackRepository projectTechStackRepository;
     private final ApplicationRepository applicationRepository;
     private final ReviewRepository reviewRepository;
+    private final ProjectPositionRepository projectPositionRepository;
+    private final PositionSeats positionSeats;
 
     /**
      * 작성자는 토큰의 사용자(본문의 leader_id는 무시).
@@ -80,6 +84,21 @@ public class ProjectService {
                     .toList();
 
             projectTechStackRepository.saveAll(projectTechStacks);
+        }
+
+        if (request.getPositions() != null && !request.getPositions().isEmpty()) {
+            List<ProjectPosition> positions = request.getPositions().stream()
+                    .map(p -> ProjectPosition.builder()
+                            .project(savedProject)
+                            .roleName(p.getRoleName().trim())
+                            .requiredCount(p.getRequiredCount())
+                            .currentCount(0)
+                            .build())
+                    .toList();
+            if (positions.stream().map(ProjectPosition::getRoleName).distinct().count() != positions.size()) {
+                throw new IllegalArgumentException("같은 이름의 포지션을 두 번 등록할 수 없습니다.");
+            }
+            savedProject.getProjectPositions().addAll(projectPositionRepository.saveAll(positions));
         }
 
         applicationRepository.save(Application.builder()
@@ -151,9 +170,15 @@ public class ProjectService {
         if (Objects.equals(project.getLeader().getId(), memberId)) {
             throw new ConflictException("팀장은 팀에서 제외할 수 없습니다.");
         }
-        Application application = applicationRepository
+        Long applicationId = applicationRepository
                 .findByProjectIdAndApplicantIdAndStatus(projectId, memberId, ApplicationService.ACCEPTED)
+                .orElseThrow(() -> new NotFoundException("해당 팀원을 찾을 수 없습니다."))
+                .getId();
+        // 잠근 뒤 다시 확인: 그 사이 본인이 지원을 취소했을 수 있다
+        Application application = applicationRepository.findByIdForUpdate(applicationId)
+                .filter(Application::isAccepted)
                 .orElseThrow(() -> new NotFoundException("해당 팀원을 찾을 수 없습니다."));
+        positionSeats.releaseIfAccepted(application);   // 정원 -1 (TS-06)
         applicationRepository.delete(application);
     }
 

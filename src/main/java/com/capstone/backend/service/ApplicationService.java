@@ -34,6 +34,7 @@ public class ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
+    private final PositionSeats positionSeats;
 
     /**
      * 1. 프로젝트 지원하기. 지원자는 토큰의 사용자 (본문의 applicant_id는 무시)
@@ -57,6 +58,8 @@ public class ApplicationService {
         if (applicationRepository.existsByApplicantIdAndProjectId(applicant.getId(), project.getId())) {
             throw new ConflictException("이미 지원한 프로젝트입니다.");
         }
+        // 포지션을 정해 둔 모집글이면 그 포지션 중 하나로, 정원이 남은 곳에만 지원할 수 있다 (TS-06)
+        positionSeats.checkApplicable(project.getId(), requestDto.getSupport_role());
 
         Application application = Application.builder()
                 .project(project)
@@ -78,7 +81,7 @@ public class ApplicationService {
     @Transactional
     public void deleteApplication(String email, Long applicationId) {
         User me = currentUser(email);
-        Application application = applicationRepository.findById(applicationId)
+        Application application = applicationRepository.findByIdForUpdate(applicationId)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 지원서입니다."));
 
         if (!Objects.equals(application.getApplicant().getId(), me.getId())) {
@@ -87,6 +90,7 @@ public class ApplicationService {
         if (isLeader(application.getProject(), me.getId())) {
             throw new ConflictException("팀장은 자신의 모집글에서 빠질 수 없습니다.");
         }
+        positionSeats.releaseIfAccepted(application);   // 수락된 팀원이 나가면 정원 -1 (TS-06)
         applicationRepository.delete(application);
     }
 
@@ -140,7 +144,8 @@ public class ApplicationService {
     @Transactional
     public ApplicationResponseDto updateStatus(String email, Long applicationId, String status) {
         User me = currentUser(email);
-        Application application = applicationRepository.findById(applicationId)
+        // 지원서 행 잠금: 같은 지원서 수락 요청이 동시에 와도 한 건만 PENDING → ACCEPTED를 본다 (TS-06)
+        Application application = applicationRepository.findByIdForUpdate(applicationId)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 지원서입니다."));
 
         Project project = application.getProject();
@@ -148,7 +153,13 @@ public class ApplicationService {
             throw new ForbiddenException("모집글 작성자만 지원서를 처리할 수 있습니다.");
         }
 
-        application.updateStatus(status);
+        boolean changed = application.updateStatus(status);
+        if (changed && application.isAccepted()) {
+            if (!project.isRecruiting()) {
+                throw new ConflictException("모집 중인 프로젝트에서만 지원서를 수락할 수 있습니다.");
+            }
+            positionSeats.take(project.getId(), application.getSupportRole());
+        }
         return convertToDto(application);
     }
 
@@ -162,7 +173,7 @@ public class ApplicationService {
     }
 
     static boolean isAccepted(Application application) {
-        return application.getStatus() != null && ACCEPTED.equalsIgnoreCase(application.getStatus().trim());
+        return application.isAccepted();
     }
 
     private ApplicationResponseDto convertToDto(Application application) {

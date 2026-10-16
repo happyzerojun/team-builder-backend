@@ -26,7 +26,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +45,9 @@ class ApplicationServiceTest {
 
     @Mock
     private ProjectRepository projectRepository;
+
+    @Mock
+    private PositionSeats positionSeats;
 
     @InjectMocks
     private ApplicationService applicationService;
@@ -106,18 +111,74 @@ class ApplicationServiceTest {
     void onlyLeaderCanChangeStatus() {
         Application pending = application(applicant, "PENDING");
         when(userRepository.findByEmail("other@example.com")).thenReturn(Optional.of(stranger));
-        when(applicationRepository.findById(100L)).thenReturn(Optional.of(pending));
+        when(applicationRepository.findByIdForUpdate(100L)).thenReturn(Optional.of(pending));
 
         assertThatThrownBy(() -> applicationService.updateStatus("other@example.com", 100L, "ACCEPTED"))
                 .isInstanceOf(ForbiddenException.class);
         assertThat(pending.getStatus()).isEqualTo("PENDING");
+        verify(positionSeats, never()).take(any(), any());
+    }
+
+    @Test
+    @DisplayName("TS-06: 수락하면 포지션 정원을 차지하고, 같은 요청 반복(멱등)은 다시 세지 않는다")
+    void acceptTakesSeatOnce() {
+        Application pending = Application.builder().id(100L).project(project).applicant(applicant)
+                .supportRole("백엔드").status("PENDING").build();
+        when(userRepository.findByEmail("leader@example.com")).thenReturn(Optional.of(leader));
+        when(applicationRepository.findByIdForUpdate(100L)).thenReturn(Optional.of(pending));
+
+        applicationService.updateStatus("leader@example.com", 100L, "ACCEPTED");
+        applicationService.updateStatus("leader@example.com", 100L, "ACCEPTED");
+
+        verify(positionSeats, times(1)).take(10L, "백엔드");
+        assertThat(pending.getStatus()).isEqualTo("ACCEPTED");
+    }
+
+    @Test
+    @DisplayName("TS-06: 정원 초과(조건부 UPDATE 0행)는 409로 전파된다")
+    void fullPositionIs409() {
+        Application pending = Application.builder().id(100L).project(project).applicant(applicant)
+                .supportRole("백엔드").status("PENDING").build();
+        when(userRepository.findByEmail("leader@example.com")).thenReturn(Optional.of(leader));
+        when(applicationRepository.findByIdForUpdate(100L)).thenReturn(Optional.of(pending));
+        doThrow(new ConflictException("'백엔드' 포지션은 정원이 찼습니다.")).when(positionSeats).take(10L, "백엔드");
+
+        assertThatThrownBy(() -> applicationService.updateStatus("leader@example.com", 100L, "ACCEPTED"))
+                .isInstanceOf(ConflictException.class);
+    }
+
+    @Test
+    @DisplayName("TS-06: 모집이 끝난(진행중) 프로젝트에서는 수락할 수 없다")
+    void cannotAcceptAfterRecruiting() {
+        Project proceeding = Project.builder().id(12L).status("진행중").leader(leader).build();
+        Application pending = Application.builder().id(100L).project(proceeding).applicant(applicant).status("PENDING").build();
+        when(userRepository.findByEmail("leader@example.com")).thenReturn(Optional.of(leader));
+        when(applicationRepository.findByIdForUpdate(100L)).thenReturn(Optional.of(pending));
+
+        assertThatThrownBy(() -> applicationService.updateStatus("leader@example.com", 100L, "ACCEPTED"))
+                .isInstanceOf(ConflictException.class);
+        verify(positionSeats, never()).take(any(), any());
+    }
+
+    @Test
+    @DisplayName("TS-06: 수락된 지원자가 취소하면 정원을 돌려준다")
+    void cancelReleasesSeat() {
+        Application accepted = Application.builder().id(100L).project(project).applicant(applicant)
+                .supportRole("백엔드").status("ACCEPTED").build();
+        when(userRepository.findByEmail("me@example.com")).thenReturn(Optional.of(applicant));
+        when(applicationRepository.findByIdForUpdate(100L)).thenReturn(Optional.of(accepted));
+
+        applicationService.deleteApplication("me@example.com", 100L);
+
+        verify(positionSeats).releaseIfAccepted(accepted);
+        verify(applicationRepository).delete(accepted);
     }
 
     @Test
     @DisplayName("지원 취소는 지원자 본인만")
     void onlyApplicantCanCancel() {
         when(userRepository.findByEmail("other@example.com")).thenReturn(Optional.of(stranger));
-        when(applicationRepository.findById(100L)).thenReturn(Optional.of(application(applicant, "PENDING")));
+        when(applicationRepository.findByIdForUpdate(100L)).thenReturn(Optional.of(application(applicant, "PENDING")));
 
         assertThatThrownBy(() -> applicationService.deleteApplication("other@example.com", 100L))
                 .isInstanceOf(ForbiddenException.class);

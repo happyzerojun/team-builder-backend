@@ -63,8 +63,11 @@ public class Application {
     /**
      * 지원서 상태 전이: PENDING → ACCEPTED / REJECTED 만 허용한다.
      * 이전에는 아무 문자열이나 저장돼 오타("ACEPTED")나 거절→수락 같은 역행이 가능했다 (TS-04)
+     *
+     * @return 상태가 실제로 바뀌었으면 true, 같은 상태 재요청(멱등)이면 false.
+     *         호출 측은 true일 때만 정원을 늘린다(버튼 연타로 두 번 세지 않게) (TS-06)
      */
-    public void updateStatus(String newStatus) {
+    public boolean updateStatus(String newStatus) {
         if (newStatus == null) {
             throw new IllegalArgumentException("변경할 상태가 필요합니다.");
         }
@@ -74,11 +77,16 @@ public class Application {
         }
         String current = this.status == null ? "PENDING" : this.status.trim().toUpperCase(); // 예전 소문자 데이터 호환
         if (next.equals(current)) {
-            return; // 같은 상태로의 재요청은 멱등 처리 (버튼 연타)
+            return false; // 같은 상태로의 재요청은 멱등 처리 (버튼 연타)
         }
         if (!"PENDING".equals(current) || next.equals("PENDING")) {
             throw new IllegalStateException("대기 중인 지원서만 수락하거나 거절할 수 있습니다. 현재 상태: " + current);
         }
         this.status = next;
+        return true;
+    }
+
+    public boolean isAccepted() {
+        return status != null && "ACCEPTED".equalsIgnoreCase(status.trim());
     }
 }

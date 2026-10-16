@@ -16,7 +16,10 @@ public record ProjectResponseDto(
         String meetingType,
         Boolean isLocalOnly,
 
-        List<TechStackDto> techStacks
+        List<TechStackDto> techStacks,
+
+        // 포지션별 정원/현재 인원 (포지션을 정하지 않은 글은 빈 목록)
+        List<PositionDto> positions
 ) {
     public static ProjectResponseDto from(Project project) {
         return new ProjectResponseDto(
@@ -39,7 +42,11 @@ public record ProjectResponseDto(
                                     projectTechStack.getTechStack().getId(),
                                     projectTechStack.getTechStack().getName()
                             ))
-                            .toList()
+                            .toList(),
+
+                project.getProjectPositions() == null
+                        ? List.of()
+                        : project.getProjectPositions().stream().map(PositionDto::from).toList()
         );
     }
 }

@@ -1,5 +1,6 @@
 package com.capstone.backend.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -35,4 +36,8 @@ public class ProjectRequestDto {
     private String meetingType;
     private Boolean isLocalOnly;
     private List<Long> techStackIds;
+
+    /** 선택: 포지션별 모집 인원. 생성 시에만 반영되고, 수정 요청에서는 무시한다 */
+    @Valid
+    private List<PositionRequestDto> positions;
 }

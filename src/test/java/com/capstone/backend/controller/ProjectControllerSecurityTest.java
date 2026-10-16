@@ -68,7 +68,7 @@ class ProjectControllerSecurityTest {
     }
 
     private static ProjectResponseDto dto() {
-        return new ProjectResponseDto(1L, "제목", "내용", "온라인", "모집중", 7L, "작성자", "3", null, false, List.of());
+        return new ProjectResponseDto(1L, "제목", "내용", "온라인", "모집중", 7L, "작성자", "3", null, false, List.of(), List.of());
     }
 
     @Test

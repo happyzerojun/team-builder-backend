@@ -4,7 +4,7 @@ import com.capstone.backend.dto.AiRecommendResponse;
 import com.capstone.backend.dto.RecommendationDto;
 import com.capstone.backend.entity.Project;
 import com.capstone.backend.entity.TechStack;
-import com.capstone.backend.entity.User;
+import com.capstone.backend.global.exception.UnauthorizedException;
 import com.capstone.backend.repository.ProjectRepository;
 import com.capstone.backend.repository.TechStackRepository;
 import com.capstone.backend.repository.UserRepository;
@@ -73,10 +73,10 @@ public class AiService {
     }
 
     @Transactional(readOnly = true)
-    public AiRecommendResponse getRecommendation(Long userId, String userPrompt) {
-        // 1. 유저 정보 조회
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
+    public AiRecommendResponse getRecommendation(String email, String userPrompt) {
+        // 1. 요청자 확인 (JWT의 email). 탈퇴 등으로 없으면 401
+        userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException("로그인 정보를 찾을 수 없습니다. 다시 로그인해주세요."));
 
         // 2. 동적 기술 스택 매칭
         // 가장 긴 키워드부터 매칭한다. 이전에는 HashMap 순회 순서의 첫 매칭이라

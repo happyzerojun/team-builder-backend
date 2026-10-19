@@ -24,6 +24,7 @@
 | TS-18 | 2026-10-16 | API | 모집글 수정 시 기술 스택이 저장되지 않음, 생성 응답의 기술 스택이 빈 목록 | 해결 |
 | TS-19 | 2026-10-16 | 도메인 | 화면에 포지션 입력이 없어 정원 제한이 API로 만든 글에만 적용 | 해결 (`support_role` 문자열 연결 유지) |
 | TS-20 | 2026-10-16 | AI | 실행 중 새로 생긴 기술 스택이 재시작 전까지 키워드 맵에 없음 | 해결 |
+| TS-21 | 2026-10-19 | 운영·보안 | `.env`에 넣은 OAuth·JWT 값이 컨테이너에 전달되지 않음 | 해결 |
 
 ---
 
@@ -193,3 +194,13 @@
   - 주기 재적재(`@Scheduled`, 기본 10분, `TECH_KEYWORDS_RELOAD_INTERVAL_MS`): 이벤트가 닿지 않는 변경(DB 직접 수정, 서버 여러 대일 때 다른 인스턴스에서 생긴 스택)을 따라잡음. 실패하면 기존 맵 유지.
 - **트레이드오프:** 이벤트는 같은 JVM 안에서만 전달됨. 서버가 여러 대면 다른 인스턴스는 주기 재적재까지 최대 10분 늦음(즉시 반영하려면 Redis pub/sub 등 필요). 재적재는 기술 스택 전체 조회(수십~수백 행)라 비용이 작고, 맵을 통째로 교체해 읽는 쪽은 잠금이 없음.
 - **재발 방지:** `TechKeywordMatcherTest`(이벤트 후 매칭, 주기 재적재 실패 시 유지), `TechKeywordRefreshIntegrationTest`(MySQL: 프로필 저장 → 재시작 없이 매칭).
+
+### TS-21 `.env`에 넣은 OAuth·JWT 값이 컨테이너에 전달되지 않음
+- **증상(분석):** TS-15 뒤 Google 클라이언트를 재발급해 `.env`에 `GOOGLE_CLIENT_ID`·`GOOGLE_CLIENT_SECRET`을 넣었지만, `docker compose up`으로 띄운 백엔드는 `dummy-google-client-id`로 동작해 Google 로그인이 `invalid_client`로 실패하는 구조. 같은 이유로 `JWT_SECRET`도 전달되지 않아 저장소에 공개된 로컬용 기본 키로 토큰을 서명함 → 누구나 임의 사용자의 JWT를 만들 수 있음.
+- **원인:** Docker Compose는 `.env`를 compose 파일의 `${}` 치환에만 쓰고, 컨테이너 환경변수로는 `environment:`(또는 `env_file:`)에 적은 것만 넘김. `docker-compose.yml`에는 DB·Gemini·DDL 값만 있었음. Spring Boot도 `.env` 파일을 직접 읽지 않음. `application.yml`의 기본값(`${GOOGLE_CLIENT_ID:dummy…}`, `${JWT_SECRET:local-dev-only…}`) 때문에 오류 없이 기동해 문제가 드러나지 않음.
+- **해결:**
+  - `backend.environment`에 `GOOGLE_CLIENT_ID`·`GOOGLE_CLIENT_SECRET`·`JWT_SECRET`·`OAUTH2_REDIRECT_URI` 추가. 앞의 셋은 `${VAR:?메시지}`로, 값이 없으면 compose가 기동 자체를 거부함(조용히 공개 기본값으로 뜨는 것보다 실패가 안전).
+  - 소셜 로그인은 Google만 제공하기로 해 로그인 화면의 카카오 버튼 제거. 백엔드의 Kakao·Naver 등록은 dummy 값으로 남아 있지만 화면에서 진입 경로가 없음.
+  - `.env.example`에 새 키와 생성 방법 추가.
+- **트레이드오프:** `env_file: .env`로 통째로 넘기면 짧지만, DB 루트 비밀번호처럼 백엔드에 필요 없는 값까지 들어가고 어떤 값이 필요한지 파일만 봐서는 알 수 없음. 필요한 키만 명시.
+- **재발 방지:** `docker compose config`로 값이 없을 때 기동 거부, 값이 있을 때 컨테이너 환경에 들어가는지 확인. 운영에서는 기본값 없는 프로필(`application-prod.yml`)로 필수 값을 강제하는 것이 다음 단계.

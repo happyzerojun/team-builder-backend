@@ -50,18 +50,6 @@
     margin-top: 10px;
 }
 
-.kakao-btn {
-    width: 100%;
-    padding: 12px;
-    background-color: #FEE500;
-    color: #3C1E1E;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
 .google-btn {
     width: 100%;
     padding: 12px;

@@ -10,15 +10,10 @@ public final class OAuth2UserInfoFactory {
     private OAuth2UserInfoFactory() {
     }
 
+    // 소셜 로그인은 Google만 운영해요. 제공자를 늘리면 OAuth2UserInfo 구현을 추가하고 여기서 분기해요 (TS-21)
     public static OAuth2UserInfo getOAuth2UserInfo(String registrationId, Map<String, Object> attributes) {
         if ("google".equalsIgnoreCase(registrationId)) {
             return new GoogleOAuth2UserInfo(attributes);
-        }
-        if ("kakao".equalsIgnoreCase(registrationId)) {
-            return new KakaoOAuth2UserInfo(attributes);
-        }
-        if ("naver".equalsIgnoreCase(registrationId)) {
-            return new NaverOAuth2UserInfo(attributes);
         }
 
         throw new OAuth2AuthenticationException(new OAuth2Error("unsupported_provider"),

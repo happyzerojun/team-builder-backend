@@ -200,7 +200,9 @@
 - **원인:** Docker Compose는 `.env`를 compose 파일의 `${}` 치환에만 쓰고, 컨테이너 환경변수로는 `environment:`(또는 `env_file:`)에 적은 것만 넘김. `docker-compose.yml`에는 DB·Gemini·DDL 값만 있었음. Spring Boot도 `.env` 파일을 직접 읽지 않음. `application.yml`의 기본값(`${GOOGLE_CLIENT_ID:dummy…}`, `${JWT_SECRET:local-dev-only…}`) 때문에 오류 없이 기동해 문제가 드러나지 않음.
 - **해결:**
   - `backend.environment`에 `GOOGLE_CLIENT_ID`·`GOOGLE_CLIENT_SECRET`·`JWT_SECRET`·`OAUTH2_REDIRECT_URI` 추가. 앞의 셋은 `${VAR:?메시지}`로, 값이 없으면 compose가 기동 자체를 거부함(조용히 공개 기본값으로 뜨는 것보다 실패가 안전).
-  - 소셜 로그인은 Google만 제공하기로 해 로그인 화면의 카카오 버튼 제거. 백엔드의 Kakao·Naver 등록은 dummy 값으로 남아 있지만 화면에서 진입 경로가 없음.
+  - 소셜 로그인은 Google만 운영하기로 해 Kakao·Naver를 제거: 로그인 화면 버튼, `KakaoOAuth2UserInfo`·`NaverOAuth2UserInfo`, 팩토리 분기, `application.yml` 등록·provider 블록. 이제 `/oauth2/authorization/kakao`는 등록되지 않은 경로라 로그인 흐름이 시작되지 않고, 팩토리도 `unsupported_provider`로 거절.
+  - `AuthProvider`의 `KAKAO`·`NAVER` 값은 `@Deprecated`로 남김. `provider` 컬럼이 `EnumType.STRING`이라 기존 행에 그 값이 있으면, enum에서 지우는 순간 해당 사용자를 조회할 때 `IllegalArgumentException`이 남. 운영 DB에 ``SELECT provider, COUNT(*) FROM `user` GROUP BY provider``로 0건을 확인한 뒤 지울 수 있음.
+  - 옛 Kakao REST 키는 공개 이력(TS-15)에 남아 있으므로 콘솔에서 재발급(또는 앱 삭제).
   - `.env.example`에 새 키와 생성 방법 추가.
 - **트레이드오프:** `env_file: .env`로 통째로 넘기면 짧지만, DB 루트 비밀번호처럼 백엔드에 필요 없는 값까지 들어가고 어떤 값이 필요한지 파일만 봐서는 알 수 없음. 필요한 키만 명시.
-- **재발 방지:** `docker compose config`로 값이 없을 때 기동 거부, 값이 있을 때 컨테이너 환경에 들어가는지 확인. 운영에서는 기본값 없는 프로필(`application-prod.yml`)로 필수 값을 강제하는 것이 다음 단계.
+- **재발 방지:** `CustomOAuth2UserServiceTest.rejectsRemovedProviders`(제거한 제공자 거절). `docker compose config`로 값이 없을 때 기동 거부, 값이 있을 때 컨테이너 환경에 들어가는지 확인. 운영에서는 기본값 없는 프로필(`application-prod.yml`)로 필수 값을 강제하는 것이 다음 단계.

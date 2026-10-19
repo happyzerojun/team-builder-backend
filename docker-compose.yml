@@ -35,6 +35,12 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       # 스키마 자동 변경 정책 (TS-14). 운영 DB 스키마를 맞춘 뒤 .env에서 validate로 바꾼다
       - JPA_DDL_AUTO=${JPA_DDL_AUTO:-update}
+      # compose는 .env를 ${} 치환에만 쓰고 컨테이너에 자동으로 넘기지 않는다. 여기 적은 값만 백엔드에 들어간다 (TS-21)
+      # 값이 없으면 application.yml의 공개된 기본값(dummy·로컬용 JWT 키)으로 기동하므로, 필수 값은 :?로 기동을 막는다
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:?.env에 GOOGLE_CLIENT_ID를 설정하세요}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:?.env에 GOOGLE_CLIENT_SECRET을 설정하세요}
+      - JWT_SECRET=${JWT_SECRET:?.env에 JWT_SECRET을 설정하세요 (32바이트 이상 랜덤)}
+      - OAUTH2_REDIRECT_URI=${OAUTH2_REDIRECT_URI:-http://localhost:5173/oauth/callback}
     restart: on-failure
     networks:
       - app-network

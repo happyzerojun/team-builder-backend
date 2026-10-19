@@ -24,7 +24,7 @@
 
 | 구분 | 기능 |
 | --- | --- |
-| **회원** | 이메일 회원가입/로그인, **Google · Kakao · Naver 소셜 로그인**, 기술 스택 · 지역 · 소개 등 프로필 관리 |
+| **회원** | 이메일 회원가입/로그인, **Google 소셜 로그인**(Kakao · Naver는 코드로 지원, 화면 미노출), 기술 스택 · 지역 · 소개 등 프로필 관리 |
 | **모집글** | 제목 · 내용 · 지역 · 기간 · 대면 여부 · 기술 스택 · **모집 포지션(역할 · 인원)**을 담은 모집글 작성/수정, 페이지네이션 조회, 내가 쓴 글 조회, 모집 상태 변경 |
 | **지원** | 포지션 · 경험 · 연락처를 담은 지원서 제출, 중복 지원 차단, 팀장의 수락 / 거절(포지션 정원까지) |
 | **팀 관리** | 수락된 지원자로 팀원 목록 구성, 팀원 추가 · 제외 |
@@ -38,7 +38,7 @@ flowchart LR
     FE[React SPA] -->|REST + JWT| BE[Spring Boot API<br/>AWS EC2 · Docker]
     BE --> DB[(MySQL 8)]
     BE -->|프롬프트 + 후보 프로젝트| AI[Google Gemini 2.5 Flash]
-    BE <-->|OAuth2| SNS[Google · Kakao · Naver]
+    BE <-->|OAuth2| SNS[Google<br/>Kakao · Naver는 코드만]
 ```
 
 ## 🛠 기술 스택
@@ -133,7 +133,7 @@ erDiagram
 ## 🔐 인증 · 공통 처리 (팀 구현)
 
 - 이메일 로그인과 OAuth2 소셜 로그인 모두 **최종적으로 같은 JWT를 발급**해 이후 요청은 동일한 필터로 인증합니다.
-- 제공자마다 다른 사용자 정보 응답 구조(Kakao의 중첩 객체, Naver의 `response` 래핑)를 `OAuth2UserInfo` 인터페이스와 팩토리로 추상화했습니다.
+- 제공자마다 다른 사용자 정보 응답 구조(Kakao의 중첩 객체, Naver의 `response` 래핑)를 `OAuth2UserInfo` 인터페이스와 팩토리로 추상화했습니다. 현재 화면에는 **Google 로그인만** 노출하고, Kakao · Naver는 키를 설정하고 버튼을 추가하면 같은 흐름으로 켤 수 있습니다. ([TS-21](docs/troubleshooting.md#ts-21-env에-넣은-oauthjwt-값이-컨테이너에-전달되지-않음))
 - 소셜 로그인 시 같은 이메일의 기존 계정이 있으면 새로 만들지 않고 연동하며, 소셜 계정으로 비밀번호 로그인을 시도하면 거절합니다.
 - **인가는 기본 닫힘**입니다. 모집글 · 기술 스택 조회, 로그인 · 회원가입, OAuth2, Swagger만 공개하고 나머지는 로그인이 필요합니다. 요청자는 요청 본문 · URL의 ID가 아니라 JWT에서만 꺼내고, 글 수정 · 지원 수락은 작성자만, 지원 취소는 지원자 본인만 할 수 있도록 서비스 계층에서 소유권을 검사합니다. ([TS-05](docs/troubleshooting.md#ts-05-인가-없이-배포된-api))
 - `@RestControllerAdvice`로 예외를 한 곳에서 처리해 `{ "code": "NOT_FOUND", "message": "..." }` 형태로 응답을 통일했습니다. (검증 실패 400, 인증 실패 401, 권한 없음 403, 없음 404, 충돌 409, 그 외 500 고정 문구) Security 필터 단계의 401/403도 같은 형식입니다.
@@ -167,7 +167,9 @@ docker compose up --build
 
 - 프론트엔드: http://localhost:5173
 - API 문서(Swagger UI): http://localhost:8080/swagger-ui/index.html
-- 소셜 로그인을 쓰려면 `src/main/resources/application-local.yml.example`을 참고해 OAuth 클라이언트 정보를 설정하고, 각 제공자 콘솔에 백엔드 리디렉션 URI(`http://localhost:8080/login/oauth2/code/{google|kakao|naver}`)를 등록합니다. 로그인 성공 후에는 `OAUTH2_REDIRECT_URI`(기본 `http://localhost:5173/oauth/callback`)로 JWT가 전달됩니다.
+- 실행 전 `.env.example`을 `.env`로 복사해 `GOOGLE_CLIENT_ID` · `GOOGLE_CLIENT_SECRET` · `JWT_SECRET`을 채웁니다. 셋 중 하나라도 비어 있으면 `docker compose`가 기동을 거부합니다. compose는 `.env`를 컨테이너에 자동으로 넘기지 않으므로 새 값은 `docker-compose.yml`의 `backend.environment`에도 추가해야 합니다. ([TS-21](docs/troubleshooting.md#ts-21-env에-넣은-oauthjwt-값이-컨테이너에-전달되지-않음))
+- compose 없이 `./gradlew bootRun`으로 띄울 때는 Spring이 `.env`를 읽지 않으므로, `application-local.yml.example`을 `application-local.yml`(커밋 제외)로 복사해 값을 넣고 `local` 프로필로 실행합니다.
+- Google Cloud Console의 승인된 리디렉션 URI에 `http://localhost:8080/login/oauth2/code/google`(배포 시 백엔드 주소로)을 등록합니다. 로그인 성공 후에는 `OAUTH2_REDIRECT_URI`(기본 `http://localhost:5173/oauth/callback`)로 JWT가 전달됩니다.
 - 스키마 자동 변경은 `JPA_DDL_AUTO`(기본 `update`)로 조정합니다. 운영은 스키마 확인 후 `validate`를 권장합니다. ([TS-14](docs/troubleshooting.md#ts-14-ddl-auto-update가-운영-스키마를-직접-변경-부분-해결)) `update`는 유니크 제약 추가가 실패해도 경고만 남기므로, 기존 데이터에 중복 지원 · 중복 리뷰가 없는지 먼저 확인합니다. ([TS-16](docs/troubleshooting.md#ts-16-리뷰-중복을-조회로만-막음))
 - AI 키워드 맵 주기 재적재 간격은 `TECH_KEYWORDS_RELOAD_INTERVAL_MS`(기본 600000 = 10분)입니다.
 

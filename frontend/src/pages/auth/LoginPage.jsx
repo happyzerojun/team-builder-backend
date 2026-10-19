@@ -24,12 +24,10 @@ const LoginPage = ({ onLoginSuccess }) => {
     };
 
     // 소셜 로그인은 백엔드(Spring Security OAuth2)가 처리하고, 성공하면 /oauth/callback 으로 JWT를 넘겨준다.
-    // 클라이언트 시크릿을 프론트 코드에 두지 않는다 (TS-15)
+    // 클라이언트 시크릿을 프론트 코드에 두지 않는다 (TS-15). 소셜 로그인은 Google만 제공한다 (TS-21)
     const startSocialLogin = (provider) => {
         window.location.href = `${API_BASE_URL}/oauth2/authorization/${provider}`;
     };
-
-    const handleKakaoLogin = () => startSocialLogin("kakao");
 
     const handleGoogleLogin = () => startSocialLogin("google");
 
@@ -60,9 +58,6 @@ const LoginPage = ({ onLoginSuccess }) => {
                 </button>
 
                 <div className="social-login-group">
-                    <button className="kakao-btn" onClick={handleKakaoLogin}>
-                        카카오 로그인
-                    </button>
                     <button className="google-btn" onClick={handleGoogleLogin}>
                         구글 로그인
                     </button>

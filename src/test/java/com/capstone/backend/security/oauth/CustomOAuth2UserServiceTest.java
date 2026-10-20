@@ -8,12 +8,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -40,39 +42,13 @@ class CustomOAuth2UserServiceTest {
         assertEquals("user@example.com", user.getName());
     }
 
+    // Kakao·Naver 로그인은 제거했어요(TS-21). 등록되지 않은 제공자로 들어오면 사용자를 만들지 않고 거절해야 해요
     @Test
-    void createsKakaoUserFromNestedAttributes() {
-        OAuth2UserInfo userInfo = OAuth2UserInfoFactory.getOAuth2UserInfo("kakao",
-                Map.of(
-                        "id", 123456789L,
-                        "kakao_account", Map.of("email", "kakao@example.com"),
-                        "properties", Map.of("nickname", "Kakao User")
-                ));
-
-        when(userRepository.findByProviderAndProviderId(AuthProvider.KAKAO, "123456789")).thenReturn(Optional.empty());
-        when(userRepository.findByEmail("kakao@example.com")).thenReturn(Optional.empty());
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        OAuth2User user = customOAuth2UserService.upsertOAuth2User("kakao", userInfo, Map.of("id", 123456789L));
-
-        assertEquals("kakao@example.com", user.getName());
-    }
-
-    @Test
-    void createsNaverUserFromResponseAttributes() {
-        OAuth2UserInfo userInfo = OAuth2UserInfoFactory.getOAuth2UserInfo("naver",
-                Map.of("response", Map.of(
-                        "id", "naver-123",
-                        "email", "naver@example.com",
-                        "name", "Naver User"
-                )));
-
-        when(userRepository.findByProviderAndProviderId(AuthProvider.NAVER, "naver-123")).thenReturn(Optional.empty());
-        when(userRepository.findByEmail("naver@example.com")).thenReturn(Optional.empty());
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        OAuth2User user = customOAuth2UserService.upsertOAuth2User("naver", userInfo, Map.of("response", Map.of("id", "naver-123")));
-
-        assertEquals("naver@example.com", user.getName());
+    void rejectsRemovedProviders() {
+        for (String provider : new String[]{"kakao", "naver"}) {
+            OAuth2AuthenticationException e = assertThrows(OAuth2AuthenticationException.class,
+                    () -> OAuth2UserInfoFactory.getOAuth2UserInfo(provider, Map.of("id", "1")));
+            assertEquals("unsupported_provider", e.getError().getErrorCode());
+        }
     }
 }

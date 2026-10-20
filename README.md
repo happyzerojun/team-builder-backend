@@ -24,7 +24,7 @@
 
 | 구분 | 기능 |
 | --- | --- |
-| **회원** | 이메일 회원가입/로그인, **Google 소셜 로그인**(Kakao · Naver는 코드로 지원, 화면 미노출), 기술 스택 · 지역 · 소개 등 프로필 관리 |
+| **회원** | 이메일 회원가입/로그인, **Google 소셜 로그인**, 기술 스택 · 지역 · 소개 등 프로필 관리 |
 | **모집글** | 제목 · 내용 · 지역 · 기간 · 대면 여부 · 기술 스택 · **모집 포지션(역할 · 인원)**을 담은 모집글 작성/수정, 페이지네이션 조회, 내가 쓴 글 조회, 모집 상태 변경 |
 | **지원** | 포지션 · 경험 · 연락처를 담은 지원서 제출, 중복 지원 차단, 팀장의 수락 / 거절(포지션 정원까지) |
 | **팀 관리** | 수락된 지원자로 팀원 목록 구성, 팀원 추가 · 제외 |
@@ -38,7 +38,7 @@ flowchart LR
     FE[React SPA] -->|REST + JWT| BE[Spring Boot API<br/>AWS EC2 · Docker]
     BE --> DB[(MySQL 8)]
     BE -->|프롬프트 + 후보 프로젝트| AI[Google Gemini 2.5 Flash]
-    BE <-->|OAuth2| SNS[Google<br/>Kakao · Naver는 코드만]
+    BE <-->|OAuth2| SNS[Google]
 ```
 
 ## 🛠 기술 스택
@@ -133,7 +133,7 @@ erDiagram
 ## 🔐 인증 · 공통 처리 (팀 구현)
 
 - 이메일 로그인과 OAuth2 소셜 로그인 모두 **최종적으로 같은 JWT를 발급**해 이후 요청은 동일한 필터로 인증합니다.
-- 제공자마다 다른 사용자 정보 응답 구조(Kakao의 중첩 객체, Naver의 `response` 래핑)를 `OAuth2UserInfo` 인터페이스와 팩토리로 추상화했습니다. 현재 화면에는 **Google 로그인만** 노출하고, Kakao · Naver는 키를 설정하고 버튼을 추가하면 같은 흐름으로 켤 수 있습니다. ([TS-21](docs/troubleshooting.md#ts-21-env에-넣은-oauthjwt-값이-컨테이너에-전달되지-않음))
+- 제공자별 사용자 정보는 `OAuth2UserInfo` 인터페이스와 팩토리로 받습니다. 캡스톤 당시 Google · Kakao · Naver를 구현했고, 이후 운영할 키를 줄이려고 **Google만 남기고** Kakao · Naver는 제거했습니다. 다른 제공자를 다시 붙일 때는 구현체 하나와 팩토리 분기만 추가하면 됩니다. ([TS-21](docs/troubleshooting.md#ts-21-env에-넣은-oauthjwt-값이-컨테이너에-전달되지-않음))
 - 소셜 로그인 시 같은 이메일의 기존 계정이 있으면 새로 만들지 않고 연동하며, 소셜 계정으로 비밀번호 로그인을 시도하면 거절합니다.
 - **인가는 기본 닫힘**입니다. 모집글 · 기술 스택 조회, 로그인 · 회원가입, OAuth2, Swagger만 공개하고 나머지는 로그인이 필요합니다. 요청자는 요청 본문 · URL의 ID가 아니라 JWT에서만 꺼내고, 글 수정 · 지원 수락은 작성자만, 지원 취소는 지원자 본인만 할 수 있도록 서비스 계층에서 소유권을 검사합니다. ([TS-05](docs/troubleshooting.md#ts-05-인가-없이-배포된-api))
 - `@RestControllerAdvice`로 예외를 한 곳에서 처리해 `{ "code": "NOT_FOUND", "message": "..." }` 형태로 응답을 통일했습니다. (검증 실패 400, 인증 실패 401, 권한 없음 403, 없음 404, 충돌 409, 그 외 500 고정 문구) Security 필터 단계의 401/403도 같은 형식입니다.
@@ -149,7 +149,7 @@ erDiagram
 │   ├── repository/        # Spring Data JPA, JPQL (JOIN FETCH, 기술 스택 조인 조회)
 │   ├── entity/            # User, Project, Application, Review, TechStack 및 연결 엔티티
 │   ├── dto/
-│   ├── security/          # SecurityConfig, OAuth2 (Google/Kakao/Naver)
+│   ├── security/          # SecurityConfig, OAuth2 (Google)
 │   ├── global/            # JWT, 공통 예외 처리, 더미 데이터 로더
 │   └── config/            # CORS, 기술 스택 초기 데이터
 ├── src/test/              # 단위 · 슬라이스(@WebMvcTest) · MySQL 통합 테스트
